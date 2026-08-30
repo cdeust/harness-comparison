@@ -24,6 +24,12 @@ ai-architect-mcp-codebase, ai-architect-mcp-spec, and zetetic-team-subagents.
 The Harness A components are a baseline reference configuration for matched
 capability tests, not a permanent taxonomy.
 
+Candidate class is fixed before execution. A complete autonomous harness runs
+as its own experimental unit; a portable harness layer or subsystem must pass
+separate Claude and Codex handshakes and is scored only within its declared
+capability boundary. Requiring a standalone harness to execute inside another
+harness, or treating a host adapter as a complete stack, is a category error.
+
 For every matched comparison, the declared units share the same corpus, task
 prompts, resource policy, model, and scoring rubric. Internal components are
 not counted as independent competitors.

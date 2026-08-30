@@ -2,13 +2,14 @@
 
 ## Experimental rule
 
-The benchmark compares the declared solutions at the scope appropriate to the
-research question. A capability is “available” only when
-the same surface is installed, version-pinned, isolated where stateful, and
-verified by an external handshake on both Claude and Codex. Conceptual overlap
-is not counted as parity.
+Claude and Codex are host drivers, not the competing solutions. The current
+matched baseline declares Harness A and the complete AI Architect solution as
+the two units; each unit must run through both hosts. A capability is
+“available” only when the declared surface is installed, version-pinned,
+isolated where stateful, and verified by an external handshake in every
+required host × solution cell. Conceptual overlap is not counted as parity.
 
-| Capability | Claude stack | Codex stack | Setup required before rerun |
+| Capability | Harness A reference | AI Architect solution | Setup required before rerun |
 |---|---|---|---|
 | Session memory | claude-mem | Cortex/hypermnesia | Pin versions; separate stores and verify recall. |
 | Code graph/navigation | Serena + codebase-memory-mcp | ai-architect-mcp-codebase | Provision both on both hosts; record binary/plugin SHAs. |
@@ -16,15 +17,16 @@ is not counted as parity.
 | Procedures | Superpowers | zetetic-team-subagents | Install pinned bundles; enumerate and retrieve one procedure on both. |
 | Notes/vault | Obsidian MCP | Cortex wiki/notes | Explicit per-host vault/state paths; no shared mutable vault in benchmark. |
 | SQL/vector | Supabase | Cortex PostgreSQL/pgvector | Separate credentials/tenants; verify read-only health. |
-| NoSQL | MongoDB MCP | no declared native equivalent | Install the same scoped MongoDB MCP on Codex or record a measured gap. |
-| Telemetry | OpenTelemetry MCP | Cortex telemetry | Configure distinct service names and a common collector. |
-| Decision/provenance graph | no baseline equivalent | ai-architect-mcp-spec + Cortex | Add Semantica on both hosts if this capability is in scope; otherwise score as B-specific. |
-| LSP | rust-analyzer host plugin | no declared native equivalent | Install equivalent language servers and verify symbol navigation. |
+| NoSQL | MongoDB MCP | `UNAVAILABLE` unless declared as common infrastructure | Either provision identical scoped infrastructure for both units or retain the measured gap. |
+| Telemetry | OpenTelemetry MCP | Cortex telemetry | Configure distinct service identities and a common collector for every cell. |
+| Decision/provenance graph | no current baseline equivalent | ai-architect-mcp-spec + Cortex | Add an eligible reference to both hosts when this capability is compared; otherwise report the asymmetry. |
+| LSP | rust-analyzer host plugin | ai-architect-mcp-codebase LSP integration | Pin language servers and measure the declared language/symbol surface rather than assuming equivalence. |
 
 ## Conflict controls
 
-- Claude and Codex use separate config roots, plugin caches, SQLite/state roots,
-  vaults, graph output directories, and telemetry `service.name` values.
+- Every host × solution cell uses separate config roots, plugin caches,
+  SQLite/state roots, vaults, graph output directories, and telemetry
+  `service.name` values.
 - MCP processes must never share mutable graph databases or benchmark vaults.
 - All versions and executable paths are captured in a parity manifest; no
   unpinned `npx -y`/`uvx` resolution is accepted for a scored run.
@@ -33,7 +35,8 @@ is not counted as parity.
 
 ## Operational parity gates
 
-Both stacks must be tested with the same workload ladder and declared
+Every declared stack in a matched protocol must be tested with the same
+workload ladder and declared
 concurrency. Record throughput, p95/p99 latency, queueing, retries, resource
 usage, database connections, recovery, and model/tool cost. A separate
 security track must verify outbound network policy, TLS, localhost ports,

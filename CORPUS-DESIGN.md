@@ -38,8 +38,9 @@ the primary statistical summary, and never use it to claim market superiority.
 
 ## Harness definition
 
-The experimental unit is the full configured stack, not one MCP server.
-Harness A and the AI Architect stack must each have:
+The experimental unit is the declared complete configured stack, not one MCP
+server. Every complete-harness unit — including the current Harness A baseline,
+the AI Architect stack and any promoted R-H candidate — must have:
 
 - a version-pinned manifest;
 - isolated config/cache/database/vault roots;
@@ -62,19 +63,19 @@ produce engineering findings but cannot increase the primary sample size.
 ## Acceptance gate
 
 The corpus is publishable only when an independent reviewer can clone every
-public repository at the recorded SHA, run both setup commands, reproduce the
-health checks, and locate every raw result from the manifest. Any deviation
-creates a new preregistered revision rather than an undocumented adjustment.
+public repository at the recorded SHA, run every declared unit's setup command,
+reproduce the health checks, and locate every raw result from the manifest. Any
+deviation creates a new preregistered revision rather than an undocumented
+adjustment.
 
-## Candidate open-source comparison panel
+## Candidate portable-layer and subsystem panel
 
-These are candidate benchmark applications/components, not replacements for
-the two harnesses. Final inclusion requires the acceptance gate above and a
-clean, pinned checkout.
+These are candidate benchmark applications/components. They do not become
+complete-harness units merely by appearing in this table. Final inclusion
+requires the acceptance gate above and a clean, pinned checkout.
 
 | Project | Dimension exercised | Role |
 |---|---|---|
-| OpenHands | autonomous coding, long-horizon execution, sandboxing | primary coding-agent workload |
 | LangGraph | durable state machines, checkpoints, multi-agent workflows | deterministic control-loop workload |
 | AutoGen | multi-agent delegation and tool protocols | sensitivity comparison |
 | Mem0 | long-term memory and retrieval | memory workload |
@@ -82,9 +83,24 @@ clean, pinned checkout.
 | LiteLLM | provider gateway, routing, budgets and cost controls | portability/FinOps workload |
 | Promptfoo | evaluation, red-team and prompt-injection testing | security/evaluation workload |
 
-The first primary panel should select a balanced subset (OpenHands, LangGraph,
-Mem0, Langfuse, LiteLLM, and Promptfoo) and keep AutoGen as a sensitivity
-comparison. Run locally or self-hosted; SaaS-only features are excluded.
+The first R-C panel should select a balanced subset (LangGraph, Mem0, Langfuse,
+LiteLLM, and Promptfoo) and keep AutoGen as a class-review or sensitivity
+candidate. Run locally or self-hosted; SaaS-only features are excluded.
 
 AI Architect repositories and internal product candidates remain internal and
 ecosystem tracks, not substitutes for the independent corpus.
+
+## Candidate complete-harness panel
+
+Complete harness candidates are a separate experimental-unit stratum. Their
+task corpus is still the independent Track R corpus above.
+
+| Project | Proposed unit | Current status |
+|---|---|---|
+| [OpenHands](https://github.com/OpenHands/OpenHands) | standalone coding-agent harness | candidate card required |
+| [ECC](https://github.com/affaan-m/ECC) | portable harness layer; complete-harness scope remains a pilot question | reconnaissance |
+| [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) | standalone plugin-oriented agent harness | reconnaissance |
+
+Neither row is an endorsement or a comparison result. Promotion requires a
+pinned candidate card, the class-appropriate inclusion handshake, matched
+execution and independent scoring.
