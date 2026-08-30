@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, extname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -59,6 +60,21 @@ function markdownFiles(directory) {
     if (entry.isDirectory()) return markdownFiles(child);
     return extname(entry.name) === ".md" ? [child] : [];
   });
+}
+
+function repositoryMarkdownFiles() {
+  // Git defines the source boundary: include tracked and untracked source while
+  // excluding ignored runtime/cache artifacts. Contract: git-ls-files(1),
+  // https://git-scm.com/docs/git-ls-files.
+  const paths = execFileSync(
+    "git",
+    ["ls-files", "--cached", "--others", "--exclude-standard", "-z", "--", "*.md"],
+    { cwd: repositoryRoot, encoding: "utf8" }
+  );
+  return paths
+    .split("\0")
+    .filter(Boolean)
+    .map((path) => join(repositoryRoot, path));
 }
 
 function validateLocalLinks(path, content, displayPath, failures) {
@@ -252,7 +268,7 @@ for (const projectEntry of readdirSync(issuesRoot, { withFileTypes: true })) {
   }
 }
 
-for (const path of markdownFiles(repositoryRoot)) {
+for (const path of repositoryMarkdownFiles()) {
   if (path.startsWith(issuesRoot) || path.startsWith(candidatesRoot)) continue;
   validateLocalLinks(path, readFileSync(path, "utf8"), relative(repositoryRoot, path), failures);
 }
