@@ -37,13 +37,17 @@ Populate a disposable SQLite fixture with uniquely traceable rows. Execute a
 single-client baseline followed by concurrency levels preregistered before the
 run for mixed remember, supersede and forget operations, with a fault-injected
 rollback at every level. Use a fresh process per level. From the repository
-root, invoke the preregistered cell with
-`node codex-harness/run-isolated.mjs --harness B --cwd <pinned-checkout> --prompt-file <preregistered-cell>`.
-An independent operation ledger reconciles acknowledgements, rollbacks and
-persisted rows. Preserve operation ledgers, database/FTS/vector snapshots,
-throughput, p50/p95/p99, queueing, retries, CPU, memory, disk and recovery under
-`artifacts/<release>/issues/HC-CORTEX-002/raw/`. Stop at fixture corruption or
-the preregistered resource safety bound.
+root, validate
+[`protocols/2026-08-30-hc-cortex-002-v1.json`](../../../protocols/2026-08-30-hc-cortex-002-v1.json),
+then generate or execute its exact plan with
+`node scripts/run-workload-ladder.mjs --protocol <protocol> --release-root <new-release> --source <id=checkout> --runtime <id=executable> [--database <cell=url>]`.
+The focused deterministic adapter deliberately excludes the LLM and host
+scheduler; it measures the declared transaction boundary and makes no complete
+Claude/Codex parity claim. A distinct oracle process reconciles acknowledgements,
+rollbacks and persisted rows. Preserve operation ledgers,
+database/FTS/vector observations, throughput, p50/p95/p99, queueing, retries,
+CPU, memory, disk, connections and recovery in the content-addressed release.
+Stop according to the preregistered failure scope and resource policy.
 
 ## Acceptance criteria
 
@@ -69,6 +73,7 @@ SQLite ladder and the matched PostgreSQL reference cell.
 - [Shared SQLite connection](https://github.com/cdeust/Cortex/blob/8f5ae3b87b6969f3abcb3736859febfdab69304a/mcp_server/infrastructure/sqlite_store.py)
 - [Process-wide store cache](https://github.com/cdeust/Cortex/blob/8f5ae3b87b6969f3abcb3736859febfdab69304a/mcp_server/infrastructure/memory_store.py)
 - [Worker-thread dispatch](https://github.com/cdeust/Cortex/blob/8f5ae3b87b6969f3abcb3736859febfdab69304a/mcp_server/tool_error_handler.py)
+- [Preregistered HC-CORTEX-002 protocol](../../../protocols/2026-08-30-hc-cortex-002-v1.json)
 
 ## Dependencies and exclusions
 

@@ -1,0 +1,304 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/cdeust/harness-comparison/schemas/execution-manifest-v1.schema.json",
+  "title": "Benchmark execution manifest v1",
+  "description": "Content-addressed environment and artifact ledger for one benchmark release.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "releaseId",
+    "releaseStatus",
+    "generatedAt",
+    "immutabilityPolicy",
+    "protocol",
+    "environment",
+    "artifacts",
+    "cells"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "benchmark-execution-manifest/v1" },
+    "releaseId": { "$ref": "#/$defs/nonEmptyString" },
+    "releaseStatus": {
+      "enum": ["PREREGISTERED", "PILOT", "VERIFIED", "PUBLISHED"]
+    },
+    "generatedAt": { "$ref": "#/$defs/utcTimestamp" },
+    "immutabilityPolicy": {
+      "type": "object",
+      "description": "Immutability means tamper evidence from SHA-256, byte length and a stable validation snapshot. It never claims operating-system write protection. PUBLISHED adds an external Git binding.",
+      "additionalProperties": false,
+      "required": ["scheme", "osWriteProtectionClaimed", "externalBinding"],
+      "properties": {
+        "scheme": { "const": "sha256+bytes+manifest/v1" },
+        "osWriteProtectionClaimed": { "const": false },
+        "externalBinding": { "enum": ["validation-snapshot", "git-commit"] }
+      }
+    },
+    "protocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "sourceRegistration"],
+      "properties": {
+        "path": { "$ref": "#/$defs/artifactPath" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "sourceRegistration": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["repository", "revision", "path"],
+          "properties": {
+            "repository": { "$ref": "#/$defs/nonEmptyString" },
+            "revision": { "$ref": "#/$defs/gitRevision" },
+            "path": { "$ref": "#/$defs/artifactPath" }
+          }
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repositories",
+        "host",
+        "runtimes",
+        "tools",
+        "credentials",
+        "stores",
+        "processes"
+      ],
+      "properties": {
+        "repositories": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "repository", "revision", "dirty", "dirtyPaths"],
+            "properties": {
+              "id": { "$ref": "#/$defs/nonEmptyString" },
+              "repository": { "$ref": "#/$defs/nonEmptyString" },
+              "revision": { "$ref": "#/$defs/gitRevision" },
+              "dirty": { "type": "boolean" },
+              "dirtyPaths": {
+                "type": "array",
+                "items": { "$ref": "#/$defs/nonEmptyString" }
+              }
+            }
+          }
+        },
+        "host": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["os", "release", "architecture", "cpu", "logicalCpus", "memoryBytes"],
+          "properties": {
+            "os": { "$ref": "#/$defs/nonEmptyString" },
+            "release": { "$ref": "#/$defs/nonEmptyString" },
+            "architecture": { "$ref": "#/$defs/nonEmptyString" },
+            "cpu": { "$ref": "#/$defs/nonEmptyString" },
+            "logicalCpus": { "type": "integer", "minimum": 1 },
+            "memoryBytes": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "runtimes": { "$ref": "#/$defs/versionedComponents" },
+        "tools": { "$ref": "#/$defs/versionedComponents" },
+        "credentials": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "provider", "scope", "secretMaterialRecorded"],
+            "properties": {
+              "id": { "$ref": "#/$defs/nonEmptyString" },
+              "provider": { "$ref": "#/$defs/nonEmptyString" },
+              "scope": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "$ref": "#/$defs/nonEmptyString" }
+              },
+              "secretMaterialRecorded": { "const": false }
+            }
+          }
+        },
+        "stores": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "type", "location", "isolation", "initialState"],
+            "properties": {
+              "id": { "$ref": "#/$defs/nonEmptyString" },
+              "type": { "$ref": "#/$defs/nonEmptyString" },
+              "location": { "$ref": "#/$defs/nonEmptyString" },
+              "isolation": { "$ref": "#/$defs/nonEmptyString" },
+              "initialState": { "$ref": "#/$defs/nonEmptyString" }
+            }
+          }
+        },
+        "processes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "instanceId", "command", "pid", "host", "declaredEndpoints"],
+            "properties": {
+              "id": { "$ref": "#/$defs/nonEmptyString" },
+              "instanceId": { "$ref": "#/$defs/nonEmptyString" },
+              "command": { "$ref": "#/$defs/nonEmptyString" },
+              "pid": { "type": "integer", "minimum": 1 },
+              "host": {
+                "description": "Execution-host designation only; it must not imply an operating-system sandbox that was not evidenced.",
+                "$ref": "#/$defs/nonEmptyString"
+              },
+              "declaredEndpoints": {
+                "description": "Endpoint assignments evidenced by configuration receipts. An empty array makes no claim that a network scan observed no listeners.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["transport", "portSuffix", "binding", "evidence", "networkScanPerformed"],
+                  "properties": {
+                    "transport": { "enum": ["unix-domain-socket", "tcp", "udp"] },
+                    "portSuffix": {
+                      "oneOf": [
+                        { "type": "integer", "minimum": 1, "maximum": 65535 },
+                        { "type": "null" }
+                      ]
+                    },
+                    "binding": { "$ref": "#/$defs/nonEmptyString" },
+                    "evidence": { "enum": ["configuration-receipt", "process-receipt"] },
+                    "networkScanPerformed": { "const": false }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256", "bytes", "role", "immutable"],
+        "properties": {
+          "path": { "$ref": "#/$defs/artifactPath" },
+          "sha256": { "$ref": "#/$defs/sha256" },
+          "bytes": { "type": "integer", "minimum": 0 },
+          "role": {
+            "enum": [
+              "protocol",
+              "raw",
+              "analysis",
+              "scoring",
+              "negative-log",
+              "review",
+              "reproduction",
+              "change-log",
+              "other"
+            ]
+          },
+          "immutable": {
+            "type": "boolean",
+            "description": "True means the bytes are content-addressed by this manifest; it does not mean the filesystem denies writes."
+          }
+        }
+      }
+    },
+    "cells": {
+      "description": "Attempted cells in preregistered order. Partial PILOT evidence may use null execution bindings and empty/global rawArtifactPaths; completed and publishable cells are required by the semantic gate to carry every terminal binding.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "startedAt",
+          "endedAt",
+          "status",
+          "expectedVerdict",
+          "verdict",
+          "protocolSha256",
+          "attemptId",
+          "processInstanceId",
+          "restartReceiptArtifactPath",
+          "rawLedgerArtifactPath",
+          "rawArtifactPaths",
+          "resolution"
+        ],
+        "properties": {
+          "id": { "$ref": "#/$defs/nonEmptyString" },
+          "startedAt": { "$ref": "#/$defs/nullableUtcTimestamp" },
+          "endedAt": { "$ref": "#/$defs/nullableUtcTimestamp" },
+          "status": { "enum": ["completed", "failed", "indeterminate"] },
+          "expectedVerdict": { "enum": ["proven", "blocked"] },
+          "verdict": { "enum": ["proven", "blocked", "indeterminate"] },
+          "protocolSha256": { "$ref": "#/$defs/sha256" },
+          "attemptId": { "$ref": "#/$defs/nullableNonEmptyString" },
+          "processInstanceId": { "$ref": "#/$defs/nullableNonEmptyString" },
+          "restartReceiptArtifactPath": { "$ref": "#/$defs/nullableArtifactPath" },
+          "rawLedgerArtifactPath": { "$ref": "#/$defs/nullableArtifactPath" },
+          "rawArtifactPaths": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/artifactPath" }
+          },
+          "resolution": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["state", "detail"],
+            "properties": {
+              "state": { "enum": ["resolved", "unresolved"] },
+              "detail": { "$ref": "#/$defs/nonEmptyString" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "gitRevision": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "artifactPath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*(?:^|/)\\.(?:/|$)).+$"
+    },
+    "utcTimestamp": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$",
+      "format": "date-time"
+    },
+    "nullableUtcTimestamp": {
+      "oneOf": [
+        { "$ref": "#/$defs/utcTimestamp" },
+        { "type": "null" }
+      ]
+    },
+    "nullableNonEmptyString": {
+      "oneOf": [
+        { "$ref": "#/$defs/nonEmptyString" },
+        { "type": "null" }
+      ]
+    },
+    "nullableArtifactPath": {
+      "oneOf": [
+        { "$ref": "#/$defs/artifactPath" },
+        { "type": "null" }
+      ]
+    },
+    "versionedComponents": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "version"],
+        "properties": {
+          "id": { "$ref": "#/$defs/nonEmptyString" },
+          "version": { "$ref": "#/$defs/nonEmptyString" }
+        }
+      }
+    }
+  }
+}

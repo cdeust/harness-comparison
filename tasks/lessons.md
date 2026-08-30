@@ -22,3 +22,10 @@ These rules capture corrections that must remain true in later capstone cycles.
    non-ignored source. A raw filesystem walk lets ignored runtime caches
    contaminate deterministic results; regressions must prove both exclusion of
    ignored files and coverage of non-ignored new files.
+9. A release manifest cannot prove its own preregistration. Bind the exact
+   protocol bytes to an externally inspectable Git object, and adversarially
+   test post-hoc rewrites, empty published releases and malformed structures.
+10. A green development smoke is not benchmark evidence when its scheduler,
+    recovery probe or telemetry boundary differs from the preregistered
+    contract. Preserve it as engineering feedback, correct the adapter, and
+    rerun from a fresh unscored attempt.

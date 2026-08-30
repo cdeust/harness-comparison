@@ -7,3 +7,8 @@ codex-harness/runtime/
 codex-harness/plugin-marketplaces/
 results/codex-rev3/
 .worktrees/
+
+# Generated Python test/runtime state — source and release evidence only
+__pycache__/
+*.py[cod]
+.pytest_cache/
