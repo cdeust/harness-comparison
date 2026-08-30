@@ -30,10 +30,11 @@ three complementary populations:
 1. **Internal product maturity** — the complete AI Architect corpus, used to
    expose gaps and drive engineering issues.
 2. **Independent capability comparison** — pinned public open-source projects,
-   selected by capability and tested through both Claude and Codex adapters.
-3. **Frontier watch** — emerging projects such as OpenViking or a precisely
-   identified Claudex repository; candidates enter the primary panel only after
-   a clean pilot and reproducibility review.
+   stratified as complete harnesses or portable capability references and
+   evaluated through the class-appropriate gate.
+3. **Frontier watch** — emerging projects such as OpenViking, ECC, DeepSeek
+   Harness, or a precisely identified Claudex repository; candidates enter the
+   primary panel only after a clean pilot and reproducibility review.
 
 The benchmark is valid only when it records the full environment, uses the
 same workload and model policy, isolates mutable state, scores independently,
@@ -49,6 +50,7 @@ and publishes failures as well as successes.
 - [issues/](issues/) — canonical public issue registry organized by stack, category, and subject.
 - [COMMUNICATION-FRAMEWORK.md](COMMUNICATION-FRAMEWORK.md) — one evidence-backed release adapted across channels.
 - [CAPSTONE-CHARTER.md](CAPSTONE-CHARTER.md) — research objective, three populations, inclusion gate, and sovereignty scorecard.
+- [candidates/](candidates/) — pinned reconnaissance cards and promotion decisions for frontier projects.
 - [claude-harness/](claude-harness/) and [codex-harness/](codex-harness/) — isolated configurations and runners.
 
 ## Public artifact

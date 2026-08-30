@@ -1,0 +1,64 @@
+name: Frontier candidate
+description: Propose an open-source harness or subsystem for the inclusion gate
+title: "[candidate] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A repository mention is a hypothesis, not an endorsement. The candidate must pass `CAPSTONE-CHARTER.md` before entering a scored panel.
+  - type: input
+    id: repository
+    attributes:
+      label: Canonical repository
+      placeholder: https://github.com/owner/project
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: Release or full source SHA
+      description: Pin the source that should be inspected.
+    validations:
+      required: true
+  - type: dropdown
+    id: class
+    attributes:
+      label: Proposed experimental-unit class
+      options:
+        - Complete harness
+        - Portable harness layer or subsystem
+        - Both, with separate gates
+    validations:
+      required: true
+  - type: textarea
+    id: capability
+    attributes:
+      label: Capability and explicit non-capabilities
+      description: State the narrow capability claim and what is not being claimed.
+    validations:
+      required: true
+  - type: textarea
+    id: source_evidence
+    attributes:
+      label: Primary source evidence
+      description: Link license, install contract, adapters, safety notice and known limitations at the pinned revision.
+    validations:
+      required: true
+  - type: textarea
+    id: pilot
+    attributes:
+      label: Proposed clean pilot
+      description: Include environment, model/provider policy, fixture, command, oracle, isolation, raw artifacts and stop rule.
+    validations:
+      required: true
+  - type: checkboxes
+    id: integrity
+    attributes:
+      label: Integrity checks
+      options:
+        - label: README claims are labelled as unobserved until reproduced.
+          required: true
+        - label: Popularity is not used as a maturity or inclusion criterion.
+          required: true
+        - label: Complete-harness and host-adapter claims are gated separately.
+          required: true

@@ -1,0 +1,103 @@
+name: Capstone finding
+description: Track one evidence-backed product defect or benchmark gap
+title: "[project][category] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This form follows `issues/SCHEMA.md`. Claims without a pinned source and an external acceptance signal remain pending.
+  - type: input
+    id: project
+    attributes:
+      label: Project
+      description: Canonical repository or harness-comparison infrastructure.
+      placeholder: cdeust/Cortex
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - benchmark-validity
+        - code-intelligence
+        - critical-reasoning
+        - data-sovereignty
+        - documentation
+        - finops
+        - integration
+        - memory
+        - network-security
+        - observability
+        - orchestration
+        - provenance
+        - reliability
+        - scalability
+    validations:
+      required: true
+  - type: input
+    id: subject
+    attributes:
+      label: Subject
+      description: One falsifiable defect or one missing measurement.
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: Pinned source revision
+      placeholder: Full 40-character commit SHA
+    validations:
+      required: true
+  - type: input
+    id: research_rule
+    attributes:
+      label: Research rule
+      placeholder: RESEARCH-PROCESS.md §5b
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed condition and evidence
+      description: State only what the current source or immutable runtime artifact supports.
+    validations:
+      required: true
+  - type: textarea
+    id: hypothesis
+    attributes:
+      label: Falsifiable hypothesis and non-claims
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction protocol
+      description: Include fixture/corpus, environment, command, oracle, raw artifact and stop rule.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: External acceptance criteria
+      description: List observable pass conditions and the required benchmark regression slice.
+    validations:
+      required: true
+  - type: textarea
+    id: sovereignty
+    attributes:
+      label: Sovereignty impact
+      description: Cite the numbered CAPSTONE-CHARTER.md dimensions affected.
+    validations:
+      required: true
+  - type: checkboxes
+    id: gates
+    attributes:
+      label: Publication checks
+      options:
+        - label: The source revision is pinned and publicly checkable.
+          required: true
+        - label: The acceptance signal is external to the implementation under test.
+          required: true
+        - label: Private tracker names, private paths and unsupported historical claims are absent.
+          required: true

@@ -6,3 +6,4 @@ vault/
 codex-harness/runtime/
 codex-harness/plugin-marketplaces/
 results/codex-rev3/
+.worktrees/
