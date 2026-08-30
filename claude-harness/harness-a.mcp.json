@@ -1,0 +1,35 @@
+{
+  "mcpServers": {
+    "codebase-memory": {
+      "command": "npx",
+      "args": ["-y", "codebase-memory-mcp"]
+    },
+    "graphify": {
+      "command": "bash",
+      "args": ["-c", "cd \"${GRAPHIFY_PROJECT:-.}\" && exec npx -y @dreamtree-org/graphify --mcp"]
+    },
+    "serena": {
+      "command": "uvx",
+      "args": ["--from", "serena-agent", "serena", "start-mcp-server", "--context", "claude-code"]
+    },
+    "obsidian": {
+      "command": "npx",
+      "args": ["-y", "kobsidian-mcp"],
+      "env": {"OBSIDIAN_VAULT_PATH": "${HARNESS_A_OBSIDIAN_VAULT_PATH:?set a dedicated benchmark vault}"}
+    },
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp"
+    },
+    "mongodb": {
+      "command": "npx",
+      "args": ["-y", "mongodb-mcp-server"],
+      "env": {"MDB_MCP_CONNECTION_STRING": "${MDB_MCP_CONNECTION_STRING:-mongodb://localhost:27017}"}
+    },
+    "opentelemetry": {
+      "command": "npx",
+      "args": ["-y", "otel-mcp"]
+    }
+  },
+  "plugins": ["claude-mem@thedotmack", "superpowers@superpowers-marketplace"]
+}

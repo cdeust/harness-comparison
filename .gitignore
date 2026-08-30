@@ -1,0 +1,8 @@
+# Local tool state — not part of the benchmark evidence
+graphify-out/
+vault/
+.serena/
+.claude/
+codex-harness/runtime/
+codex-harness/plugin-marketplaces/
+results/codex-rev3/

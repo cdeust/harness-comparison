@@ -1,0 +1,10 @@
+{
+  "mcpServers": {},
+  "plugins": [
+    "hypermnesia-mcp@cortex-plugins",
+    "hypermnesia-mcp-viz@cortex-plugins",
+    "ai-architect-mcp-codebase@ai-architect-mcp-codebase-marketplace",
+    "ai-architect-mcp-spec@ai-architect-mcp-spec-marketplace",
+    "zetetic-team-subagents@zetetic-marketplace"
+  ]
+}

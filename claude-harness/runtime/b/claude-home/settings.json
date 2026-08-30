@@ -1,0 +1,9 @@
+{
+  "enabledPlugins": {
+    "hypermnesia-mcp@cortex-plugins": true,
+    "hypermnesia-mcp-viz@cortex-plugins": true,
+    "ai-architect-mcp-codebase@ai-architect-mcp-codebase-marketplace": true,
+    "ai-architect-mcp-spec@ai-architect-mcp-spec-marketplace": true,
+    "zetetic-team-subagents@zetetic-marketplace": true
+  }
+}

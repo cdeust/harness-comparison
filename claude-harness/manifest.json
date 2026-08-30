@@ -1,0 +1,24 @@
+{
+  "id": "harness-a-claude",
+  "role": "independent-baseline",
+  "host": "claude",
+  "components": [
+    "claude-mem", "serena", "graphify", "codebase-memory-mcp",
+    "superpowers", "obsidian", "mongodb", "opentelemetry", "supabase"
+  ],
+  "corpus_tracks": {
+    "primary": "public-open-source-cross-platform",
+    "internal": "author-owned-dogfooding"
+  },
+  "isolation": {
+    "config_root": "runtime/{a,b}/claude-home",
+    "mutable_state": "runtime/{a,b}",
+    "vault": "dedicated-per-run",
+    "network_identity": "harness-a-claude"
+  },
+  "requirements": {
+    "versions": "pinned before scoring",
+    "credentials": "scoped per service and never committed",
+    "shared_mutable_stores": false
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "version": 2,
+  "plugins": {
+    "hypermnesia-mcp@cortex-plugins": [
+      {
+        "scope": "user",
+        "installPath": "/Users/cdeust/.claude/plugins/cache/cortex-plugins/hypermnesia-mcp/4.17.2",
+        "version": "4.17.2",
+        "installedAt": "2026-08-02T14:10:07.752Z",
+        "lastUpdated": "2026-08-02T15:48:38.894Z",
+        "gitCommitSha": "bc5cc5f6816e16f2dff2ced6967e5d3f6379aa47"
+      }
+    ],
+    "hypermnesia-mcp-viz@cortex-plugins": [
+      {
+        "scope": "user",
+        "installPath": "/Users/cdeust/.claude/plugins/cache/cortex-plugins/hypermnesia-mcp-viz/3.1.1",
+        "version": "3.1.1",
+        "installedAt": "2026-08-11T12:44:32.912Z",
+        "lastUpdated": "2026-08-11T12:44:32.912Z",
+        "gitCommitSha": "33fa1646ec3eb4f9045b4d4df91bc6872ac951a7"
+      }
+    ],
+    "ai-architect-mcp-codebase@ai-architect-mcp-codebase-marketplace": [
+      {
+        "scope": "user",
+        "installPath": "/Users/cdeust/.claude/plugins/cache/ai-architect-mcp-codebase-marketplace/ai-architect-mcp-codebase/0.11.1",
+        "version": "0.11.1",
+        "installedAt": "2026-08-04T21:54:37.699Z",
+        "lastUpdated": "2026-08-24T17:29:14.359Z",
+        "gitCommitSha": "92163dae60b3533bbe6b59def5748a89659772d8"
+      }
+    ],
+    "ai-architect-mcp-spec@ai-architect-mcp-spec-marketplace": [
+      {
+        "scope": "user",
+        "installPath": "/Users/cdeust/.claude/plugins/cache/ai-architect-mcp-spec-marketplace/ai-architect-mcp-spec/0.8.0",
+        "version": "0.8.0",
+        "installedAt": "2026-08-03T19:49:53.019Z",
+        "lastUpdated": "2026-08-11T12:46:56.070Z",
+        "gitCommitSha": "e5c163b74e73e09c52ae26524905a0fa4c8efd13"
+      }
+    ],
+    "zetetic-team-subagents@zetetic-marketplace": [
+      {
+        "scope": "user",
+        "installPath": "/Users/cdeust/.claude/plugins/cache/zetetic-marketplace/zetetic-team-subagents/2.37.0",
+        "version": "2.37.0",
+        "installedAt": "2026-06-15T20:45:50.616Z",
+        "lastUpdated": "2026-08-11T12:43:12.018Z",
+        "gitCommitSha": "cfc8ef791d695866b9578a616cbf7f256b649d5a"
+      }
+    ]
+  }
+}

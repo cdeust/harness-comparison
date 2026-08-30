@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "cortex": {
+      "command": "/opt/homebrew/bin/python3.13",
+      "args": ["/Users/cdeust/.claude/plugins/cache/cortex-plugins/hypermnesia-mcp/4.17.2/scripts/launcher.py", "mcp_server", "--profile", "lean"]
+    },
+    "ai-architect": {
+      "command": "/Users/cdeust/Developments/anthropic-partnership/ai-architect-mcp-codebase/target/release/ai-architect-mcp-codebase",
+      "args": ["--profile", "core"]
+    },
+    "ai-architect-spec": {
+      "command": "/opt/homebrew/bin/node",
+      "args": ["/Users/cdeust/Developments/anthropic-partnership/ai-architect-mcp-spec/mcp-server/index.js"]
+    }
+  },
+  "plugins": ["zetetic-team-subagents", "hypermnesia-mcp-viz"]
+}
