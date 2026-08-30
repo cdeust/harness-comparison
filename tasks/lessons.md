@@ -18,3 +18,7 @@ These rules capture corrections that must remain true in later capstone cycles.
    reported explicitly rather than repaired through silent substitution.
 7. Public dossiers contain only current, checkable source and reproducible
    acceptance signals; private paths and private provenance stay out.
+8. Repository-wide validators must enumerate tracked files plus untracked,
+   non-ignored source. A raw filesystem walk lets ignored runtime caches
+   contaminate deterministic results; regressions must prove both exclusion of
+   ignored files and coverage of non-ignored new files.
