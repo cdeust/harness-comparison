@@ -22,7 +22,10 @@ import { fileURLToPath } from "node:url";
 import { loadBenchmarkProtocol } from "./benchmark-release-lib.mjs";
 import { statusPostgresReference } from "./hc-cortex-002-postgresql-lib.mjs";
 
-const repositoryRoot = realpathSync(fileURLToPath(new URL("../", import.meta.url)));
+// Every realpathSync(...) call in this file is realpathSync.native -- see the matching import
+// comment in benchmark-release-lib.mjs for why (Windows 8.3 short-path expansion difference
+// between plain realpathSync and both Git for Windows and the OS's own realpath API).
+const repositoryRoot = realpathSync.native(fileURLToPath(new URL("../", import.meta.url)));
 const adapterInterface = "hc-cortex-002/v1";
 const parameterNames = [
   "backend",
@@ -275,7 +278,7 @@ function gitRaw(checkout, arguments_) {
 }
 
 function harnessRegistration(protocolPath, sourceRegistration) {
-  const root = realpathSync(git(dirname(protocolPath), ["rev-parse", "--show-toplevel"]));
+  const root = realpathSync.native(git(dirname(protocolPath), ["rev-parse", "--show-toplevel"]));
   if (!sameHostPath(root, repositoryRoot)) fail("HARNESS_ROOT_MISMATCH", "Protocol and workload runner are not in one registered checkout");
   const revision = git(root, ["rev-parse", "HEAD"]);
   if (revision !== sourceRegistration?.revision) {
@@ -316,7 +319,7 @@ function verifyHarnessRegistration(registration, allowedOutput = null) {
 }
 
 function inspectCheckout(requestedPath, revision) {
-  const checkout = realpathSync(resolve(requestedPath));
+  const checkout = realpathSync.native(resolve(requestedPath));
   if (!lstatSync(checkout).isDirectory()) fail("SOURCE_NOT_DIRECTORY", `${requestedPath} is not a directory`);
   const head = git(checkout, ["rev-parse", "HEAD"]);
   if (!shaPattern.test(head) || !shaPattern.test(revision) || head !== revision) {
@@ -389,7 +392,7 @@ function inspectRuntime(requestedPath, runtimeId) {
   const path = resolve(requestedPath);
   rejectSymlinkParents(path);
   const requestedStatus = lstatSync(path);
-  const target = realpathSync(path);
+  const target = realpathSync.native(path);
   const targetStatus = statSync(target);
   if ((!requestedStatus.isFile() && !requestedStatus.isSymbolicLink()) || !targetStatus.isFile()) {
     fail("RUNTIME_NOT_REGULAR", `${requestedPath} is not a regular file or terminal executable link`);
@@ -509,7 +512,7 @@ function preflightReleaseRoot(requestedRoot) {
   if (!existsSync(parent) || !lstatSync(parent).isDirectory()) {
     fail("RELEASE_PARENT_MISSING", `Release parent does not exist: ${parent}`);
   }
-  return join(realpathSync(parent), basename(absolute));
+  return join(realpathSync.native(parent), basename(absolute));
 }
 
 function redactDatabase(value, expectedPort) {
@@ -547,7 +550,7 @@ function redactDatabase(value, expectedPort) {
   let socketStatus;
   try {
     rejectSymlinkComponents(host);
-    socketRoot = realpathSync(host);
+    socketRoot = realpathSync.native(host);
     socketStatus = statSync(socketRoot);
   } catch {
     fail("POSTGRESQL_SOCKET_UNAVAILABLE", "PostgreSQL Unix socket directory is unavailable or traverses a symbolic link");

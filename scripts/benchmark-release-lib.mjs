@@ -14,6 +14,16 @@ import {
 import { dirname, isAbsolute, join, posix, relative, resolve, sep, win32 } from "node:path";
 import { fileURLToPath } from "node:url";
 
+// Every realpathSync(...) call in this file is realpathSync.native. Leading hypothesis for the
+// GitHub Actions windows-latest "dot-segment" UNSAFE_ARTIFACT_PATH failure (confirmed case-
+// insensitive equality was NOT the cause -- see the earlier sameHostPath() fix, which did not
+// resolve it): plain realpathSync's pure-JS fallback path does not reliably expand Windows 8.3
+// short path components (e.g. a temp-directory segment shortened to RUNNER~1), while both Git
+// for Windows and the OS's own native realpath API resolve to the long form -- producing a
+// git-reported root and a Node-realpathSync'd path with no common prefix at all. Confirmed by
+// the next Windows CI run after this push, not yet independently verified on Windows.
+// realpathSync.native calls the OS's realpath directly and is a byte-identical no-op versus
+// plain realpathSync on POSIX either way.
 const protocolSchema = readSchema("../schemas/benchmark-protocol-v1.schema.json");
 const manifestSchema = readSchema("../schemas/execution-manifest-v1.schema.json");
 const manifestFileName = "execution-manifest.json";
@@ -363,7 +373,7 @@ function readStableRegularFile(path, root, errors, errorPath, expectedIdentity =
     }
     let observedRealPath;
     try {
-      observedRealPath = realpathSync(path);
+      observedRealPath = realpathSync.native(path);
     } catch (error) {
       filesystemError(errors, errorPath, error);
       return null;
@@ -429,7 +439,7 @@ function normalizeRepository(value, basePath = process.cwd()) {
   if (typeof value !== "string" || value.trim() === "") return null;
   const trimmed = value.trim();
   if (isAbsolute(trimmed) || win32.isAbsolute(trimmed)) {
-    const canonical = existsSync(trimmed) ? realpathSync(trimmed) : win32.normalize(trimmed);
+    const canonical = existsSync(trimmed) ? realpathSync.native(trimmed) : win32.normalize(trimmed);
     return `file:${canonical.replaceAll("\\", "/").replace(/^([A-Z]):/u, (_, drive) => `${drive.toLowerCase()}:`)}`;
   }
   const scp = /^([^@\s]+@)?([^:\s]+):(.+)$/u.exec(trimmed);
@@ -440,13 +450,13 @@ function normalizeRepository(value, basePath = process.cwd()) {
     const parsed = new URL(trimmed);
     if (parsed.protocol === "file:") {
       const path = fileURLToPath(parsed);
-      return `file:${existsSync(path) ? realpathSync(path) : resolve(path)}`;
+      return `file:${existsSync(path) ? realpathSync.native(path) : resolve(path)}`;
     }
     const authority = `${parsed.hostname.toLowerCase()}${parsed.port === "" ? "" : `:${parsed.port}`}`;
     return `${authority}/${parsed.pathname.replace(/^\/+|\/+$/gu, "").replace(/\.git$/iu, "")}`;
   } catch {
     const path = resolve(basePath, trimmed);
-    return `file:${existsSync(path) ? realpathSync(path) : path}`;
+    return `file:${existsSync(path) ? realpathSync.native(path) : path}`;
   }
 }
 
@@ -485,7 +495,7 @@ function gitRootFromPath(path, errors, errorPath) {
   }
   const root = execution.stdout.toString("utf8").trim();
   try {
-    return realpathSync(root);
+    return realpathSync.native(root);
   } catch (error) {
     filesystemError(errors, errorPath, error);
     return null;
@@ -528,7 +538,7 @@ function verifyGitRegistration(registration, repositoryRoot, expectedBytes, erro
   }
   let root;
   try {
-    root = realpathSync(resolve(repositoryRoot));
+    root = realpathSync.native(resolve(repositoryRoot));
   } catch (error) {
     filesystemError(errors, errorPath, error);
     return null;
@@ -583,7 +593,7 @@ function verifyProtocolCheckout(protocolPath, bytes, errors, options) {
   const inferredRoot = gitRootFromPath(protocolPath, errors, "$.sourceRegistration");
   const root = options?.sourceRepositoryRoot
     ? (() => {
-        try { return realpathSync(resolve(options.sourceRepositoryRoot)); } catch { return null; }
+        try { return realpathSync.native(resolve(options.sourceRepositoryRoot)); } catch { return null; }
       })()
     : inferredRoot;
   if (!root || !inferredRoot || !sameHostPath(root, inferredRoot)) {
@@ -1262,7 +1272,7 @@ function verifyPublishedRelease(root, tree, snapshots, manifestSnapshot, manifes
   if (manifest.releaseStatus !== "PUBLISHED") return null;
   let sourceRoot;
   try {
-    sourceRoot = realpathSync(resolve(options?.sourceRepositoryRoot ?? fileURLToPath(new URL("..", import.meta.url))));
+    sourceRoot = realpathSync.native(resolve(options?.sourceRepositoryRoot ?? fileURLToPath(new URL("..", import.meta.url))));
   } catch (error) {
     filesystemError(errors, "$.releaseRegistration", error);
     return null;
@@ -1370,7 +1380,7 @@ export function loadBenchmarkProtocol(protocolFile, options = {}) {
       add(errors, "UNSAFE_SYMLINK_PATH", "$", "Protocol path must not be a symbolic link");
       return protocolInspection(result(errors));
     }
-    const path = realpathSync(requestedPath);
+    const path = realpathSync.native(requestedPath);
     const repositoryRoot = gitRootFromPath(path, errors, "$.sourceRegistration");
     if (!repositoryRoot) return protocolInspection(result(errors));
     const relativePath = portablePath(repositoryRoot, path);
@@ -1437,7 +1447,7 @@ export function validateBenchmarkRelease(releaseRoot, options = {}) {
     // Work from the canonical root. Static platform aliases such as macOS /var
     // -> /private/var are safe once resolved; descendants are still checked
     // component-by-component and the tree is snapshotted twice.
-    const root = realpathSync(requestedRoot);
+    const root = realpathSync.native(requestedRoot);
     const tree = new Map();
     walkRelease(root, root, tree, errors);
     const files = releaseFiles(tree);
@@ -1523,7 +1533,7 @@ export function validateBenchmarkReleaseSet(searchRoot, options = {}) {
       add(errors, "RELEASE_SET_ROOT_MISSING", "$", "Release search root is not a directory");
       return result(errors, null, releaseSetValidationSchemaVersion);
     }
-    const root = realpathSync(requestedRoot);
+    const root = realpathSync.native(requestedRoot);
     const tree = new Map();
     walkRelease(root, root, tree, errors);
     const manifestPaths = [...releaseFiles(tree)]

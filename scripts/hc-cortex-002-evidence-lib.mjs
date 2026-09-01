@@ -148,7 +148,9 @@ export function snapshotRelease(requestedRoot, exclusions = new Set()) {
   if (lstatSync(absolute).isSymbolicLink() || !lstatSync(absolute).isDirectory()) {
     failEvidence("UNSAFE_RELEASE_ROOT", "$", "Release root must be a real directory");
   }
-  const root = realpathSync(absolute);
+  // realpathSync.native, not plain realpathSync -- see benchmark-release-lib.mjs's import
+  // comment for why (Windows 8.3 short-path expansion difference).
+  const root = realpathSync.native(absolute);
   const allFiles = new Map();
   const directories = new Map();
   walk(root, root, allFiles, directories);
