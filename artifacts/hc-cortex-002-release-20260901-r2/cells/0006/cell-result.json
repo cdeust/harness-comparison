@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "workload-cell-result/v1",
+  "id": "main-r1-sqlite-c5",
+  "ordinal": 6,
+  "expectedVerdict": "proven",
+  "attemptId": "0d9acc23-b00b-441e-be49-f50dfed8ade7",
+  "verdict": "proven",
+  "status": "passed",
+  "reason": null,
+  "failureScope": null,
+  "startedAt": "2026-09-01T20:37:02.588Z",
+  "endedAt": "2026-09-01T20:37:23.983Z",
+  "workloadProcessPath": "cells/0006/workload/process.json",
+  "oracleProcessPath": "cells/0006/oracle/process.json"
+}

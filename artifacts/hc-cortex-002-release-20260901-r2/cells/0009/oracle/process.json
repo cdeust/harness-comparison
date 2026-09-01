@@ -1,0 +1,285 @@
+{
+  "schemaVersion": "workload-process-record/v1",
+  "mode": "oracle",
+  "processInstanceId": "28dd4755-c2af-41ba-af8e-306215c5ad94",
+  "command": {
+    "runtimeId": "python-3.12",
+    "runtimeSha256": "d049fa6d31f8075e3fcb76517ddaaa666fc2344768d6e7698d3263f79b49db8f",
+    "adapterId": "hc-cortex-002-adapter",
+    "adapterPath": "adapters/hc-cortex-002/adapter.py",
+    "adapterTreeSha256": "40942215c833b8b47e9256edebc90b7f970fecc5c051bcafcebe32b6bcfbea0b",
+    "interface": "hc-cortex-002/v1",
+    "logicalArguments": {
+      "mode": "oracle",
+      "releaseId": "hc-cortex-002-release-20260901-r2",
+      "protocolId": "2026-08-30-hc-cortex-002-v1",
+      "protocolSha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+      "cellId": "main-r1-postgresql-c4",
+      "attemptId": "59b82599-ebc8-4077-a5a8-a45f58e45b0a",
+      "processInstanceId": "28dd4755-c2af-41ba-af8e-306215c5ad94",
+      "backend": "postgresql",
+      "concurrency": 4,
+      "operationsPerType": 100,
+      "runId": "run-0009-b1d56d77-5414-405d-b8d5-dc81bbc92377",
+      "database": {
+        "strategy": "caller-supplied-per-cell",
+        "databaseIdentitySha256": "a532825d5e2919d108a8857a48c7b6837d0d4f92e1c5df4e387712ccb70ab37e",
+        "redacted": true
+      },
+      "postgresqlService": {
+        "serviceInstanceId": "5b76367b905f4bb0efd3d7562b0dca5fc4c1b96d5b7ef7950c3ed8d0f3405eba",
+        "startedAt": "2026-09-01T20:34:19.659Z",
+        "processId": 43070
+      }
+    }
+  },
+  "stdoutPath": "cells/0009/oracle/stdout.json",
+  "stderrPath": "cells/0009/oracle/stderr.txt",
+  "pid": 35379,
+  "status": "complete",
+  "exit": {
+    "code": 0,
+    "signal": null
+  },
+  "spawnError": null,
+  "closeAfterStdio": true,
+  "events": [
+    {
+      "event": "spawn",
+      "at": "2026-09-01T20:38:19.815Z",
+      "monotonicNs": "393481246656083",
+      "pid": 35379
+    },
+    {
+      "event": "stderr-end",
+      "at": "2026-09-01T20:38:21.211Z",
+      "monotonicNs": "393482642372500"
+    },
+    {
+      "event": "stdout-end",
+      "at": "2026-09-01T20:38:21.211Z",
+      "monotonicNs": "393482642406125"
+    },
+    {
+      "event": "exit",
+      "at": "2026-09-01T20:38:21.211Z",
+      "monotonicNs": "393482642458291",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "event": "close",
+      "at": "2026-09-01T20:38:21.211Z",
+      "monotonicNs": "393482642461541",
+      "code": 0,
+      "signal": null,
+      "stdoutEnded": true,
+      "stderrEnded": true
+    }
+  ],
+  "environmentBefore": {
+    "capturedAt": "2026-09-01T20:38:19.815Z",
+    "monotonicNs": "393481246237083",
+    "host": {
+      "platform": "darwin",
+      "release": "25.6.0",
+      "architecture": "arm64",
+      "node": "v24.7.0",
+      "cpus": [
+        {
+          "model": "Apple M4",
+          "speedMHz": 2400
+        },
+        {
+          "model": "Apple M4",
+          "speedMHz": 2400
+        },
+        {
+          "model": "Apple M4",
+          "speedMHz": 2400
+        },
+        {
+          "model": "Apple M4",
+          "speedMHz": 2400
+        },
+        {
+          "model": "Apple M4",
+          "speedMHz": 2400
+        },
+        {
+          "model": "Apple M4",
+          "speedMHz": 2400
+        },
+        {
+          "model": "Apple M4",
+          "speedMHz": 2400
+        },
+        {
+          "model": "Apple M4",
+          "speedMHz": 2400
+        },
+        {
+          "model": "Apple M4",
+          "speedMHz": 2400
+        },
+        {
+          "model": "Apple M4",
+          "speedMHz": 2400
+        }
+      ]
+    },
+    "loadAverage": [
+      7.380859375,
+      6.85107421875,
+      6.64501953125
+    ],
+    "memory": {
+      "freeBytes": 552435712,
+      "totalBytes": 25769803776,
+      "runner": {
+        "rss": 65765376,
+        "heapTotal": 12943360,
+        "heapUsed": 8131008,
+        "external": 2949344,
+        "arrayBuffers": 836299
+      }
+    },
+    "runnerCpuUsage": {
+      "user": 1755660,
+      "system": 4748214
+    },
+    "runnerResourceUsage": {
+      "userCPUTime": 1755661,
+      "systemCPUTime": 4748215,
+      "maxRSS": 64720,
+      "sharedMemorySize": 0,
+      "unsharedDataSize": 0,
+      "unsharedStackSize": 0,
+      "minorPageFault": 20747,
+      "majorPageFault": 150,
+      "swappedOut": 0,
+      "fsRead": 0,
+      "fsWrite": 0,
+      "ipcSent": 0,
+      "ipcReceived": 10709,
+      "signalsCount": 0,
+      "voluntaryContextSwitches": 268,
+      "involuntaryContextSwitches": 105642
+    },
+    "systemUptimeSeconds": 393478,
+    "filesystem": {
+      "availableBytes": "44956110848",
+      "freeBytes": "44956110848",
+      "totalBytes": "494384795648"
+    }
+  },
+  "environmentAfter": {
+    "capturedAt": "2026-09-01T20:38:21.216Z",
+    "monotonicNs": "393482647677583",
+    "host": {
+      "platform": "darwin",
+      "release": "25.6.0",
+      "architecture": "arm64",
+      "node": "v24.7.0",
+      "cpus": [
+        {
+          "model": "Apple M4",
+          "speedMHz": 2400
+        },
+        {
+          "model": "Apple M4",
+          "speedMHz": 2400
+        },
+        {
+          "model": "Apple M4",
+          "speedMHz": 2400
+        },
+        {
+          "model": "Apple M4",
+          "speedMHz": 2400
+        },
+        {
+          "model": "Apple M4",
+          "speedMHz": 2400
+        },
+        {
+          "model": "Apple M4",
+          "speedMHz": 2400
+        },
+        {
+          "model": "Apple M4",
+          "speedMHz": 2400
+        },
+        {
+          "model": "Apple M4",
+          "speedMHz": 2400
+        },
+        {
+          "model": "Apple M4",
+          "speedMHz": 2400
+        },
+        {
+          "model": "Apple M4",
+          "speedMHz": 2400
+        }
+      ]
+    },
+    "loadAverage": [
+      7.380859375,
+      6.85107421875,
+      6.64501953125
+    ],
+    "memory": {
+      "freeBytes": 357335040,
+      "totalBytes": 25769803776,
+      "runner": {
+        "rss": 65765376,
+        "heapTotal": 12943360,
+        "heapUsed": 8169504,
+        "external": 2949516,
+        "arrayBuffers": 836471
+      }
+    },
+    "runnerCpuUsage": {
+      "user": 1756151,
+      "system": 4748691
+    },
+    "runnerResourceUsage": {
+      "userCPUTime": 1756151,
+      "systemCPUTime": 4748692,
+      "maxRSS": 64720,
+      "sharedMemorySize": 0,
+      "unsharedDataSize": 0,
+      "unsharedStackSize": 0,
+      "minorPageFault": 20750,
+      "majorPageFault": 150,
+      "swappedOut": 0,
+      "fsRead": 0,
+      "fsWrite": 0,
+      "ipcSent": 0,
+      "ipcReceived": 10710,
+      "signalsCount": 0,
+      "voluntaryContextSwitches": 272,
+      "involuntaryContextSwitches": 105655
+    },
+    "systemUptimeSeconds": 393480,
+    "filesystem": {
+      "availableBytes": "44956184576",
+      "freeBytes": "44956184576",
+      "totalBytes": "494384795648"
+    }
+  },
+  "adapterEnvelope": {
+    "interface": "hc-cortex-002/v1",
+    "ledger_path": "run-0009-b1d56d77-5414-405d-b8d5-dc81bbc92377.oracle.jsonl",
+    "mode": "oracle",
+    "status": "complete",
+    "verdict": "proven"
+  },
+  "ledger": {
+    "path": "cells/0009/adapter/run-0009-b1d56d77-5414-405d-b8d5-dc81bbc92377.oracle.jsonl",
+    "sha256": "de0fb0888b49c6cbd30c33bf0083f53f3a0ef755a3ac2c5e9a0fb5021e7ecd50",
+    "bytes": 107770
+  },
+  "orchestrationError": null
+}

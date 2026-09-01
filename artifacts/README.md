@@ -4,6 +4,12 @@ This directory contains only artifacts referenced by public upstream work.
 
 - [`claude-mem-3693.md`](claude-mem-3693.md) — citation and provenance for the
   published harness-comparison benchmark referenced by claude-mem PR #3693.
+- [`hc-cortex-002-release-20260901-r2/`](hc-cortex-002-release-20260901-r2/) —
+  sealed `VERIFIED` release of the preregistered HC-CORTEX-002
+  transaction-isolation protocol (`2026-08-30-hc-cortex-002-v1`, 18 cells,
+  study verdict `PASS`); dossier
+  `issues/Cortex/scalability/sqlite-transaction-isolation.md`, runbook
+  `protocols/HC-CORTEX-002-RUNBOOK.md`.
 
 New experiments belong in a dated, pre-registered release directory only after
 the research gates in `RESEARCH-PROCESS.md` pass.

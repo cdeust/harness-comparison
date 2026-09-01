@@ -1,0 +1,745 @@
+{
+  "schemaVersion": "benchmark-protocol/v1",
+  "protocolId": "2026-08-30-hc-cortex-002-v1",
+  "title": "Cortex SQLite request-transaction isolation under concurrent mutations",
+  "registeredAt": "2026-09-01T17:31:11Z",
+  "researchQuestion": "Does Cortex candidate 9faa80d3f36b1c7fd05edb4aca8202448a79fb27 prevent one concurrent SQLite request from committing or rolling back another request's mutation, while preserving the same operation ledger under the PostgreSQL reference backend?",
+  "systemBoundary": "The measured boundary is Cortex safe_handler admission, worker-thread dispatch, request transaction finalization, and the SQLite/PostgreSQL store methods insert_memory, supersede_atomic, and delete_memory. The adapter bypasses embedding, predictive write gating, wiki synchronization, MCP JSON-RPC serialization, the LLM, and host-specific Claude/Codex scheduling so those variables cannot be mistaken for database isolation.",
+  "evidenceSources": [
+    {
+      "id": "research-process",
+      "citation": "RESEARCH-PROCESS.md §§1, 3, 4, 5, 5a, 6 and 8 at harness-comparison 6f4c1f27626dc74b7df326ecb15c6260ebd1978e",
+      "claim": "The repository requires preregistration, fresh cells, complete workload telemetry, independent evaluation and immutable release artifacts."
+    },
+    {
+      "id": "hc-cortex-002-dossier",
+      "citation": "issues/Cortex/scalability/sqlite-transaction-isolation.md at harness-comparison 6f4c1f27626dc74b7df326ecb15c6260ebd1978e",
+      "claim": "The dossier requires mixed remember, supersede and forget mutations, a faulted rollback at every level, a second clean run, restart oracles and a matched PostgreSQL reference."
+    },
+    {
+      "id": "baseline-source",
+      "citation": "https://github.com/cdeust/Cortex/blob/8f5ae3b87b6969f3abcb3736859febfdab69304a/mcp_server/infrastructure/sqlite_store.py",
+      "claim": "The pinned baseline owns one process-wide SQLite connection with cross-thread use enabled."
+    },
+    {
+      "id": "candidate-design",
+      "citation": "https://github.com/cdeust/Cortex/blob/9faa80d3f36b1c7fd05edb4aca8202448a79fb27/docs/adr/ADR-0055-sqlite-connection-per-execution-thread.md",
+      "claim": "The candidate defines request-scoped native SQLite handles, exact-handle finalization and explicit cancellation non-claims."
+    },
+    {
+      "id": "candidate-admission",
+      "citation": "https://github.com/cdeust/Cortex/blob/9faa80d3f36b1c7fd05edb4aca8202448a79fb27/mcp_server/handlers/admission.py#L35-L90",
+      "claim": "The remember admission budget is four requests; the fifth concurrent remember is the first source-derived queueing boundary."
+    },
+    {
+      "id": "candidate-request-boundary",
+      "citation": "https://github.com/cdeust/Cortex/blob/9faa80d3f36b1c7fd05edb4aca8202448a79fb27/mcp_server/tool_error_handler.py#L150-L229",
+      "claim": "safe_handler gates named tools, offloads every handler to a worker thread and enters the request transaction scope around that handler."
+    },
+    {
+      "id": "candidate-regression",
+      "citation": "https://github.com/cdeust/Cortex/blob/9faa80d3f36b1c7fd05edb4aca8202448a79fb27/tests_py/infrastructure/test_sqlite_transaction_isolation.py",
+      "claim": "The smallest source regression fixes the fault after supersede compare-and-set, pairs it with an acknowledged insert, permits one lock retry, and reconciles memory, FTS, vector, integrity and foreign keys after reopen."
+    },
+    {
+      "id": "hf-1996",
+      "citation": "https://doi.org/10.1080/00031305.1996.10473566",
+      "claim": "Hyndman and Fan define type-1 sample quantiles as the inverse empirical distribution function based on observed order statistics."
+    },
+    {
+      "id": "sqlite-isolation",
+      "citation": "https://www.sqlite.org/isolation.html",
+      "claim": "SQLite serializes writers and isolates separate database connections; rollback-mode write contention is observable as locking."
+    },
+    {
+      "id": "postgres-transactions",
+      "citation": "https://www.postgresql.org/docs/17/tutorial-transactions.html",
+      "claim": "PostgreSQL transactions make intermediate states invisible and commit or roll back as a unit."
+    },
+    {
+      "id": "postgres-local-connections",
+      "citation": "https://www.postgresql.org/docs/17/runtime-config-connection.html",
+      "claim": "An empty listen_addresses disables TCP/IP listeners; unix_socket_directories selects the local socket directory; port 5432 is the documented default and socket filename suffix; unix_socket_permissions=0700 restricts socket access to its owner."
+    },
+    {
+      "id": "postgres-trust-boundary",
+      "citation": "https://www.postgresql.org/docs/17/auth-trust.html",
+      "claim": "Trust authentication is acceptable only behind adequate operating-system protection, including a restricted Unix-domain socket directory, and must not be exposed through permissive TCP host rules."
+    },
+    {
+      "id": "postgres-createdb",
+      "citation": "https://www.postgresql.org/docs/17/app-createdb.html",
+      "claim": "createdb creates a distinct named database, accepts an explicit Unix-domain socket directory and port, can refuse password prompts, and can copy the unmodified template0 database."
+    },
+    {
+      "id": "postgres-hba-view",
+      "citation": "https://www.postgresql.org/docs/17/view-pg-hba-file-rules.html",
+      "claim": "The pg_hba_file_rules system view exposes one row per active authentication-file rule, including its connection type, authentication method and parse error, for auditable configuration checks."
+    },
+    {
+      "id": "python-to-thread",
+      "citation": "https://docs.python.org/3/library/asyncio-task.html#asyncio.to_thread",
+      "claim": "Cancelling the awaiting task does not establish that native thread work has stopped, so uncertain attempts require an indeterminate outcome and reconciliation."
+    },
+    {
+      "id": "adapter-contract",
+      "citation": "adapters/hc-cortex-002/README.md and adapters/hc-cortex-002/adapter.py in the protocol registration revision",
+      "claim": "The deterministic adapter defines fixture arithmetic, append-only event identities, fault choreography, backend observations and the independent restart oracle."
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "H1-baseline-red",
+      "statement": "At concurrency two, the pinned baseline permits the peer remember to commit the faulted supersede on the shared SQLite connection.",
+      "falsifier": "The baseline regression cell records zero rejected-row, supersession-edge and acknowledgement reconciliation violations after restart."
+    },
+    {
+      "id": "H2-candidate-green",
+      "statement": "Every candidate SQLite cell isolates the injected supersede rollback from every acknowledged peer mutation.",
+      "falsifier": "Any acknowledged mutation has cardinality other than one, any rejected mutation persists, the wrong transaction is removed, or any integrity, foreign-key, FTS or vector oracle fails."
+    },
+    {
+      "id": "H3-postgresql-reference",
+      "statement": "The candidate PostgreSQL cells produce the same logical acknowledgement and rejection ledger as the candidate SQLite cells at every preregistered level.",
+      "falsifier": "Any PostgreSQL cell has a ledger cardinality, supersession, deletion, vector, full-text, constraint or restart-oracle violation."
+    }
+  ],
+  "nonClaims": [
+    "The study does not establish a safe production concurrency above five requests or generalize throughput beyond this synthetic mutation fixture.",
+    "The study does not claim that cancelling an asyncio waiter cancels its native worker, and it never relabels a cancelled or transport-lost operation as rejected.",
+    "The study does not prove handler-wide atomicity after a store method has already committed; a larger unit-of-work contract is separate work.",
+    "The study does not measure embedding, predictive gating, wiki synchronization, MCP serialization, LLM quality, Claude/Codex host parity or complete-stack maturity.",
+    "The PostgreSQL reference uses an owner-private, credential-free local Unix-socket service. It does not evaluate authentication, TLS or networked PostgreSQL security, and databases are logically dedicated rather than isolated from other code running as the same operating-system user.",
+    "The scored full matrix is POSIX-only on the registered Linux or macOS host and its results are host-specific. Cross-platform validator conformance does not establish Windows workload support.",
+    "No external network access is required or intentionally performed, but external egress is neither blocked by an operating-system sandbox nor measured. The pinned source, adapter and runtime execute as trusted code under the same operating-system identity; this study is not a hostile-code isolation or data-loss-prevention evaluation.",
+    "The release binds the source locks, interpreter bytes, Python version, package/version inventory and reported native-library versions. It does not claim a byte-identical container, complete software bill of materials, or content hash for every installed package file.",
+    "Performance and saturation observations are descriptive; they are not correctness thresholds or winner scores."
+  ],
+  "populations": [
+    {
+      "id": "cortex-internal-transaction-boundary",
+      "description": "Pinned Cortex baseline and candidate revisions under one deterministic mutation fixture.",
+      "inclusion": "safe_handler request dispatch and local store mutations needed to test HC-CORTEX-002.",
+      "exclusion": "Other AI Architect components, external harnesses, model behavior and unrelated Cortex handlers."
+    }
+  ],
+  "experimentalUnits": [
+    {
+      "id": "cortex-baseline",
+      "description": "Cortex baseline revision 8f5ae3b87b6969f3abcb3736859febfdab69304a.",
+      "components": [
+        "safe_handler worker dispatch",
+        "process-wide SQLite connection",
+        "PostgreSQL pooled store"
+      ]
+    },
+    {
+      "id": "cortex-candidate",
+      "description": "Cortex candidate revision 9faa80d3f36b1c7fd05edb4aca8202448a79fb27 from draft PR 452.",
+      "components": [
+        "safe_handler worker dispatch",
+        "request-scoped SQLite connection registry",
+        "exact-handle transaction finalizer",
+        "PostgreSQL pooled store"
+      ]
+    }
+  ],
+  "adapters": [
+    {
+      "id": "hc-cortex-002-adapter",
+      "path": "adapters/hc-cortex-002/adapter.py",
+      "runtimeId": "python-3.12",
+      "interface": "hc-cortex-002/v1"
+    }
+  ],
+  "corpora": [
+    {
+      "id": "cortex-baseline",
+      "repository": "https://github.com/cdeust/Cortex.git",
+      "revision": "8f5ae3b87b6969f3abcb3736859febfdab69304a",
+      "dirty": false
+    },
+    {
+      "id": "cortex-candidate",
+      "repository": "https://github.com/cdeust/Cortex.git",
+      "revision": "9faa80d3f36b1c7fd05edb4aca8202448a79fb27",
+      "dirty": false
+    }
+  ],
+  "modelPolicy": {
+    "provider": "none",
+    "model": "not-applicable",
+    "versionPolicy": "No model is invoked. Both revisions run through the same caller-supplied Python 3.12 virtual environment. The release binds the executable target, pyvenv.cfg, interpreter version, source lockfiles, installed package/version inventory and reported SQLite/libpq versions; this is an auditable inventory, not a byte-identical environment claim.",
+    "parameters": {},
+    "networkUse": "No external network access is required or intentionally performed. External egress is not operating-system-blocked or observed. PostgreSQL uses an owner-private credential-free Unix socket and a fresh database per cell; password-bearing, TCP and remote bindings are rejected."
+  },
+  "resourcePolicy": {
+    "description": "Cells execute sequentially on the same host. Every cell gets a fresh workload process, fresh store, fresh independent oracle process and cold cache policy. Structural limits bound work; operating-system or database resource failure is preserved as a failed cell rather than converted to success.",
+    "limits": {
+      "maximumConcurrentRequests": {
+        "value": 5,
+        "unit": "in-flight requests",
+        "rationale": "Five is the first level above the source-declared remember admission budget of four.",
+        "evidenceSourceIds": ["candidate-admission"]
+      },
+      "maximumNormalOperationsPerType": {
+        "value": 100,
+        "unit": "operations per mutation type per main cell",
+        "rationale": "With type-1 quantiles, 100 observations place p99 at the 99th order statistic instead of collapsing it to the sample maximum.",
+        "evidenceSourceIds": ["hf-1996"]
+      },
+      "persistentStoresPerCell": {
+        "value": 1,
+        "unit": "fresh databases",
+        "rationale": "A single fresh store makes operation-to-row reconciliation and post-restart identity unambiguous.",
+        "evidenceSourceIds": ["hc-cortex-002-dossier", "adapter-contract", "postgres-createdb"]
+      },
+      "benchmarkProcessesPerCell": {
+        "value": 2,
+        "unit": "fresh Python processes",
+        "rationale": "One process executes load and closes; a different process supplies the required restart oracle.",
+        "evidenceSourceIds": ["hc-cortex-002-dossier", "research-process"]
+      },
+      "postgresqlLocalTransport": {
+        "value": "unix-domain-socket-only; private directory and socket mode 0700; listen_addresses empty; host authentication reject",
+        "unit": "service isolation policy",
+        "rationale": "The reference needs a credential-free local connection without opening a TCP listener. PostgreSQL documents filesystem-restricted Unix sockets as the operating-system boundary required for local trust authentication.",
+        "evidenceSourceIds": ["postgres-local-connections", "postgres-trust-boundary", "postgres-hba-view"]
+      },
+      "postgresqlSocketPort": {
+        "value": 5432,
+        "unit": "Unix-domain socket filename suffix",
+        "rationale": "PostgreSQL documents 5432 as the default port and uses the same number in the Unix-domain socket filename. It is not a network listener in this protocol because listen_addresses is empty.",
+        "evidenceSourceIds": ["postgres-local-connections"]
+      }
+    },
+    "evidenceSourceIds": [
+      "research-process",
+      "hc-cortex-002-dossier",
+      "candidate-admission",
+      "hf-1996",
+      "postgres-local-connections",
+      "postgres-trust-boundary",
+      "postgres-createdb",
+      "postgres-hba-view"
+    ]
+  },
+  "operationPolicy": {
+    "adapterId": "hc-cortex-002-adapter",
+    "orderedOperations": [
+      {
+        "id": "fixture-seed",
+        "description": "Create one unique supersede target and one unique forget target per normal operation, plus one independent fault target.",
+        "parameters": [
+          {
+            "id": "seed-count-formula",
+            "value": "2 * operationsPerType + 1",
+            "unit": "rows",
+            "rationale": "The three target classes are disjoint, making every later state transition independently countable.",
+            "evidenceSourceIds": ["adapter-contract", "candidate-regression"]
+          }
+        ]
+      },
+      {
+        "id": "faulted-supersede",
+        "description": "Raise after the fault target insert and compare-and-set but before commit; at concurrency at least two, pair it with one normal remember request.",
+        "parameters": [
+          {
+            "id": "faults-per-cell",
+            "value": 1,
+            "unit": "faults",
+            "rationale": "The public dossier requires a fault-injected rollback at every level and the source regression defines one deterministic fault point.",
+            "evidenceSourceIds": ["hc-cortex-002-dossier", "candidate-regression"]
+          }
+        ]
+      },
+      {
+        "id": "remember",
+        "description": "Insert uniquely marked normal memories through safe_handler with tool_name remember.",
+        "parameters": []
+      },
+      {
+        "id": "supersede",
+        "description": "Supersede every normal supersede target through safe_handler with tool_name remember.",
+        "parameters": []
+      },
+      {
+        "id": "forget",
+        "description": "Delete every normal forget target through safe_handler with tool_name forget.",
+        "parameters": []
+      },
+      {
+        "id": "post-load-recovery",
+        "description": "After load removal, execute and time one read-only backend health observation without changing the reconciled row set.",
+        "parameters": [
+          {
+            "id": "recovery-probes",
+            "value": 1,
+            "unit": "probes",
+            "rationale": "One post-load observation measures recovery without adding another mutation to the operation ledger.",
+            "evidenceSourceIds": ["research-process", "adapter-contract"]
+          }
+        ]
+      },
+      {
+        "id": "restart-oracle",
+        "description": "Close the workload store and reconcile the immutable ledger from a distinct process instance against the reopened database.",
+        "parameters": [
+          {
+            "id": "oracle-processes",
+            "value": 1,
+            "unit": "fresh processes",
+            "rationale": "A distinct bootstrap nonce proves a true process restart rather than a same-process reopen.",
+            "evidenceSourceIds": ["hc-cortex-002-dossier", "adapter-contract"]
+          }
+        ]
+      }
+    ],
+    "retryPolicy": {
+      "description": "The harness performs no general retry. Only the peer remember in the injected SQLite fault window may record one database-locked observation, wait for that specific rollback, and retry once; every attempt remains in the ledger.",
+      "evidenceSourceIds": ["candidate-regression", "sqlite-isolation"]
+    },
+    "interruptionPolicy": {
+      "description": "Cancellation, transport loss, missing terminal events or an unquiesced worker produce indeterminate. The attempt is preserved and cannot be reused; a new process must reconcile the store before a new attempt ID is allowed.",
+      "evidenceSourceIds": ["candidate-design", "python-to-thread", "research-process"]
+    }
+  },
+  "workload": {
+    "concurrencyLevels": {
+      "value": [1, 2, 4, 5],
+      "unit": "maximum in-flight requests",
+      "rationale": "One is the serial baseline; two is the minimum cross-request race; four is the remember admission budget; five is the first request that must wait at that budget.",
+      "evidenceSourceIds": ["candidate-admission", "candidate-request-boundary"]
+    },
+    "callRate": {
+      "value": "closed-loop",
+      "unit": "scheduling policy",
+      "rationale": "A worker slot submits its next operation only after its prior operation reaches a terminal observation, so the declared concurrency is the actual in-flight bound.",
+      "evidenceSourceIds": ["research-process", "adapter-contract"]
+    },
+    "callCount": {
+      "value": [1, 100],
+      "unit": "normal operations per mutation type per cell",
+      "rationale": "One is the smallest RED/GREEN regression slice. One hundred supplies a non-maximum empirical p99 order statistic for each mutation type in main cells.",
+      "evidenceSourceIds": ["candidate-regression", "hf-1996"]
+    },
+    "duration": {
+      "value": null,
+      "unit": "completion-bounded",
+      "rationale": "Cells end after the declared operation count and oracle, not after a fixed wall-clock success timeout.",
+      "evidenceSourceIds": ["research-process"]
+    },
+    "completionCondition": {
+      "description": "Every intent has acknowledged, rejected or indeterminate observation; the workload process closes; the independent restart oracle terminates; and all declared raw artifacts are fsynced.",
+      "evidenceSourceIds": ["research-process", "adapter-contract"]
+    },
+    "warmColdPolicy": {
+      "description": "Every cell starts in a new process with a new empty database. Recovery is observed after load in that process; correctness is then rechecked by a different process against the same persistent store.",
+      "evidenceSourceIds": ["hc-cortex-002-dossier", "research-process"]
+    },
+    "faultSchedule": [
+      {
+        "id": "fault-after-cas",
+        "operationId": "faulted-supersede",
+        "description": "Inject exactly once after the supersede insert and compare-and-set but before commit in every cell.",
+        "trigger": {
+          "value": 1,
+          "unit": "fault occurrences per cell",
+          "rationale": "This is the smallest fault point that reproduced cross-request commit on the baseline and is mandated at every ladder level.",
+          "evidenceSourceIds": ["candidate-regression", "hc-cortex-002-dossier"]
+        }
+      }
+    ],
+    "quantileMethod": {
+      "description": "Report p50, p95 and p99 as Hyndman-Fan type-1 inverse empirical-distribution order statistics, separately for total, queue and service latency; do not interpolate unobserved latency values.",
+      "evidenceSourceIds": ["hf-1996"]
+    },
+    "parameterSpace": {
+      "sourceId": {
+        "value": ["cortex-baseline", "cortex-candidate"],
+        "unit": "pinned source",
+        "rationale": "The regression must show the same external fixture RED before and GREEN after the exact change.",
+        "evidenceSourceIds": ["baseline-source", "candidate-design", "hc-cortex-002-dossier"]
+      },
+      "backend": {
+        "value": ["sqlite", "postgresql"],
+        "unit": "store backend",
+        "rationale": "SQLite is the accused local default; PostgreSQL is the dossier's required matched reference.",
+        "evidenceSourceIds": ["hc-cortex-002-dossier", "sqlite-isolation", "postgres-transactions"]
+      },
+      "concurrency": {
+        "value": [1, 2, 4, 5],
+        "unit": "maximum in-flight requests",
+        "rationale": "The values are the declared workload ladder.",
+        "evidenceSourceIds": ["candidate-admission", "candidate-request-boundary"]
+      },
+      "operationsPerType": {
+        "value": [1, 100],
+        "unit": "normal operations per mutation type",
+        "rationale": "The values separate the minimal regression from the main empirical-quantile sample.",
+        "evidenceSourceIds": ["candidate-regression", "hf-1996"]
+      },
+      "repetition": {
+        "value": [0, 1, 2],
+        "unit": "run index",
+        "rationale": "Zero labels the unscored regression slice; one and two are the dossier-mandated clean main repetitions.",
+        "evidenceSourceIds": ["hc-cortex-002-dossier"]
+      },
+      "phase": {
+        "value": ["regression", "main"],
+        "unit": "study phase",
+        "rationale": "The baseline is used only for causal RED/GREEN regression; candidate backend ladders constitute the main run.",
+        "evidenceSourceIds": ["hc-cortex-002-dossier", "research-process"]
+      },
+      "callRate": {
+        "value": "closed-loop",
+        "unit": "scheduling policy",
+        "rationale": "All cells use the same declared scheduling policy.",
+        "evidenceSourceIds": ["research-process", "adapter-contract"]
+      },
+      "callCount": {
+        "value": [1, 100],
+        "unit": "normal operations per mutation type",
+        "rationale": "This repeats the executable count in each cell so the plan cannot silently diverge from operationsPerType.",
+        "evidenceSourceIds": ["candidate-regression", "hf-1996"]
+      },
+      "duration": {
+        "value": null,
+        "unit": "completion-bounded",
+        "rationale": "No cell treats a fixed timeout as success.",
+        "evidenceSourceIds": ["research-process"]
+      },
+      "warmCold": {
+        "value": "cold",
+        "unit": "initial-state policy",
+        "rationale": "Every planned cell uses a fresh process and empty store.",
+        "evidenceSourceIds": ["hc-cortex-002-dossier", "research-process"]
+      },
+      "faultIds": {
+        "value": [["fault-after-cas"]],
+        "unit": "fault identifiers",
+        "rationale": "Every planned cell executes the same single preregistered fault.",
+        "evidenceSourceIds": ["hc-cortex-002-dossier", "candidate-regression"]
+      }
+    },
+    "cellOrder": [
+      "regression-baseline-sqlite-c2",
+      "regression-candidate-sqlite-c2",
+      "main-r1-sqlite-c1",
+      "main-r1-sqlite-c2",
+      "main-r1-sqlite-c4",
+      "main-r1-sqlite-c5",
+      "main-r1-postgresql-c1",
+      "main-r1-postgresql-c2",
+      "main-r1-postgresql-c4",
+      "main-r1-postgresql-c5",
+      "main-r2-postgresql-c1",
+      "main-r2-postgresql-c2",
+      "main-r2-postgresql-c4",
+      "main-r2-postgresql-c5",
+      "main-r2-sqlite-c1",
+      "main-r2-sqlite-c2",
+      "main-r2-sqlite-c4",
+      "main-r2-sqlite-c5"
+    ]
+  },
+  "metrics": [
+    {
+      "id": "operation-reconciliation",
+      "definition": "Each acknowledged remember or supersede marker exists once, each acknowledged forget target is absent, and each rejected marker exists zero times after restart.",
+      "unit": "violations",
+      "summary": "Exact count; pass requires zero."
+    },
+    {
+      "id": "rollback-scope",
+      "definition": "The fault target remains unsuperseded while all unrelated acknowledged mutations retain their expected state.",
+      "unit": "violations",
+      "summary": "Exact count; pass requires zero."
+    },
+    {
+      "id": "store-integrity",
+      "definition": "Memory, full-text and vector counts reconcile; SQLite additionally reports integrity_check=ok and no foreign-key violations; PostgreSQL reports populated tsvector/vector rows and validated constraints.",
+      "unit": "violations",
+      "summary": "Exact count after load and after independent restart."
+    },
+    {
+      "id": "throughput",
+      "definition": "Terminal operation observations divided by measured load-phase wall time.",
+      "unit": "operations per second",
+      "summary": "Per cell and per operation type; descriptive."
+    },
+    {
+      "id": "latency",
+      "definition": "Total, admission-queue and handler-service duration from monotonic clocks.",
+      "unit": "nanoseconds",
+      "summary": "Hyndman-Fan type-1 p50, p95 and p99; descriptive."
+    },
+    {
+      "id": "queue-depth",
+      "definition": "Maximum number of submitted requests not yet admitted to service.",
+      "unit": "requests",
+      "summary": "Maximum and raw events per cell."
+    },
+    {
+      "id": "errors-retries",
+      "definition": "Errors, indeterminate outcomes and explicit retry events, retaining the operation identity for each.",
+      "unit": "events",
+      "summary": "Exact counts by type."
+    },
+    {
+      "id": "cpu-memory-disk",
+      "definition": "Process CPU time, observed peak resident memory when the host exposes it, and database/WAL/SHM or PostgreSQL database bytes.",
+      "unit": "seconds and bytes",
+      "summary": "Before/after or process-peak values with unavailable fields explicit."
+    },
+    {
+      "id": "database-connections",
+      "definition": "Observed store-owned open and peak connection counts for the active backend.",
+      "unit": "connections",
+      "summary": "Per cell with measurement method named."
+    },
+    {
+      "id": "post-load-recovery",
+      "definition": "Read-only health observation latency after all load requests have terminated and before store close.",
+      "unit": "nanoseconds",
+      "summary": "One measured observation per cell; no threshold."
+    },
+    {
+      "id": "saturation-observation",
+      "definition": "A candidate onset is the first main level whose throughput does not increase while p95 queue latency and maximum queue depth increase relative to the prior level in both repetitions. Otherwise report not_observed_within_ladder.",
+      "unit": "concurrency level or not_observed_within_ladder",
+      "summary": "Descriptive and counterbalanced across backend order; never a correctness threshold."
+    },
+    {
+      "id": "model-tool-cost",
+      "definition": "Model and remote tool usage attributable to the cell.",
+      "unit": "not-applicable",
+      "summary": "Exactly zero because the deterministic adapter invokes no model or remote tool."
+    }
+  ],
+  "repetitions": {
+    "count": 2,
+    "unit": "complete candidate backend ladders",
+    "rationale": "The public dossier explicitly requires a second clean run. Backend block order is reversed on repetition two to expose order effects instead of pooling them silently.",
+    "evidenceSourceIds": ["hc-cortex-002-dossier", "research-process"]
+  },
+  "stopRule": {
+    "description": "Execute the explicit cell order. Stop later cells in the affected backend/repetition block after a reconciliation, integrity or isolation violation, an unresolved indeterminate attempt, fixture corruption, or an operating-system/database resource failure. Preserve every completed or partial raw artifact without overwrite. A performance plateau alone never stops the run.",
+    "onSuccess": "Continue until every preregistered cell and independent restart oracle is terminal, then seal the exact artifact tree for independent review.",
+    "onFailure": "Record a failed or indeterminate cell, capture the negative log and database snapshot where safe, do not reuse its attempt ID, and do not promote the release beyond PILOT until reconciled.",
+    "evidenceSourceIds": ["research-process", "hc-cortex-002-dossier", "python-to-thread"]
+  },
+  "scoringRubric": {
+    "procedure": "A separate oracle process verifies the append-only event chain and queries the reopened store. Correctness is PASS only when every exact reconciliation, rollback-scope and backend-integrity predicate has zero violations. The baseline RED hypothesis is evaluated separately from candidate conformance. Performance is reported by distribution and never hidden inside the correctness verdict.",
+    "independent": true,
+    "labels": [
+      {
+        "id": "PASS",
+        "definition": "The cell is terminal and all preregistered exact correctness predicates have zero violations."
+      },
+      {
+        "id": "FAIL",
+        "definition": "At least one terminal correctness predicate is violated or the cell has a recorded execution failure."
+      },
+      {
+        "id": "INDETERMINATE",
+        "definition": "Native work or persistent state cannot yet be reconciled; this label is never treated as rejection or success."
+      },
+      {
+        "id": "NOT_OBSERVED",
+        "definition": "A descriptive performance phenomenon such as saturation does not satisfy its preregistered replicated directional rule within the ladder."
+      }
+    ]
+  },
+  "plannedCells": [
+    {
+      "id": "regression-baseline-sqlite-c2",
+      "expectedVerdict": "blocked",
+      "populationId": "cortex-internal-transaction-boundary",
+      "experimentalUnitId": "cortex-baseline",
+      "corpusId": "cortex-baseline",
+      "adapterId": "hc-cortex-002-adapter",
+      "parameters": {"sourceId": "cortex-baseline", "backend": "sqlite", "concurrency": 2, "operationsPerType": 1, "repetition": 0, "phase": "regression", "callRate": "closed-loop", "callCount": 1, "duration": null, "warmCold": "cold", "faultIds": ["fault-after-cas"]}
+    },
+    {
+      "id": "regression-candidate-sqlite-c2",
+      "expectedVerdict": "proven",
+      "populationId": "cortex-internal-transaction-boundary",
+      "experimentalUnitId": "cortex-candidate",
+      "corpusId": "cortex-candidate",
+      "adapterId": "hc-cortex-002-adapter",
+      "parameters": {"sourceId": "cortex-candidate", "backend": "sqlite", "concurrency": 2, "operationsPerType": 1, "repetition": 0, "phase": "regression", "callRate": "closed-loop", "callCount": 1, "duration": null, "warmCold": "cold", "faultIds": ["fault-after-cas"]}
+    },
+    {
+      "id": "main-r1-sqlite-c1",
+      "expectedVerdict": "proven",
+      "populationId": "cortex-internal-transaction-boundary",
+      "experimentalUnitId": "cortex-candidate",
+      "corpusId": "cortex-candidate",
+      "adapterId": "hc-cortex-002-adapter",
+      "parameters": {"sourceId": "cortex-candidate", "backend": "sqlite", "concurrency": 1, "operationsPerType": 100, "repetition": 1, "phase": "main", "callRate": "closed-loop", "callCount": 100, "duration": null, "warmCold": "cold", "faultIds": ["fault-after-cas"]}
+    },
+    {
+      "id": "main-r1-sqlite-c2",
+      "expectedVerdict": "proven",
+      "populationId": "cortex-internal-transaction-boundary",
+      "experimentalUnitId": "cortex-candidate",
+      "corpusId": "cortex-candidate",
+      "adapterId": "hc-cortex-002-adapter",
+      "parameters": {"sourceId": "cortex-candidate", "backend": "sqlite", "concurrency": 2, "operationsPerType": 100, "repetition": 1, "phase": "main", "callRate": "closed-loop", "callCount": 100, "duration": null, "warmCold": "cold", "faultIds": ["fault-after-cas"]}
+    },
+    {
+      "id": "main-r1-sqlite-c4",
+      "expectedVerdict": "proven",
+      "populationId": "cortex-internal-transaction-boundary",
+      "experimentalUnitId": "cortex-candidate",
+      "corpusId": "cortex-candidate",
+      "adapterId": "hc-cortex-002-adapter",
+      "parameters": {"sourceId": "cortex-candidate", "backend": "sqlite", "concurrency": 4, "operationsPerType": 100, "repetition": 1, "phase": "main", "callRate": "closed-loop", "callCount": 100, "duration": null, "warmCold": "cold", "faultIds": ["fault-after-cas"]}
+    },
+    {
+      "id": "main-r1-sqlite-c5",
+      "expectedVerdict": "proven",
+      "populationId": "cortex-internal-transaction-boundary",
+      "experimentalUnitId": "cortex-candidate",
+      "corpusId": "cortex-candidate",
+      "adapterId": "hc-cortex-002-adapter",
+      "parameters": {"sourceId": "cortex-candidate", "backend": "sqlite", "concurrency": 5, "operationsPerType": 100, "repetition": 1, "phase": "main", "callRate": "closed-loop", "callCount": 100, "duration": null, "warmCold": "cold", "faultIds": ["fault-after-cas"]}
+    },
+    {
+      "id": "main-r1-postgresql-c1",
+      "expectedVerdict": "proven",
+      "populationId": "cortex-internal-transaction-boundary",
+      "experimentalUnitId": "cortex-candidate",
+      "corpusId": "cortex-candidate",
+      "adapterId": "hc-cortex-002-adapter",
+      "parameters": {"sourceId": "cortex-candidate", "backend": "postgresql", "concurrency": 1, "operationsPerType": 100, "repetition": 1, "phase": "main", "callRate": "closed-loop", "callCount": 100, "duration": null, "warmCold": "cold", "faultIds": ["fault-after-cas"]}
+    },
+    {
+      "id": "main-r1-postgresql-c2",
+      "expectedVerdict": "proven",
+      "populationId": "cortex-internal-transaction-boundary",
+      "experimentalUnitId": "cortex-candidate",
+      "corpusId": "cortex-candidate",
+      "adapterId": "hc-cortex-002-adapter",
+      "parameters": {"sourceId": "cortex-candidate", "backend": "postgresql", "concurrency": 2, "operationsPerType": 100, "repetition": 1, "phase": "main", "callRate": "closed-loop", "callCount": 100, "duration": null, "warmCold": "cold", "faultIds": ["fault-after-cas"]}
+    },
+    {
+      "id": "main-r1-postgresql-c4",
+      "expectedVerdict": "proven",
+      "populationId": "cortex-internal-transaction-boundary",
+      "experimentalUnitId": "cortex-candidate",
+      "corpusId": "cortex-candidate",
+      "adapterId": "hc-cortex-002-adapter",
+      "parameters": {"sourceId": "cortex-candidate", "backend": "postgresql", "concurrency": 4, "operationsPerType": 100, "repetition": 1, "phase": "main", "callRate": "closed-loop", "callCount": 100, "duration": null, "warmCold": "cold", "faultIds": ["fault-after-cas"]}
+    },
+    {
+      "id": "main-r1-postgresql-c5",
+      "expectedVerdict": "proven",
+      "populationId": "cortex-internal-transaction-boundary",
+      "experimentalUnitId": "cortex-candidate",
+      "corpusId": "cortex-candidate",
+      "adapterId": "hc-cortex-002-adapter",
+      "parameters": {"sourceId": "cortex-candidate", "backend": "postgresql", "concurrency": 5, "operationsPerType": 100, "repetition": 1, "phase": "main", "callRate": "closed-loop", "callCount": 100, "duration": null, "warmCold": "cold", "faultIds": ["fault-after-cas"]}
+    },
+    {
+      "id": "main-r2-postgresql-c1",
+      "expectedVerdict": "proven",
+      "populationId": "cortex-internal-transaction-boundary",
+      "experimentalUnitId": "cortex-candidate",
+      "corpusId": "cortex-candidate",
+      "adapterId": "hc-cortex-002-adapter",
+      "parameters": {"sourceId": "cortex-candidate", "backend": "postgresql", "concurrency": 1, "operationsPerType": 100, "repetition": 2, "phase": "main", "callRate": "closed-loop", "callCount": 100, "duration": null, "warmCold": "cold", "faultIds": ["fault-after-cas"]}
+    },
+    {
+      "id": "main-r2-postgresql-c2",
+      "expectedVerdict": "proven",
+      "populationId": "cortex-internal-transaction-boundary",
+      "experimentalUnitId": "cortex-candidate",
+      "corpusId": "cortex-candidate",
+      "adapterId": "hc-cortex-002-adapter",
+      "parameters": {"sourceId": "cortex-candidate", "backend": "postgresql", "concurrency": 2, "operationsPerType": 100, "repetition": 2, "phase": "main", "callRate": "closed-loop", "callCount": 100, "duration": null, "warmCold": "cold", "faultIds": ["fault-after-cas"]}
+    },
+    {
+      "id": "main-r2-postgresql-c4",
+      "expectedVerdict": "proven",
+      "populationId": "cortex-internal-transaction-boundary",
+      "experimentalUnitId": "cortex-candidate",
+      "corpusId": "cortex-candidate",
+      "adapterId": "hc-cortex-002-adapter",
+      "parameters": {"sourceId": "cortex-candidate", "backend": "postgresql", "concurrency": 4, "operationsPerType": 100, "repetition": 2, "phase": "main", "callRate": "closed-loop", "callCount": 100, "duration": null, "warmCold": "cold", "faultIds": ["fault-after-cas"]}
+    },
+    {
+      "id": "main-r2-postgresql-c5",
+      "expectedVerdict": "proven",
+      "populationId": "cortex-internal-transaction-boundary",
+      "experimentalUnitId": "cortex-candidate",
+      "corpusId": "cortex-candidate",
+      "adapterId": "hc-cortex-002-adapter",
+      "parameters": {"sourceId": "cortex-candidate", "backend": "postgresql", "concurrency": 5, "operationsPerType": 100, "repetition": 2, "phase": "main", "callRate": "closed-loop", "callCount": 100, "duration": null, "warmCold": "cold", "faultIds": ["fault-after-cas"]}
+    },
+    {
+      "id": "main-r2-sqlite-c1",
+      "expectedVerdict": "proven",
+      "populationId": "cortex-internal-transaction-boundary",
+      "experimentalUnitId": "cortex-candidate",
+      "corpusId": "cortex-candidate",
+      "adapterId": "hc-cortex-002-adapter",
+      "parameters": {"sourceId": "cortex-candidate", "backend": "sqlite", "concurrency": 1, "operationsPerType": 100, "repetition": 2, "phase": "main", "callRate": "closed-loop", "callCount": 100, "duration": null, "warmCold": "cold", "faultIds": ["fault-after-cas"]}
+    },
+    {
+      "id": "main-r2-sqlite-c2",
+      "expectedVerdict": "proven",
+      "populationId": "cortex-internal-transaction-boundary",
+      "experimentalUnitId": "cortex-candidate",
+      "corpusId": "cortex-candidate",
+      "adapterId": "hc-cortex-002-adapter",
+      "parameters": {"sourceId": "cortex-candidate", "backend": "sqlite", "concurrency": 2, "operationsPerType": 100, "repetition": 2, "phase": "main", "callRate": "closed-loop", "callCount": 100, "duration": null, "warmCold": "cold", "faultIds": ["fault-after-cas"]}
+    },
+    {
+      "id": "main-r2-sqlite-c4",
+      "expectedVerdict": "proven",
+      "populationId": "cortex-internal-transaction-boundary",
+      "experimentalUnitId": "cortex-candidate",
+      "corpusId": "cortex-candidate",
+      "adapterId": "hc-cortex-002-adapter",
+      "parameters": {"sourceId": "cortex-candidate", "backend": "sqlite", "concurrency": 4, "operationsPerType": 100, "repetition": 2, "phase": "main", "callRate": "closed-loop", "callCount": 100, "duration": null, "warmCold": "cold", "faultIds": ["fault-after-cas"]}
+    },
+    {
+      "id": "main-r2-sqlite-c5",
+      "expectedVerdict": "proven",
+      "populationId": "cortex-internal-transaction-boundary",
+      "experimentalUnitId": "cortex-candidate",
+      "corpusId": "cortex-candidate",
+      "adapterId": "hc-cortex-002-adapter",
+      "parameters": {"sourceId": "cortex-candidate", "backend": "sqlite", "concurrency": 5, "operationsPerType": 100, "repetition": 2, "phase": "main", "callRate": "closed-loop", "callCount": 100, "duration": null, "warmCold": "cold", "faultIds": ["fault-after-cas"]}
+    }
+  ],
+  "declaredDeviations": [
+    {
+      "id": "deterministic-direct-adapter",
+      "description": "The dossier's provisional command used Codex run-isolated. This protocol instead invokes the same safe_handler/store boundary directly from a deterministic adapter.",
+      "rationale": "The LLM and host scheduler are outside the transaction-isolation question and would add an uncontrolled source of operation ordering, retries and missing ledger events. Host integration remains an explicit non-claim."
+    },
+    {
+      "id": "full-postgresql-reference-ladders",
+      "description": "The dossier names a matched PostgreSQL reference cell; this protocol runs the complete four-level PostgreSQL ladder in both repetitions.",
+      "rationale": "Using the same operation counts, concurrency levels and reversed repetition order avoids selecting one favorable PostgreSQL level after observing SQLite."
+    },
+    {
+      "id": "pre-freeze-c1-c2-tooling-pilots",
+      "description": "Temporary C1/C2 experiments run during runner/adapter development are development pilots only. They used a write recovery probe, an eager task backlog, the wrong queue boundary and no peak-connection observation; they are excluded from the release matrix and did not select any registered parameter.",
+      "rationale": "Documented here, at freeze, so the pre-freeze tooling history is traceable without being mistaken for scored evidence; RESEARCH-PROCESS.md requires pilot observations that inform the final protocol to be written before any scored cell."
+    },
+    {
+      "id": "pre-freeze-corrected-c2-w1-and-c5-w100-smokes",
+      "description": "After the C1/C2 pilots above were corrected, two development smokes ran unscored outside any sealed release: the pinned baseline at concurrency 2, operations-per-type 1, produced the expected blocked oracle; the pinned candidate at concurrency 5, operations-per-type 100, produced a proven oracle with 3W+1 = 301 measured terminal operations, five dispatcher requests in flight and one request observed at the source admission queue.",
+      "rationale": "These smokes validated the corrected runner/oracle machinery before registering the exact ladder levels and repetitions below; their temporary trees are excluded from publication and neither result selects a registered parameter after the fact."
+    },
+    {
+      "id": "pre-freeze-postgresql-c1-w1-producer-oracle-smoke",
+      "description": "A real PostgreSQL 17.9 producer-to-oracle smoke at concurrency 1, operations-per-type 1 ran during tooling development against the pinned candidate and returned a proven oracle verdict.",
+      "rationale": "Established that the workload/oracle chain reconciles against a live PostgreSQL 17 service before registering the PostgreSQL provisioner and the full ladder; it is unscored and excluded from the release matrix, and did not select any registered PostgreSQL parameter."
+    }
+  ]
+}

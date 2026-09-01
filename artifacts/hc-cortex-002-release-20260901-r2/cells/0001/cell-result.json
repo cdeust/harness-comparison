@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "workload-cell-result/v1",
+  "id": "regression-baseline-sqlite-c2",
+  "ordinal": 1,
+  "expectedVerdict": "blocked",
+  "attemptId": "09e79da6-7b26-424e-9767-2f3f496d505d",
+  "verdict": "blocked",
+  "status": "passed",
+  "reason": "expected-negative-control",
+  "failureScope": null,
+  "startedAt": "2026-09-01T20:35:05.745Z",
+  "endedAt": "2026-09-01T20:35:27.190Z",
+  "workloadProcessPath": "cells/0001/workload/process.json",
+  "oracleProcessPath": "cells/0001/oracle/process.json"
+}

@@ -1,0 +1,2461 @@
+{
+  "schemaVersion": "benchmark-execution-manifest/v1",
+  "releaseId": "hc-cortex-002-release-20260901-r2",
+  "releaseStatus": "VERIFIED",
+  "generatedAt": "2026-09-01T21:03:38.433Z",
+  "immutabilityPolicy": {
+    "scheme": "sha256+bytes+manifest/v1",
+    "osWriteProtectionClaimed": false,
+    "externalBinding": "validation-snapshot"
+  },
+  "protocol": {
+    "path": "protocol.json",
+    "sha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+    "sourceRegistration": {
+      "repository": "https://github.com/cdeust/harness-comparison.git",
+      "revision": "baecc89fea4062e99cba01b53a7a1797361ebeac",
+      "path": "protocols/2026-08-30-hc-cortex-002-v1.json"
+    }
+  },
+  "environment": {
+    "repositories": [
+      {
+        "id": "harness-comparison",
+        "repository": "https://github.com/cdeust/harness-comparison.git",
+        "revision": "baecc89fea4062e99cba01b53a7a1797361ebeac",
+        "dirty": false,
+        "dirtyPaths": []
+      },
+      {
+        "id": "cortex-baseline",
+        "repository": "https://github.com/cdeust/Cortex.git",
+        "revision": "8f5ae3b87b6969f3abcb3736859febfdab69304a",
+        "dirty": false,
+        "dirtyPaths": []
+      },
+      {
+        "id": "cortex-candidate",
+        "repository": "https://github.com/cdeust/Cortex.git",
+        "revision": "9faa80d3f36b1c7fd05edb4aca8202448a79fb27",
+        "dirty": false,
+        "dirtyPaths": []
+      }
+    ],
+    "host": {
+      "os": "darwin",
+      "release": "25.6.0",
+      "architecture": "arm64",
+      "cpu": "Apple M4",
+      "logicalCpus": 10,
+      "memoryBytes": 25769803776
+    },
+    "runtimes": [
+      {
+        "id": "python-3.12",
+        "version": "Python 3.12.11; sha256=d049fa6d31f8075e3fcb76517ddaaa666fc2344768d6e7698d3263f79b49db8f"
+      }
+    ],
+    "tools": [
+      {
+        "id": "workload-ladder-runner",
+        "version": "sha256=496345f3bd146a1cfde8fcc127c33c38abe770e11557436312a8188a2901acdb"
+      },
+      {
+        "id": "hc-cortex-002-independent-analyzer",
+        "version": "hc-cortex-002-analysis/v1"
+      }
+    ],
+    "credentials": [],
+    "stores": [
+      {
+        "id": "regression-baseline-sqlite-c2",
+        "type": "sqlite",
+        "location": "cells/0001/database/cortex.sqlite3",
+        "isolation": "fresh database dedicated to one cell",
+        "initialState": "empty database checked by workload preflight"
+      },
+      {
+        "id": "regression-candidate-sqlite-c2",
+        "type": "sqlite",
+        "location": "cells/0002/database/cortex.sqlite3",
+        "isolation": "fresh database dedicated to one cell",
+        "initialState": "empty database checked by workload preflight"
+      },
+      {
+        "id": "main-r1-sqlite-c1",
+        "type": "sqlite",
+        "location": "cells/0003/database/cortex.sqlite3",
+        "isolation": "fresh database dedicated to one cell",
+        "initialState": "empty database checked by workload preflight"
+      },
+      {
+        "id": "main-r1-sqlite-c2",
+        "type": "sqlite",
+        "location": "cells/0004/database/cortex.sqlite3",
+        "isolation": "fresh database dedicated to one cell",
+        "initialState": "empty database checked by workload preflight"
+      },
+      {
+        "id": "main-r1-sqlite-c4",
+        "type": "sqlite",
+        "location": "cells/0005/database/cortex.sqlite3",
+        "isolation": "fresh database dedicated to one cell",
+        "initialState": "empty database checked by workload preflight"
+      },
+      {
+        "id": "main-r1-sqlite-c5",
+        "type": "sqlite",
+        "location": "cells/0006/database/cortex.sqlite3",
+        "isolation": "fresh database dedicated to one cell",
+        "initialState": "empty database checked by workload preflight"
+      },
+      {
+        "id": "main-r1-postgresql-c1",
+        "type": "postgresql",
+        "location": "redacted-database-identity:1254d2ff48843ae5229bb38a5b8caf2c8221fc9f9600e30fd234a802cfaab8d5",
+        "isolation": "fresh database dedicated to one cell",
+        "initialState": "empty database checked by workload preflight"
+      },
+      {
+        "id": "main-r1-postgresql-c2",
+        "type": "postgresql",
+        "location": "redacted-database-identity:b7998497aef1f54830eaba177688bad400e135cf43812ae88fc116b134170cf2",
+        "isolation": "fresh database dedicated to one cell",
+        "initialState": "empty database checked by workload preflight"
+      },
+      {
+        "id": "main-r1-postgresql-c4",
+        "type": "postgresql",
+        "location": "redacted-database-identity:a532825d5e2919d108a8857a48c7b6837d0d4f92e1c5df4e387712ccb70ab37e",
+        "isolation": "fresh database dedicated to one cell",
+        "initialState": "empty database checked by workload preflight"
+      },
+      {
+        "id": "main-r1-postgresql-c5",
+        "type": "postgresql",
+        "location": "redacted-database-identity:a244318150706e139b5b05f5675cbd6fce8c71c2096d7b9abad8e3ed6cbfea0c",
+        "isolation": "fresh database dedicated to one cell",
+        "initialState": "empty database checked by workload preflight"
+      },
+      {
+        "id": "main-r2-postgresql-c1",
+        "type": "postgresql",
+        "location": "redacted-database-identity:7316155a5c0c1245ccaee87b791422eaec11db35533ce78a5fc71ae1d4c949f2",
+        "isolation": "fresh database dedicated to one cell",
+        "initialState": "empty database checked by workload preflight"
+      },
+      {
+        "id": "main-r2-postgresql-c2",
+        "type": "postgresql",
+        "location": "redacted-database-identity:dff5c3b3cc63ad330d8871f22469933e7c737e14cc20ead1742fcd11b45c02b9",
+        "isolation": "fresh database dedicated to one cell",
+        "initialState": "empty database checked by workload preflight"
+      },
+      {
+        "id": "main-r2-postgresql-c4",
+        "type": "postgresql",
+        "location": "redacted-database-identity:8b47912968461a6f31a070d62cd6bd086508a2d90f376d93e8e4685161748543",
+        "isolation": "fresh database dedicated to one cell",
+        "initialState": "empty database checked by workload preflight"
+      },
+      {
+        "id": "main-r2-postgresql-c5",
+        "type": "postgresql",
+        "location": "redacted-database-identity:5471faf30bf6119ffbd8cf101a5ec7101968ba2654dc675605fbf0f0a9d72b25",
+        "isolation": "fresh database dedicated to one cell",
+        "initialState": "empty database checked by workload preflight"
+      },
+      {
+        "id": "main-r2-sqlite-c1",
+        "type": "sqlite",
+        "location": "cells/0015/database/cortex.sqlite3",
+        "isolation": "fresh database dedicated to one cell",
+        "initialState": "empty database checked by workload preflight"
+      },
+      {
+        "id": "main-r2-sqlite-c2",
+        "type": "sqlite",
+        "location": "cells/0016/database/cortex.sqlite3",
+        "isolation": "fresh database dedicated to one cell",
+        "initialState": "empty database checked by workload preflight"
+      },
+      {
+        "id": "main-r2-sqlite-c4",
+        "type": "sqlite",
+        "location": "cells/0017/database/cortex.sqlite3",
+        "isolation": "fresh database dedicated to one cell",
+        "initialState": "empty database checked by workload preflight"
+      },
+      {
+        "id": "main-r2-sqlite-c5",
+        "type": "sqlite",
+        "location": "cells/0018/database/cortex.sqlite3",
+        "isolation": "fresh database dedicated to one cell",
+        "initialState": "empty database checked by workload preflight"
+      }
+    ],
+    "processes": [
+      {
+        "id": "regression-baseline-sqlite-c2-workload",
+        "instanceId": "a0554b75-39f4-4b06-b16e-6341b7ee45eb",
+        "command": "python-3.12 hc-cortex-002-adapter workload",
+        "pid": 54916,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "regression-baseline-sqlite-c2-oracle",
+        "instanceId": "861120bf-bfe4-4d1e-8770-836da3cf3a00",
+        "command": "python-3.12 hc-cortex-002-adapter oracle",
+        "pid": 57739,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "regression-candidate-sqlite-c2-workload",
+        "instanceId": "7d000e0e-0ec8-45f6-b7fb-1cd1bce0631c",
+        "command": "python-3.12 hc-cortex-002-adapter workload",
+        "pid": 64727,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "regression-candidate-sqlite-c2-oracle",
+        "instanceId": "177c2370-861b-4b61-9b74-3c4a640103f3",
+        "command": "python-3.12 hc-cortex-002-adapter oracle",
+        "pid": 68303,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r1-sqlite-c1-workload",
+        "instanceId": "36b2b5b5-a5e5-4206-987b-579f1e50e6b2",
+        "command": "python-3.12 hc-cortex-002-adapter workload",
+        "pid": 75065,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r1-sqlite-c1-oracle",
+        "instanceId": "484dbfd4-29d8-4429-8dbb-1da98e3169ff",
+        "command": "python-3.12 hc-cortex-002-adapter oracle",
+        "pid": 79213,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r1-sqlite-c2-workload",
+        "instanceId": "1d5a43fb-28f6-47e8-8920-71cc1456f7e5",
+        "command": "python-3.12 hc-cortex-002-adapter workload",
+        "pid": 85362,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r1-sqlite-c2-oracle",
+        "instanceId": "0b0b1085-6495-4b58-86f1-aab6a121da67",
+        "command": "python-3.12 hc-cortex-002-adapter oracle",
+        "pid": 88745,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r1-sqlite-c4-workload",
+        "instanceId": "bdd45fe5-790a-42bc-9d05-74fc72c0ed48",
+        "command": "python-3.12 hc-cortex-002-adapter workload",
+        "pid": 94622,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r1-sqlite-c4-oracle",
+        "instanceId": "181fd8e8-54d9-427e-9b6f-01a92f997e7d",
+        "command": "python-3.12 hc-cortex-002-adapter oracle",
+        "pid": 97999,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r1-sqlite-c5-workload",
+        "instanceId": "983c6357-c288-4769-8266-0a466766aa54",
+        "command": "python-3.12 hc-cortex-002-adapter workload",
+        "pid": 4622,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r1-sqlite-c5-oracle",
+        "instanceId": "6d2e4160-4894-4bf5-a9bb-7ee762588063",
+        "command": "python-3.12 hc-cortex-002-adapter oracle",
+        "pid": 8423,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r1-postgresql-c1-workload",
+        "instanceId": "266688dd-20c6-4405-8562-1387f3385475",
+        "command": "python-3.12 hc-cortex-002-adapter workload",
+        "pid": 14010,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r1-postgresql-c1-oracle",
+        "instanceId": "3dda67ad-520f-4ea2-ad9b-d8db2d4bf025",
+        "command": "python-3.12 hc-cortex-002-adapter oracle",
+        "pid": 17245,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r1-postgresql-c2-workload",
+        "instanceId": "3a33296a-ef9f-4653-b764-cc5aca1242e8",
+        "command": "python-3.12 hc-cortex-002-adapter workload",
+        "pid": 23812,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r1-postgresql-c2-oracle",
+        "instanceId": "1d64895b-406e-49e4-b15c-488449fb63f5",
+        "command": "python-3.12 hc-cortex-002-adapter oracle",
+        "pid": 26414,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r1-postgresql-c4-workload",
+        "instanceId": "7cda4a63-a65e-4950-87f9-c6f58b0dbada",
+        "command": "python-3.12 hc-cortex-002-adapter workload",
+        "pid": 32621,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r1-postgresql-c4-oracle",
+        "instanceId": "28dd4755-c2af-41ba-af8e-306215c5ad94",
+        "command": "python-3.12 hc-cortex-002-adapter oracle",
+        "pid": 35379,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r1-postgresql-c5-workload",
+        "instanceId": "9f19c26f-6cda-4412-8c9e-fce342d5eaf3",
+        "command": "python-3.12 hc-cortex-002-adapter workload",
+        "pid": 41320,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r1-postgresql-c5-oracle",
+        "instanceId": "602cf0a8-6498-4a4f-84ac-53af95877024",
+        "command": "python-3.12 hc-cortex-002-adapter oracle",
+        "pid": 43949,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r2-postgresql-c1-workload",
+        "instanceId": "76404316-893a-4f7b-a88f-cd22bcfb44eb",
+        "command": "python-3.12 hc-cortex-002-adapter workload",
+        "pid": 50114,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r2-postgresql-c1-oracle",
+        "instanceId": "bb2bf897-8e63-4b06-be06-41cd589a25f9",
+        "command": "python-3.12 hc-cortex-002-adapter oracle",
+        "pid": 52701,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r2-postgresql-c2-workload",
+        "instanceId": "a463c5f6-7623-42be-9ac8-c4241f01a475",
+        "command": "python-3.12 hc-cortex-002-adapter workload",
+        "pid": 58843,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r2-postgresql-c2-oracle",
+        "instanceId": "8defec42-e688-4f03-ac81-0246abc9fdb7",
+        "command": "python-3.12 hc-cortex-002-adapter oracle",
+        "pid": 61428,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r2-postgresql-c4-workload",
+        "instanceId": "4f5468a1-a09a-468e-9acc-5c396362aa17",
+        "command": "python-3.12 hc-cortex-002-adapter workload",
+        "pid": 67561,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r2-postgresql-c4-oracle",
+        "instanceId": "d8245ec9-3edf-4149-a744-c877b65c1c83",
+        "command": "python-3.12 hc-cortex-002-adapter oracle",
+        "pid": 70664,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r2-postgresql-c5-workload",
+        "instanceId": "fea3938a-6f48-462a-9d5e-ac0c31f47f1d",
+        "command": "python-3.12 hc-cortex-002-adapter workload",
+        "pid": 76421,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r2-postgresql-c5-oracle",
+        "instanceId": "b69d2b9c-d6b8-4aab-90a6-d5ecf109b475",
+        "command": "python-3.12 hc-cortex-002-adapter oracle",
+        "pid": 79517,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r2-sqlite-c1-workload",
+        "instanceId": "ccf548de-8258-494b-8ff6-b83a53c6e30e",
+        "command": "python-3.12 hc-cortex-002-adapter workload",
+        "pid": 84981,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r2-sqlite-c1-oracle",
+        "instanceId": "802cd816-7e6f-4b09-81d5-7fc5ba9b880a",
+        "command": "python-3.12 hc-cortex-002-adapter oracle",
+        "pid": 88156,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r2-sqlite-c2-workload",
+        "instanceId": "1a50c979-e95f-4b93-9ec0-d2a60df7a163",
+        "command": "python-3.12 hc-cortex-002-adapter workload",
+        "pid": 93718,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r2-sqlite-c2-oracle",
+        "instanceId": "f77382cf-bad0-4c38-a536-0184181a7247",
+        "command": "python-3.12 hc-cortex-002-adapter oracle",
+        "pid": 96782,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r2-sqlite-c4-workload",
+        "instanceId": "9171d24e-1ade-4964-9bb7-0472df2763b2",
+        "command": "python-3.12 hc-cortex-002-adapter workload",
+        "pid": 2892,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r2-sqlite-c4-oracle",
+        "instanceId": "516f9745-c98f-4913-87ad-9aa477d09e13",
+        "command": "python-3.12 hc-cortex-002-adapter oracle",
+        "pid": 6272,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r2-sqlite-c5-workload",
+        "instanceId": "66ddb049-15ca-4174-b8b3-8ea331514be2",
+        "command": "python-3.12 hc-cortex-002-adapter workload",
+        "pid": 12139,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "main-r2-sqlite-c5-oracle",
+        "instanceId": "59a12184-6095-404f-9924-efa24afaad79",
+        "command": "python-3.12 hc-cortex-002-adapter oracle",
+        "pid": 15376,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": []
+      },
+      {
+        "id": "postgresql-private-service",
+        "instanceId": "5b76367b905f4bb0efd3d7562b0dca5fc4c1b96d5b7ef7950c3ed8d0f3405eba",
+        "command": "postgresql 17.9 (Homebrew); Unix-domain socket only",
+        "pid": 43070,
+        "host": "same-user local host; no operating-system sandbox claimed",
+        "declaredEndpoints": [
+          {
+            "transport": "unix-domain-socket",
+            "portSuffix": 5432,
+            "binding": "private owner-controlled socket directory; PostgreSQL socket filename suffix only",
+            "evidence": "configuration-receipt",
+            "networkScanPerformed": false
+          }
+        ]
+      }
+    ]
+  },
+  "artifacts": [
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "565095de673e0774bcbc95e7ce388daf021a6ee3ea210a2a4a3ff143320a9037",
+      "bytes": 178,
+      "role": "change-log",
+      "immutable": true
+    },
+    {
+      "path": "REPRODUCE.md",
+      "sha256": "bed464b3f10054b0af3fa6e8cfb0bd9148fa5b4fe91ae00984a3e154081352ac",
+      "bytes": 469,
+      "role": "reproduction",
+      "immutable": true
+    },
+    {
+      "path": "analysis/analysis.json",
+      "sha256": "35a6fdfb14533cfcf6cb5a50d1eb4ca2bf3822ee5464792f9c5efce2a2fb422e",
+      "bytes": 2318098,
+      "role": "analysis",
+      "immutable": true
+    },
+    {
+      "path": "analysis/analysis.md",
+      "sha256": "742872d837e3a26063208eddb1436cd7d1cd446e9a95e9cf3a1b456067320944",
+      "bytes": 1616,
+      "role": "analysis",
+      "immutable": true
+    },
+    {
+      "path": "analysis/negative-evidence.json",
+      "sha256": "3f865d459db301d6408655dce90f618b7ea3d9cd16dbd78c9ed62ea25b2451fe",
+      "bytes": 5348,
+      "role": "negative-log",
+      "immutable": true
+    },
+    {
+      "path": "cells/0001/adapter/run-0001-7606e9e9-562b-4417-aa38-de5ffe9a2cbe.oracle.jsonl",
+      "sha256": "4306fb04f66a80f603b64a0d0b693b2375bfbea1a7ba050a8521902044d92125",
+      "bytes": 11575,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0001/adapter/run-0001-7606e9e9-562b-4417-aa38-de5ffe9a2cbe.workload.jsonl",
+      "sha256": "ecb2a306f1c9e38b3a6e4fc1153a27a94f7e18eae3c4c29fd326ac0ce39c9ae6",
+      "bytes": 25974,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0001/cell-result.json",
+      "sha256": "59492558f80cf795c5ab03474c8c3bffd9106dd94b54f97bd4f9eef82d675fff",
+      "bytes": 506,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0001/cell.json",
+      "sha256": "0aee45c5073a7756c06acb478d7095833f2862efa87a7632bba486d270938781",
+      "bytes": 1064,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0001/database/cortex.sqlite3",
+      "sha256": "c4a9845b8a24b7b33f28bdd9ba99913702d5ecf9548cb640404582b5c5a4972e",
+      "bytes": 1896448,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0001/oracle/process.json",
+      "sha256": "480d9d46ead0a404646d3b55dc4b20060f24cabb6384735fc27e950384d3210f",
+      "bytes": 6994,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0001/oracle/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0001/oracle/stdout.json",
+      "sha256": "a87644895d639ace6b867d4c65617052947d0b3e9802cbedd9e18fe39e47ff21",
+      "bytes": 173,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0001/workload/process.json",
+      "sha256": "40238f9bf4e66401ab03f5a20448b5ea3067fc088ccaa5df9e3884210bf776a1",
+      "bytes": 7001,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0001/workload/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0001/workload/stdout.json",
+      "sha256": "a54b7ce1b4ff0de1a1426d8fb617d6e33f8e81a91f713b54e67ff2b6fc1ffff1",
+      "bytes": 177,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0002/adapter/run-0002-e82617a9-9d07-4c6a-b608-d20091cecbee.oracle.jsonl",
+      "sha256": "1aba15a1c4e4cf0a4450b5b3c1ba247629f12aa3df6e21ea5a3cb4cda7b8713d",
+      "bytes": 10902,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0002/adapter/run-0002-e82617a9-9d07-4c6a-b608-d20091cecbee.workload.jsonl",
+      "sha256": "2e30faa06a63de032cdb6c0c2fbc7dc95e82199da696659ed955bc30461c50c6",
+      "bytes": 26823,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0002/cell-result.json",
+      "sha256": "dafe365dfdf19544bfa50ba87c3d36f8c11db10a692077810c31ef9969c6f6be",
+      "bytes": 482,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0002/cell.json",
+      "sha256": "472b327b41cd36e766da60151c5ec63becff26817fce4e3333330a587c22234b",
+      "bytes": 1066,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0002/database/cortex.sqlite3",
+      "sha256": "9a6b7d4b9412e0373c103e924cbbaf60fd8bd2d3a6aba553379400d7f7d6668e",
+      "bytes": 1896448,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0002/oracle/process.json",
+      "sha256": "76c478626f70c5c02bc17bc1402ac0b23499c1e77f562f94d6c6d342c362404d",
+      "bytes": 7002,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0002/oracle/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0002/oracle/stdout.json",
+      "sha256": "fc8b0fb2458196d6ce2b64b5178586ac540229f806b32a63d7d41d44b6a99f0e",
+      "bytes": 172,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0002/workload/process.json",
+      "sha256": "2f09db189d666223389301aedf4ac727e188ee8d20336d573bcf952563b3b4e5",
+      "bytes": 7013,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0002/workload/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0002/workload/stdout.json",
+      "sha256": "8b1d8e253658c1c85234fcbdbf1760b616515863ed3b81fce53a4dfcea02f62b",
+      "bytes": 177,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0003/adapter/run-0003-d7d8a3dc-dbf1-4e06-9060-31f1fe050cc8.oracle.jsonl",
+      "sha256": "fb453748525253d2ce9a90c3e133d3e01b8d1fce4994fe5b5cca24b50382e988",
+      "bytes": 84826,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0003/adapter/run-0003-d7d8a3dc-dbf1-4e06-9060-31f1fe050cc8.workload.jsonl",
+      "sha256": "6d56ea6b1b8aa5c9b5f1b067b78ef22cc6042df0129e99de47b0ef2c75f71d9e",
+      "bytes": 1070798,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0003/cell-result.json",
+      "sha256": "1c259bc07b3824664a5a0d28187f60b3835199cf4e73a2c3a9802cd9e6e4331e",
+      "bytes": 469,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0003/cell.json",
+      "sha256": "f864d116fd0916f01c3ca0d42afb86656b5863f8038655eb3a31f585599d8e48",
+      "bytes": 1051,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0003/database/cortex.sqlite3",
+      "sha256": "dee0c9d8cc7df324e84c29741310e4d7e08fe1031bdaadb2101d0dcfe39b1b44",
+      "bytes": 2375680,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0003/oracle/process.json",
+      "sha256": "5011ddaa3b4a483095dc69ff23ed3914f6b73de743d07b8d3a50d56028d7192e",
+      "bytes": 6993,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0003/oracle/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0003/oracle/stdout.json",
+      "sha256": "ee8fe095b4f230e0090b6dc2cf4559ff652a32836dffd23f4b9efce2b00c2e0e",
+      "bytes": 172,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0003/workload/process.json",
+      "sha256": "d7f5093ff4c064c01bd3d4ee79573b8aeed8e2dae2f15c309f0f740cea60e2b8",
+      "bytes": 7006,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0003/workload/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0003/workload/stdout.json",
+      "sha256": "b6c3c99506b6dce3a380ec4a40fc140df3be3e2b2a6711c6612e0e9db0c53068",
+      "bytes": 177,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0004/adapter/run-0004-1a921c2d-3fb6-445d-bdc3-3a2992dd0b8b.oracle.jsonl",
+      "sha256": "fe06270f28ac285b103200a8a0989a7fb83e3bfe1e1f8f9da92ed979a5ac8356",
+      "bytes": 84826,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0004/adapter/run-0004-1a921c2d-3fb6-445d-bdc3-3a2992dd0b8b.workload.jsonl",
+      "sha256": "62ac70709c6e7ba89c7f591a327a5d4ab95298d57ff1457105d258696be415e4",
+      "bytes": 1071542,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0004/cell-result.json",
+      "sha256": "93281f3f862c0c31b2f39d934c6a1bd1d1e2bfe84631f33de6fa0d4b91470c53",
+      "bytes": 469,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0004/cell.json",
+      "sha256": "c05a0a11eecf2f11fc07e2cb2aa658d33f9018eb317ecaab0099e94240a628be",
+      "bytes": 1051,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0004/database/cortex.sqlite3",
+      "sha256": "191d461b2486a4204a70324e3b1872d927245ead6b10365838270c1aacefcb66",
+      "bytes": 2375680,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0004/oracle/process.json",
+      "sha256": "e3c54502b115e4df8f20c52ee03bc37194ca2d54d73c79a242317245d1701057",
+      "bytes": 7000,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0004/oracle/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0004/oracle/stdout.json",
+      "sha256": "90ce0202cf8e22384b398b3f3851652f645b4d14e854e040be8da0578bb78eca",
+      "bytes": 172,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0004/workload/process.json",
+      "sha256": "46d28e773652c50726712c0d1d3abd0e7173b60997ef3be2b9158c9da200a9dd",
+      "bytes": 7015,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0004/workload/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0004/workload/stdout.json",
+      "sha256": "4b39d6c58e39fdaaf6db71a6ec4d68ebd7ce439bc6707c8d4e7c5952e8d1f3e6",
+      "bytes": 177,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0005/adapter/run-0005-d5709982-e640-45b7-84b1-6eaa903f0a44.oracle.jsonl",
+      "sha256": "04694201201e79ce10b867f908cd2a3bcb5697589e6cad64237a0a94b54d0fde",
+      "bytes": 84826,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0005/adapter/run-0005-d5709982-e640-45b7-84b1-6eaa903f0a44.workload.jsonl",
+      "sha256": "02b9b02815ac549c4bf09c991a21775abbed6e99e74b0bcaae57d329dfdca5fd",
+      "bytes": 1071549,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0005/cell-result.json",
+      "sha256": "f9af34dc4b19dc895fa0f21230a18a9a1f8f2865b71608889ccd3536f0be49aa",
+      "bytes": 469,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0005/cell.json",
+      "sha256": "55eb29cf4e54edcfea40cb61ab0a33d6cd264160f8242480c3fa8d4ea64c6613",
+      "bytes": 1051,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0005/database/cortex.sqlite3",
+      "sha256": "5747c743cf4fcdb72c580271aef1ea97ba792ea90a4ab5efd23a2ccd17384d01",
+      "bytes": 2375680,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0005/oracle/process.json",
+      "sha256": "7dbe5f5aad04989691d98da5eba353d0f5217b79eaf54c4c8cbe13c565dff9d2",
+      "bytes": 7003,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0005/oracle/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0005/oracle/stdout.json",
+      "sha256": "702ef435e07cc486f170c8f1d4d4e28922debef08e1e388a1b137cf54cbe3bdc",
+      "bytes": 172,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0005/workload/process.json",
+      "sha256": "dd95443fdff0a5c3568768e698c9ba14f3fc8f4f5f4fdbd77a65d9164ce77768",
+      "bytes": 7018,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0005/workload/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0005/workload/stdout.json",
+      "sha256": "b0466c3399790e39d7e9134e5d5127a53004d38c211f6d2ffc78b672957d3c86",
+      "bytes": 177,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0006/adapter/run-0006-aea7b72f-d25d-4d72-b9f5-5d0f1970d6ec.oracle.jsonl",
+      "sha256": "8db6c685016c703a4c2fc65a7effb7927e58e782c33989be0fa6391d30c4fbdf",
+      "bytes": 84825,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0006/adapter/run-0006-aea7b72f-d25d-4d72-b9f5-5d0f1970d6ec.workload.jsonl",
+      "sha256": "3130d5a01e36c4f2b06859bf6a2639f30cf5c59fddd1da622b9275aa7fd47acf",
+      "bytes": 1072743,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0006/cell-result.json",
+      "sha256": "b5fd65365fe2fd272f2b6fb0485f25b5ae5b581721f841573c790bf6f9c0cb60",
+      "bytes": 469,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0006/cell.json",
+      "sha256": "f2d57d654411d8ace62f579b5d86213625f0272cf72f99eb20923a4822cd0350",
+      "bytes": 1051,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0006/database/cortex.sqlite3",
+      "sha256": "4be26bb4e96b8796aea3a07898fabea36c5aec40401402bad7e531d6f97b07ca",
+      "bytes": 2375680,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0006/oracle/process.json",
+      "sha256": "96230c7a9e3e34ecb4f872fe30a6bde70509b61e818dfcb63bb22355e814d141",
+      "bytes": 6997,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0006/oracle/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0006/oracle/stdout.json",
+      "sha256": "dbb1d004d70dc37b9b10d1bfa53131f936adf6ccd2171b546d7a32fb9f1dfb73",
+      "bytes": 172,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0006/workload/process.json",
+      "sha256": "595cba806cff2b44ad8e5e876cb3e4915108edf625f0a5cfcfe72830af2b6072",
+      "bytes": 7018,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0006/workload/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0006/workload/stdout.json",
+      "sha256": "0ad8044b59be215db11ed4ff541774661e09f1b353bf5d5f5cae84cc4596d02f",
+      "bytes": 177,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0007/adapter/run-0007-2cad4c33-5a5b-4655-95ce-569aed0ccc49.oracle.jsonl",
+      "sha256": "cee2fd7bf4869e89be54e1a38433ab407023d0a53f2ae6e18d84b8fa2f09fa33",
+      "bytes": 107772,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0007/adapter/run-0007-2cad4c33-5a5b-4655-95ce-569aed0ccc49.workload.jsonl",
+      "sha256": "e09bec88cbc2687d4b7373ceb3b302a2ad1ad88d3d671b09a33af8f7991c7818",
+      "bytes": 1073847,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0007/cell-result.json",
+      "sha256": "69b12565ac156ab5760494aa81421c19ec93c2dd9676c366c3cecf3438c9b8a5",
+      "bytes": 473,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0007/cell.json",
+      "sha256": "eb416c0b4a2690e80c51d13349b12cb7b84ced5a9c521df4da00a756353e2658",
+      "bytes": 1248,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0007/oracle/process.json",
+      "sha256": "ee25ec7e77125fce37bd4c59872b4a4f151f6efc1c0543b9c2c379f38a0ab007",
+      "bytes": 7219,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0007/oracle/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0007/oracle/stdout.json",
+      "sha256": "d0cee52be83f07fbb1482abe4643d3fe2119e62f51fdde15e01b4b6916419d52",
+      "bytes": 172,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0007/workload/process.json",
+      "sha256": "ade44d72f08a9141907de7ee2914961fcc5f5bf1883652145b49da3b5cbd4e41",
+      "bytes": 7234,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0007/workload/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0007/workload/stdout.json",
+      "sha256": "8d8e1379534348a1bb7143a93b7e59b6811c29e1bfc0e776134f555d35a7301d",
+      "bytes": 177,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0008/adapter/run-0008-db6c6927-e97f-4ab7-a144-47a17a1d4e3c.oracle.jsonl",
+      "sha256": "8fa361e47328fd17b4315955536dce91356802c7be7098dc40c6b4b9325444ce",
+      "bytes": 107772,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0008/adapter/run-0008-db6c6927-e97f-4ab7-a144-47a17a1d4e3c.workload.jsonl",
+      "sha256": "e101d53d4f3951f036411820039a78e6b94c81d5a780a1e1a95dfa41df59843d",
+      "bytes": 1073939,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0008/cell-result.json",
+      "sha256": "5503ba71dbf9ca835fb3c28dbebe5d4d952b366196862336fba1fd6c91309291",
+      "bytes": 473,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0008/cell.json",
+      "sha256": "d23bf24f450159b47db2bf0285f65b20c3b21b7d9acc0de973d02274ff9ba710",
+      "bytes": 1248,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0008/oracle/process.json",
+      "sha256": "e183bbbec26badc7b70c458b5ca70de9baa445e90fc06089970858eaa9e15017",
+      "bytes": 7222,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0008/oracle/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0008/oracle/stdout.json",
+      "sha256": "125ff205a0b76be19fe51ff7be2f01509d8ab1aa55099cbcf197f633e7ba4436",
+      "bytes": 172,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0008/workload/process.json",
+      "sha256": "4109509b346c6dcf306b4ab61b049f0e64ccca6a7f257cb048f8ff705d0ee000",
+      "bytes": 7239,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0008/workload/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0008/workload/stdout.json",
+      "sha256": "f2c570dff2f6d2620532d2f85b536e9596d6202db789cec272c3042347b828a1",
+      "bytes": 177,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0009/adapter/run-0009-b1d56d77-5414-405d-b8d5-dc81bbc92377.oracle.jsonl",
+      "sha256": "de0fb0888b49c6cbd30c33bf0083f53f3a0ef755a3ac2c5e9a0fb5021e7ecd50",
+      "bytes": 107770,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0009/adapter/run-0009-b1d56d77-5414-405d-b8d5-dc81bbc92377.workload.jsonl",
+      "sha256": "1a8032817f1791a06d65d7b19ccf893a7ddeb0c1dec3e9cf40c5522e55b1e704",
+      "bytes": 1074070,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0009/cell-result.json",
+      "sha256": "cbd71fb7ed5a96ab1fff55ba89b9857798d3867d0b03e8afdaeb70b3ccef8d1f",
+      "bytes": 473,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0009/cell.json",
+      "sha256": "81aac08b7c93aaff53ebe75115d129ff4297008fa5a386dad6a6e511cf72180d",
+      "bytes": 1248,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0009/oracle/process.json",
+      "sha256": "845752ede771c30d7ed67445fe88a643a7cef11e8d1dbf15c026ce88aa0ac828",
+      "bytes": 7222,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0009/oracle/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0009/oracle/stdout.json",
+      "sha256": "cbaaeb3f9512db1d82940a6cbf85fff5467b8ec354294c0dade9db4e6cca6a1b",
+      "bytes": 172,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0009/workload/process.json",
+      "sha256": "0e96247cec4a86d4a34fbc7c817670bbe7f9230648e277cea28a32d9f8683d3f",
+      "bytes": 7234,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0009/workload/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0009/workload/stdout.json",
+      "sha256": "1cccf37034123bfd42c0ab422813aad053a4909ea66c92c0465791c61665167f",
+      "bytes": 177,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0010/adapter/run-0010-13811c4d-285f-4758-b8f2-a77f30e122c5.oracle.jsonl",
+      "sha256": "23b8f0194aa8038bc47ff8a6422543d7648939db57ae434280b4cc77eef48f9f",
+      "bytes": 107770,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0010/adapter/run-0010-13811c4d-285f-4758-b8f2-a77f30e122c5.workload.jsonl",
+      "sha256": "5d82b812dd3713995fd1142a5035610db8be4494be3027f177a74a08dd171b74",
+      "bytes": 1074798,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0010/cell-result.json",
+      "sha256": "c23d7fc270b237a4054f4336c3f233c2c057dc610681f987095d08252d8ae923",
+      "bytes": 474,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0010/cell.json",
+      "sha256": "26eb9823f915c0f7c50d37ed0e93153f2c7ff2bf172e55462335beba1958e97b",
+      "bytes": 1249,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0010/oracle/process.json",
+      "sha256": "d84fb19a7bc99c19eb1cdd6cbb0999f6a20073b48409885c8c93f960987883ee",
+      "bytes": 7222,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0010/oracle/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0010/oracle/stdout.json",
+      "sha256": "7117bc86034c31933f489ca82149064803c793f9e15cf9f24b46db63cf501ce7",
+      "bytes": 172,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0010/workload/process.json",
+      "sha256": "af984fd85b613d0367b68de3fe45f04072a8381f2504b6a23b21c0159e9d22c1",
+      "bytes": 7228,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0010/workload/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0010/workload/stdout.json",
+      "sha256": "51ae6c380d9d479abcbdd41c1b120f0d7c44caef82171d006534c99a7abcbffa",
+      "bytes": 177,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0011/adapter/run-0011-3bdfb57a-0340-4c6a-8326-c225d97f1762.oracle.jsonl",
+      "sha256": "a2d5a8c60003ae604df17c174f3e1a62140809477c9378a90d8e3b67a43166e4",
+      "bytes": 107772,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0011/adapter/run-0011-3bdfb57a-0340-4c6a-8326-c225d97f1762.workload.jsonl",
+      "sha256": "7768b06b28645da6e1bb39fc20fb7bac3a32a90ddce30023bd21f10c53240f1d",
+      "bytes": 1073855,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0011/cell-result.json",
+      "sha256": "57812a033f0dcfeb5f0d7fa5762423593cf26f37958405b8fdf37b4b3be2df22",
+      "bytes": 474,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0011/cell.json",
+      "sha256": "f6da7f6e1ab15944de2c781941a8db5fc293cf3bb223c5de5c15a9dcbeec28bb",
+      "bytes": 1249,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0011/oracle/process.json",
+      "sha256": "a0be2f7d2445153320c8cc7aac7b5afcc91aed5878f2a0f01f502a30977d39a1",
+      "bytes": 7220,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0011/oracle/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0011/oracle/stdout.json",
+      "sha256": "117330596091f0b716337edff684ab842c77d4f736eb94e5723ce2ced22a87c5",
+      "bytes": 172,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0011/workload/process.json",
+      "sha256": "62bc8b0cfeaaf4eef2e4024e27454f6bd262cac015be88f7540c187e952ec933",
+      "bytes": 7229,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0011/workload/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0011/workload/stdout.json",
+      "sha256": "404732d4cb4dd60833f77f039e70ae9492a0734c8397836e472c1e62247c8155",
+      "bytes": 177,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0012/adapter/run-0012-d36a5097-4b65-496b-830f-0affb00c3d25.oracle.jsonl",
+      "sha256": "f5bd8de28776b5c5403d5cb084a2fe531ca7b9b79e473581e797c00a06f56aad",
+      "bytes": 107772,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0012/adapter/run-0012-d36a5097-4b65-496b-830f-0affb00c3d25.workload.jsonl",
+      "sha256": "fa19112e7da92bfcc39a64d2f54d6d8fc9dbf897dedfee8b0e6e2bc0bc2be64e",
+      "bytes": 1073877,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0012/cell-result.json",
+      "sha256": "0711655dee3514a9c0e3f68c5bc74e70081e17641aec5f66a08b0ff9889cc278",
+      "bytes": 474,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0012/cell.json",
+      "sha256": "764302d0b6360e56e7a34ad5fef6eeed47155e6dadfd6ba25d5abf6f3041b2d3",
+      "bytes": 1249,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0012/oracle/process.json",
+      "sha256": "e3dcca2611dbca74835484f4a06bccb4d29c63d17990356b79ba390e79ad57b4",
+      "bytes": 7223,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0012/oracle/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0012/oracle/stdout.json",
+      "sha256": "013df27ada7cd8abe15eb12ab620b780284ca22de316d5984bde1c5a57dbdfa2",
+      "bytes": 172,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0012/workload/process.json",
+      "sha256": "4bf4fc8621fd7ca5f70d404a03c659efd46a0ba8548d76b07ab6c8af071dd045",
+      "bytes": 7236,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0012/workload/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0012/workload/stdout.json",
+      "sha256": "930786a9a473f08a30f9ffb0f8558c80d111aa18d9d8ff5803b287c777472c5e",
+      "bytes": 177,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0013/adapter/run-0013-d9c59744-0391-4470-8e53-f81ac71db728.oracle.jsonl",
+      "sha256": "3fb0cc060498adf036173f9bd2512d59423a0656b0ab3d7ec5d632baa4297d77",
+      "bytes": 107770,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0013/adapter/run-0013-d9c59744-0391-4470-8e53-f81ac71db728.workload.jsonl",
+      "sha256": "aeeab7eaddd4702709945611760d156ec0b84818e7ad1709ced79be59df1dc08",
+      "bytes": 1074067,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0013/cell-result.json",
+      "sha256": "b36fcc5bef89c8a8d374eb5d8bec0c01bd5cdc8e7ce17e47ee6f3973abf74e6e",
+      "bytes": 474,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0013/cell.json",
+      "sha256": "1c3c9b1374d2a30f068e8b7883899b7aa7c67426c82f20c6004d89780f0af113",
+      "bytes": 1249,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0013/oracle/process.json",
+      "sha256": "b378630c5f54902aae6f224f4775662d88c74d0deeefb0d0d1e5d7fad0a94a5a",
+      "bytes": 7224,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0013/oracle/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0013/oracle/stdout.json",
+      "sha256": "62b896dae49f4ab0f9df7a727c227099d8ebff1da68e59cf9f413c09ba71fdaf",
+      "bytes": 172,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0013/workload/process.json",
+      "sha256": "a2d762401dd3a1e3256d87e432aa691159050c2096bfd435ad55527b925786c2",
+      "bytes": 7246,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0013/workload/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0013/workload/stdout.json",
+      "sha256": "43f2d6c646b25d62652d1cf9b8927667c890945a14bc246789f9d4a2d5860475",
+      "bytes": 177,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0014/adapter/run-0014-41ee28ec-2ddf-4743-b499-ba8e479d0628.oracle.jsonl",
+      "sha256": "6b5e9066db42f3939fe35151ba20006b019decd46fd3dcc24ce7ef1ea3993a6e",
+      "bytes": 107772,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0014/adapter/run-0014-41ee28ec-2ddf-4743-b499-ba8e479d0628.workload.jsonl",
+      "sha256": "1ea9b8f8b3e74b0ced76fb1508f044627b2dcfd88e8bda5d8ad70f5af0409805",
+      "bytes": 1075021,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0014/cell-result.json",
+      "sha256": "abfb6f738e3a0ea7bc7daec5a3bc247091f23392f599ddbc79503d9656ae6e92",
+      "bytes": 474,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0014/cell.json",
+      "sha256": "c8744858b816fb92c1e99773aa384bae076923a0d5d030cde48cab3e4c3b7a83",
+      "bytes": 1249,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0014/oracle/process.json",
+      "sha256": "c88988d00c79f146fc0553124201d68ff4dd1d2849004fb306e3b2019bba36be",
+      "bytes": 7206,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0014/oracle/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0014/oracle/stdout.json",
+      "sha256": "7365d03c2f90a624e45f4fa92e8a05855345888bef9d3910113268054e193bde",
+      "bytes": 172,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0014/workload/process.json",
+      "sha256": "a779697ee14b0d724a36ed330ee08e85f643fe1ba797e565ec88230f33bdf45d",
+      "bytes": 7238,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0014/workload/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0014/workload/stdout.json",
+      "sha256": "150417cf4128351f705585eb2c7d2e18bff9d5e1b38aa1a001f124ac85fca870",
+      "bytes": 177,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0015/adapter/run-0015-876f4794-a71c-4a98-a2d6-d828e015a370.oracle.jsonl",
+      "sha256": "45b2ba738bcac60188dfa7a099bcca9c1be14cfc5fa7d39e1ac8cbf24a77de82",
+      "bytes": 84826,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0015/adapter/run-0015-876f4794-a71c-4a98-a2d6-d828e015a370.workload.jsonl",
+      "sha256": "3fd288eb25c4a63ecb233978abdedd9b9a5bf679efe78e2841f1f0acaef818f3",
+      "bytes": 1070621,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0015/cell-result.json",
+      "sha256": "681d4be3abeefa0f34a5ea7c10ad4682202e6c6e9b3769007cd472584ef274b3",
+      "bytes": 470,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0015/cell.json",
+      "sha256": "68059309d868dc122427ca4f9e903657a68d27317cfb2b88093ba9ef8f884ae1",
+      "bytes": 1052,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0015/database/cortex.sqlite3",
+      "sha256": "cd5d8415165795bae9a95fe7726cba5ccbe4b9f1ae6e17c5c66a5bcb51dcaac3",
+      "bytes": 2375680,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0015/oracle/process.json",
+      "sha256": "0dbbda29a236e3e7cf7c60225aeb8bd1e1b6f372bb462cb9b57e485460c60e1d",
+      "bytes": 7009,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0015/oracle/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0015/oracle/stdout.json",
+      "sha256": "06c00100c001d1db9789e214cddb8d41f0078575e4165c4d95a3282137df0d61",
+      "bytes": 172,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0015/workload/process.json",
+      "sha256": "754426c3f09e4a0509596b329e4e669eeae2e24cca4d9e21b71a5b9c674f487b",
+      "bytes": 7024,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0015/workload/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0015/workload/stdout.json",
+      "sha256": "ee9143458a16255ac2dd99da10a2c5e08556378aee0165d1d6bcbd9414825047",
+      "bytes": 177,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0016/adapter/run-0016-0dc6b1ed-148b-43b3-8afe-bf8c93dd612f.oracle.jsonl",
+      "sha256": "bdb94f3a37667dc239ea90fd11677c1759dc0157c83bbb0c1ea9af6faee41ae4",
+      "bytes": 84826,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0016/adapter/run-0016-0dc6b1ed-148b-43b3-8afe-bf8c93dd612f.workload.jsonl",
+      "sha256": "8ab3d919546d40489dcb8f03f2e7b181c2312247e43aebaa80079d5053f0c1a1",
+      "bytes": 1071457,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0016/cell-result.json",
+      "sha256": "b4c1d3af151cd16e6f59525a3ae5f60b6436dcc12421db8700db9a86f896d45a",
+      "bytes": 470,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0016/cell.json",
+      "sha256": "7a57b3cb768dcde02dc8d58d6b1fcaf9a5b3c2fe35d3a6c06f33113c2548778d",
+      "bytes": 1052,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0016/database/cortex.sqlite3",
+      "sha256": "e336334745e3db62320dca5026d797802d51ced00aaa9203aa33aaa4cd24aab0",
+      "bytes": 2387968,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0016/oracle/process.json",
+      "sha256": "ec6c6e600a4a58aba4c680cfa3f5003a8a5157d04a27f86619b958226564ec46",
+      "bytes": 7009,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0016/oracle/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0016/oracle/stdout.json",
+      "sha256": "c761c05c77f0073e7ff5288cc89e7646a038b852440cd10ec09258a19eca1251",
+      "bytes": 172,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0016/workload/process.json",
+      "sha256": "619890ff02c5c74a19d1569c6428053333f7f0e32cf90afebcd0fbeb09a6af6a",
+      "bytes": 7024,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0016/workload/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0016/workload/stdout.json",
+      "sha256": "42e7df235cc32b33b70b44b904fc00dddba337dedbfce4a11a572d828542ab82",
+      "bytes": 177,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0017/adapter/run-0017-2d8a7337-0716-4f7f-9e76-77f4acbd5701.oracle.jsonl",
+      "sha256": "5b8260dc20e9f6fd6d399eaff3d8a7d327f109b172acb78d7975df7fdcd5ebbb",
+      "bytes": 84825,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0017/adapter/run-0017-2d8a7337-0716-4f7f-9e76-77f4acbd5701.workload.jsonl",
+      "sha256": "864db864b8803fe8b112f75e44b700b58cb72cbc0841822eb697c9ebaeae8a08",
+      "bytes": 1071586,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0017/cell-result.json",
+      "sha256": "18bd8968509cf0c9f36b73cac46250fa097093f73e01e33de4ffc823d72c5127",
+      "bytes": 470,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0017/cell.json",
+      "sha256": "54b423bd38f9c25f5fa44f2c27123c9f964a068beea905116a4741e744861343",
+      "bytes": 1052,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0017/database/cortex.sqlite3",
+      "sha256": "90b6c17b335efacbaa97f619968e6880cc9d8921af3e20f8566db6f3ad222f6e",
+      "bytes": 2375680,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0017/oracle/process.json",
+      "sha256": "577f3a78ee48e1d180991696abd8846eb5c817774765e390193258056d999074",
+      "bytes": 7005,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0017/oracle/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0017/oracle/stdout.json",
+      "sha256": "6d0ec4abf275f225db22a62637c30d7c1318783df2dbeb0da009d1b302876108",
+      "bytes": 172,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0017/workload/process.json",
+      "sha256": "847c629dd4005e75b50bf03d945457c34610f5dec4bc326ab1bc70d46dfd23fe",
+      "bytes": 7018,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0017/workload/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0017/workload/stdout.json",
+      "sha256": "646a2c52277ac6d7e3152fd466db80650291ca79d74080823e8c907191420e82",
+      "bytes": 177,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0018/adapter/run-0018-a6a21d0c-ab88-4144-95d4-57475463c4f0.oracle.jsonl",
+      "sha256": "3a521c02b16f651ac12aeab360433fbe587a30337557d5ed1be0db2de5dbf1ac",
+      "bytes": 84826,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0018/adapter/run-0018-a6a21d0c-ab88-4144-95d4-57475463c4f0.workload.jsonl",
+      "sha256": "397bf5335930f378a6070a3c8f56727f39da1524f2521a2478406c3bea835bb1",
+      "bytes": 1072546,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0018/cell-result.json",
+      "sha256": "24f50f28f4766a2de7ec514b6b0c6f64bd8a7f4cfffcc1ad18601ab9084a03f4",
+      "bytes": 470,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0018/cell.json",
+      "sha256": "d256df2c3393bbf883b9d6125a2e9f9746c00c47032d670007f3f86efbdcd945",
+      "bytes": 1052,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0018/database/cortex.sqlite3",
+      "sha256": "f4ef95e0b8dd0237c4eaaf46987c63ec6c8313bc6a54cced32511dedb2497a71",
+      "bytes": 2375680,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0018/oracle/process.json",
+      "sha256": "1083bc0b9745b3962da25eee6e23fbfda8665388d81086b214bb779d6e95d7ff",
+      "bytes": 7006,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0018/oracle/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0018/oracle/stdout.json",
+      "sha256": "ff39e75047cec155d0b877d26630a2c44cc45aa24259e898538a49ffd173d4ed",
+      "bytes": 172,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0018/workload/process.json",
+      "sha256": "5cd1c9f6bec8c1f4ba5bc025bbb6783b8c91c7aeec373e85346dd59c4e67e874",
+      "bytes": 7025,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0018/workload/stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "cells/0018/workload/stdout.json",
+      "sha256": "5d8c91baa0e99d2b3f44f50f230213f96fc488f5d16de5e684bcdf30011e0ca8",
+      "bytes": 177,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "environment.json",
+      "sha256": "3cc8fcaa98cf349fae1b4796effc460495112523e19c97248cb95b93f2fcced7",
+      "bytes": 21462,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "negative-log.jsonl",
+      "sha256": "010a8fdac1af81c80ff0fba9bd5a6fc2238f5fe294630afaeb764c1fff76aef0",
+      "bytes": 161,
+      "role": "negative-log",
+      "immutable": true
+    },
+    {
+      "path": "postgresql-service-receipt.json",
+      "sha256": "40d578f09e893d1d46bb1b30b58c1fb85054d816a84d108368dacfb340b23f18",
+      "bytes": 2672,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "protocol-lock.json",
+      "sha256": "04edaaa3bea462edb6f05dfad6f9ab932863de389af611e77545b02d6818241a",
+      "bytes": 11313,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "protocol.json",
+      "sha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+      "bytes": 43310,
+      "role": "protocol",
+      "immutable": true
+    },
+    {
+      "path": "review/automated-review.md",
+      "sha256": "009fe8cb7b51fae403bf3613070c146e3675909b094f558467286ae3d567b1ba",
+      "bytes": 412,
+      "role": "review",
+      "immutable": true
+    },
+    {
+      "path": "run-summary.json",
+      "sha256": "58ec670b05770f2ad2c14cfaf83c506b0cdc4a562dcca85a81e12078329f64aa",
+      "bytes": 10043,
+      "role": "raw",
+      "immutable": true
+    },
+    {
+      "path": "scoring/scoring.json",
+      "sha256": "135de9b5e9cfc8eac484debd3957666bc8245e8be07e2e5aed8599d46f0bb116",
+      "bytes": 8582,
+      "role": "scoring",
+      "immutable": true
+    }
+  ],
+  "cells": [
+    {
+      "id": "regression-baseline-sqlite-c2",
+      "startedAt": "2026-09-01T20:35:05.745Z",
+      "endedAt": "2026-09-01T20:35:27.190Z",
+      "status": "completed",
+      "expectedVerdict": "blocked",
+      "verdict": "blocked",
+      "protocolSha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+      "attemptId": "09e79da6-7b26-424e-9767-2f3f496d505d",
+      "processInstanceId": "861120bf-bfe4-4d1e-8770-836da3cf3a00",
+      "restartReceiptArtifactPath": "cells/0001/oracle/process.json",
+      "rawLedgerArtifactPath": "cells/0001/adapter/run-0001-7606e9e9-562b-4417-aa38-de5ffe9a2cbe.workload.jsonl",
+      "rawArtifactPaths": [
+        "cells/0001/adapter/run-0001-7606e9e9-562b-4417-aa38-de5ffe9a2cbe.oracle.jsonl",
+        "cells/0001/adapter/run-0001-7606e9e9-562b-4417-aa38-de5ffe9a2cbe.workload.jsonl",
+        "cells/0001/cell-result.json",
+        "cells/0001/cell.json",
+        "cells/0001/database/cortex.sqlite3",
+        "cells/0001/oracle/process.json",
+        "cells/0001/oracle/stderr.txt",
+        "cells/0001/oracle/stdout.json",
+        "cells/0001/workload/process.json",
+        "cells/0001/workload/stderr.txt",
+        "cells/0001/workload/stdout.json"
+      ],
+      "resolution": {
+        "state": "resolved",
+        "detail": "Independent restart oracle and analyzer reached a terminal verdict."
+      }
+    },
+    {
+      "id": "regression-candidate-sqlite-c2",
+      "startedAt": "2026-09-01T20:35:27.201Z",
+      "endedAt": "2026-09-01T20:35:53.301Z",
+      "status": "completed",
+      "expectedVerdict": "proven",
+      "verdict": "proven",
+      "protocolSha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+      "attemptId": "d9aabbe9-0fcc-4f69-911a-edee7a3d70b8",
+      "processInstanceId": "177c2370-861b-4b61-9b74-3c4a640103f3",
+      "restartReceiptArtifactPath": "cells/0002/oracle/process.json",
+      "rawLedgerArtifactPath": "cells/0002/adapter/run-0002-e82617a9-9d07-4c6a-b608-d20091cecbee.workload.jsonl",
+      "rawArtifactPaths": [
+        "cells/0002/adapter/run-0002-e82617a9-9d07-4c6a-b608-d20091cecbee.oracle.jsonl",
+        "cells/0002/adapter/run-0002-e82617a9-9d07-4c6a-b608-d20091cecbee.workload.jsonl",
+        "cells/0002/cell-result.json",
+        "cells/0002/cell.json",
+        "cells/0002/database/cortex.sqlite3",
+        "cells/0002/oracle/process.json",
+        "cells/0002/oracle/stderr.txt",
+        "cells/0002/oracle/stdout.json",
+        "cells/0002/workload/process.json",
+        "cells/0002/workload/stderr.txt",
+        "cells/0002/workload/stdout.json"
+      ],
+      "resolution": {
+        "state": "resolved",
+        "detail": "Independent restart oracle and analyzer reached a terminal verdict."
+      }
+    },
+    {
+      "id": "main-r1-sqlite-c1",
+      "startedAt": "2026-09-01T20:35:53.310Z",
+      "endedAt": "2026-09-01T20:36:18.512Z",
+      "status": "completed",
+      "expectedVerdict": "proven",
+      "verdict": "proven",
+      "protocolSha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+      "attemptId": "8794248e-0200-4b62-b7ed-10ddce4b4873",
+      "processInstanceId": "484dbfd4-29d8-4429-8dbb-1da98e3169ff",
+      "restartReceiptArtifactPath": "cells/0003/oracle/process.json",
+      "rawLedgerArtifactPath": "cells/0003/adapter/run-0003-d7d8a3dc-dbf1-4e06-9060-31f1fe050cc8.workload.jsonl",
+      "rawArtifactPaths": [
+        "cells/0003/adapter/run-0003-d7d8a3dc-dbf1-4e06-9060-31f1fe050cc8.oracle.jsonl",
+        "cells/0003/adapter/run-0003-d7d8a3dc-dbf1-4e06-9060-31f1fe050cc8.workload.jsonl",
+        "cells/0003/cell-result.json",
+        "cells/0003/cell.json",
+        "cells/0003/database/cortex.sqlite3",
+        "cells/0003/oracle/process.json",
+        "cells/0003/oracle/stderr.txt",
+        "cells/0003/oracle/stdout.json",
+        "cells/0003/workload/process.json",
+        "cells/0003/workload/stderr.txt",
+        "cells/0003/workload/stdout.json"
+      ],
+      "resolution": {
+        "state": "resolved",
+        "detail": "Independent restart oracle and analyzer reached a terminal verdict."
+      }
+    },
+    {
+      "id": "main-r1-sqlite-c2",
+      "startedAt": "2026-09-01T20:36:18.520Z",
+      "endedAt": "2026-09-01T20:36:41.166Z",
+      "status": "completed",
+      "expectedVerdict": "proven",
+      "verdict": "proven",
+      "protocolSha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+      "attemptId": "a0a82e63-38fd-4fc4-8b8d-b18fe9629d4e",
+      "processInstanceId": "0b0b1085-6495-4b58-86f1-aab6a121da67",
+      "restartReceiptArtifactPath": "cells/0004/oracle/process.json",
+      "rawLedgerArtifactPath": "cells/0004/adapter/run-0004-1a921c2d-3fb6-445d-bdc3-3a2992dd0b8b.workload.jsonl",
+      "rawArtifactPaths": [
+        "cells/0004/adapter/run-0004-1a921c2d-3fb6-445d-bdc3-3a2992dd0b8b.oracle.jsonl",
+        "cells/0004/adapter/run-0004-1a921c2d-3fb6-445d-bdc3-3a2992dd0b8b.workload.jsonl",
+        "cells/0004/cell-result.json",
+        "cells/0004/cell.json",
+        "cells/0004/database/cortex.sqlite3",
+        "cells/0004/oracle/process.json",
+        "cells/0004/oracle/stderr.txt",
+        "cells/0004/oracle/stdout.json",
+        "cells/0004/workload/process.json",
+        "cells/0004/workload/stderr.txt",
+        "cells/0004/workload/stdout.json"
+      ],
+      "resolution": {
+        "state": "resolved",
+        "detail": "Independent restart oracle and analyzer reached a terminal verdict."
+      }
+    },
+    {
+      "id": "main-r1-sqlite-c4",
+      "startedAt": "2026-09-01T20:36:41.177Z",
+      "endedAt": "2026-09-01T20:37:02.579Z",
+      "status": "completed",
+      "expectedVerdict": "proven",
+      "verdict": "proven",
+      "protocolSha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+      "attemptId": "daef0efc-32f4-443f-a9f5-a1061808ecae",
+      "processInstanceId": "181fd8e8-54d9-427e-9b6f-01a92f997e7d",
+      "restartReceiptArtifactPath": "cells/0005/oracle/process.json",
+      "rawLedgerArtifactPath": "cells/0005/adapter/run-0005-d5709982-e640-45b7-84b1-6eaa903f0a44.workload.jsonl",
+      "rawArtifactPaths": [
+        "cells/0005/adapter/run-0005-d5709982-e640-45b7-84b1-6eaa903f0a44.oracle.jsonl",
+        "cells/0005/adapter/run-0005-d5709982-e640-45b7-84b1-6eaa903f0a44.workload.jsonl",
+        "cells/0005/cell-result.json",
+        "cells/0005/cell.json",
+        "cells/0005/database/cortex.sqlite3",
+        "cells/0005/oracle/process.json",
+        "cells/0005/oracle/stderr.txt",
+        "cells/0005/oracle/stdout.json",
+        "cells/0005/workload/process.json",
+        "cells/0005/workload/stderr.txt",
+        "cells/0005/workload/stdout.json"
+      ],
+      "resolution": {
+        "state": "resolved",
+        "detail": "Independent restart oracle and analyzer reached a terminal verdict."
+      }
+    },
+    {
+      "id": "main-r1-sqlite-c5",
+      "startedAt": "2026-09-01T20:37:02.588Z",
+      "endedAt": "2026-09-01T20:37:23.983Z",
+      "status": "completed",
+      "expectedVerdict": "proven",
+      "verdict": "proven",
+      "protocolSha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+      "attemptId": "0d9acc23-b00b-441e-be49-f50dfed8ade7",
+      "processInstanceId": "6d2e4160-4894-4bf5-a9bb-7ee762588063",
+      "restartReceiptArtifactPath": "cells/0006/oracle/process.json",
+      "rawLedgerArtifactPath": "cells/0006/adapter/run-0006-aea7b72f-d25d-4d72-b9f5-5d0f1970d6ec.workload.jsonl",
+      "rawArtifactPaths": [
+        "cells/0006/adapter/run-0006-aea7b72f-d25d-4d72-b9f5-5d0f1970d6ec.oracle.jsonl",
+        "cells/0006/adapter/run-0006-aea7b72f-d25d-4d72-b9f5-5d0f1970d6ec.workload.jsonl",
+        "cells/0006/cell-result.json",
+        "cells/0006/cell.json",
+        "cells/0006/database/cortex.sqlite3",
+        "cells/0006/oracle/process.json",
+        "cells/0006/oracle/stderr.txt",
+        "cells/0006/oracle/stdout.json",
+        "cells/0006/workload/process.json",
+        "cells/0006/workload/stderr.txt",
+        "cells/0006/workload/stdout.json"
+      ],
+      "resolution": {
+        "state": "resolved",
+        "detail": "Independent restart oracle and analyzer reached a terminal verdict."
+      }
+    },
+    {
+      "id": "main-r1-postgresql-c1",
+      "startedAt": "2026-09-01T20:37:23.992Z",
+      "endedAt": "2026-09-01T20:37:45.931Z",
+      "status": "completed",
+      "expectedVerdict": "proven",
+      "verdict": "proven",
+      "protocolSha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+      "attemptId": "98c53390-5cb3-48ca-84d0-036ee8b627c3",
+      "processInstanceId": "3dda67ad-520f-4ea2-ad9b-d8db2d4bf025",
+      "restartReceiptArtifactPath": "cells/0007/oracle/process.json",
+      "rawLedgerArtifactPath": "cells/0007/adapter/run-0007-2cad4c33-5a5b-4655-95ce-569aed0ccc49.workload.jsonl",
+      "rawArtifactPaths": [
+        "cells/0007/adapter/run-0007-2cad4c33-5a5b-4655-95ce-569aed0ccc49.oracle.jsonl",
+        "cells/0007/adapter/run-0007-2cad4c33-5a5b-4655-95ce-569aed0ccc49.workload.jsonl",
+        "cells/0007/cell-result.json",
+        "cells/0007/cell.json",
+        "cells/0007/oracle/process.json",
+        "cells/0007/oracle/stderr.txt",
+        "cells/0007/oracle/stdout.json",
+        "cells/0007/workload/process.json",
+        "cells/0007/workload/stderr.txt",
+        "cells/0007/workload/stdout.json"
+      ],
+      "resolution": {
+        "state": "resolved",
+        "detail": "Independent restart oracle and analyzer reached a terminal verdict."
+      }
+    },
+    {
+      "id": "main-r1-postgresql-c2",
+      "startedAt": "2026-09-01T20:37:45.942Z",
+      "endedAt": "2026-09-01T20:38:06.645Z",
+      "status": "completed",
+      "expectedVerdict": "proven",
+      "verdict": "proven",
+      "protocolSha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+      "attemptId": "e3bdee43-50d5-410f-a981-b03ba35c653c",
+      "processInstanceId": "1d64895b-406e-49e4-b15c-488449fb63f5",
+      "restartReceiptArtifactPath": "cells/0008/oracle/process.json",
+      "rawLedgerArtifactPath": "cells/0008/adapter/run-0008-db6c6927-e97f-4ab7-a144-47a17a1d4e3c.workload.jsonl",
+      "rawArtifactPaths": [
+        "cells/0008/adapter/run-0008-db6c6927-e97f-4ab7-a144-47a17a1d4e3c.oracle.jsonl",
+        "cells/0008/adapter/run-0008-db6c6927-e97f-4ab7-a144-47a17a1d4e3c.workload.jsonl",
+        "cells/0008/cell-result.json",
+        "cells/0008/cell.json",
+        "cells/0008/oracle/process.json",
+        "cells/0008/oracle/stderr.txt",
+        "cells/0008/oracle/stdout.json",
+        "cells/0008/workload/process.json",
+        "cells/0008/workload/stderr.txt",
+        "cells/0008/workload/stdout.json"
+      ],
+      "resolution": {
+        "state": "resolved",
+        "detail": "Independent restart oracle and analyzer reached a terminal verdict."
+      }
+    },
+    {
+      "id": "main-r1-postgresql-c4",
+      "startedAt": "2026-09-01T20:38:06.654Z",
+      "endedAt": "2026-09-01T20:38:26.368Z",
+      "status": "completed",
+      "expectedVerdict": "proven",
+      "verdict": "proven",
+      "protocolSha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+      "attemptId": "59b82599-ebc8-4077-a5a8-a45f58e45b0a",
+      "processInstanceId": "28dd4755-c2af-41ba-af8e-306215c5ad94",
+      "restartReceiptArtifactPath": "cells/0009/oracle/process.json",
+      "rawLedgerArtifactPath": "cells/0009/adapter/run-0009-b1d56d77-5414-405d-b8d5-dc81bbc92377.workload.jsonl",
+      "rawArtifactPaths": [
+        "cells/0009/adapter/run-0009-b1d56d77-5414-405d-b8d5-dc81bbc92377.oracle.jsonl",
+        "cells/0009/adapter/run-0009-b1d56d77-5414-405d-b8d5-dc81bbc92377.workload.jsonl",
+        "cells/0009/cell-result.json",
+        "cells/0009/cell.json",
+        "cells/0009/oracle/process.json",
+        "cells/0009/oracle/stderr.txt",
+        "cells/0009/oracle/stdout.json",
+        "cells/0009/workload/process.json",
+        "cells/0009/workload/stderr.txt",
+        "cells/0009/workload/stdout.json"
+      ],
+      "resolution": {
+        "state": "resolved",
+        "detail": "Independent restart oracle and analyzer reached a terminal verdict."
+      }
+    },
+    {
+      "id": "main-r1-postgresql-c5",
+      "startedAt": "2026-09-01T20:38:26.380Z",
+      "endedAt": "2026-09-01T20:38:46.509Z",
+      "status": "completed",
+      "expectedVerdict": "proven",
+      "verdict": "proven",
+      "protocolSha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+      "attemptId": "2c357342-f631-4b3a-ba3a-63d5036b2e9d",
+      "processInstanceId": "602cf0a8-6498-4a4f-84ac-53af95877024",
+      "restartReceiptArtifactPath": "cells/0010/oracle/process.json",
+      "rawLedgerArtifactPath": "cells/0010/adapter/run-0010-13811c4d-285f-4758-b8f2-a77f30e122c5.workload.jsonl",
+      "rawArtifactPaths": [
+        "cells/0010/adapter/run-0010-13811c4d-285f-4758-b8f2-a77f30e122c5.oracle.jsonl",
+        "cells/0010/adapter/run-0010-13811c4d-285f-4758-b8f2-a77f30e122c5.workload.jsonl",
+        "cells/0010/cell-result.json",
+        "cells/0010/cell.json",
+        "cells/0010/oracle/process.json",
+        "cells/0010/oracle/stderr.txt",
+        "cells/0010/oracle/stdout.json",
+        "cells/0010/workload/process.json",
+        "cells/0010/workload/stderr.txt",
+        "cells/0010/workload/stdout.json"
+      ],
+      "resolution": {
+        "state": "resolved",
+        "detail": "Independent restart oracle and analyzer reached a terminal verdict."
+      }
+    },
+    {
+      "id": "main-r2-postgresql-c1",
+      "startedAt": "2026-09-01T20:38:46.518Z",
+      "endedAt": "2026-09-01T20:39:06.748Z",
+      "status": "completed",
+      "expectedVerdict": "proven",
+      "verdict": "proven",
+      "protocolSha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+      "attemptId": "04f21ac8-1052-4820-b027-a022c86d5370",
+      "processInstanceId": "bb2bf897-8e63-4b06-be06-41cd589a25f9",
+      "restartReceiptArtifactPath": "cells/0011/oracle/process.json",
+      "rawLedgerArtifactPath": "cells/0011/adapter/run-0011-3bdfb57a-0340-4c6a-8326-c225d97f1762.workload.jsonl",
+      "rawArtifactPaths": [
+        "cells/0011/adapter/run-0011-3bdfb57a-0340-4c6a-8326-c225d97f1762.oracle.jsonl",
+        "cells/0011/adapter/run-0011-3bdfb57a-0340-4c6a-8326-c225d97f1762.workload.jsonl",
+        "cells/0011/cell-result.json",
+        "cells/0011/cell.json",
+        "cells/0011/oracle/process.json",
+        "cells/0011/oracle/stderr.txt",
+        "cells/0011/oracle/stdout.json",
+        "cells/0011/workload/process.json",
+        "cells/0011/workload/stderr.txt",
+        "cells/0011/workload/stdout.json"
+      ],
+      "resolution": {
+        "state": "resolved",
+        "detail": "Independent restart oracle and analyzer reached a terminal verdict."
+      }
+    },
+    {
+      "id": "main-r2-postgresql-c2",
+      "startedAt": "2026-09-01T20:39:06.759Z",
+      "endedAt": "2026-09-01T20:39:27.607Z",
+      "status": "completed",
+      "expectedVerdict": "proven",
+      "verdict": "proven",
+      "protocolSha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+      "attemptId": "5fdae70f-902d-41f0-9ce2-e20e2b841a43",
+      "processInstanceId": "8defec42-e688-4f03-ac81-0246abc9fdb7",
+      "restartReceiptArtifactPath": "cells/0012/oracle/process.json",
+      "rawLedgerArtifactPath": "cells/0012/adapter/run-0012-d36a5097-4b65-496b-830f-0affb00c3d25.workload.jsonl",
+      "rawArtifactPaths": [
+        "cells/0012/adapter/run-0012-d36a5097-4b65-496b-830f-0affb00c3d25.oracle.jsonl",
+        "cells/0012/adapter/run-0012-d36a5097-4b65-496b-830f-0affb00c3d25.workload.jsonl",
+        "cells/0012/cell-result.json",
+        "cells/0012/cell.json",
+        "cells/0012/oracle/process.json",
+        "cells/0012/oracle/stderr.txt",
+        "cells/0012/oracle/stdout.json",
+        "cells/0012/workload/process.json",
+        "cells/0012/workload/stderr.txt",
+        "cells/0012/workload/stdout.json"
+      ],
+      "resolution": {
+        "state": "resolved",
+        "detail": "Independent restart oracle and analyzer reached a terminal verdict."
+      }
+    },
+    {
+      "id": "main-r2-postgresql-c4",
+      "startedAt": "2026-09-01T20:39:27.618Z",
+      "endedAt": "2026-09-01T20:39:48.859Z",
+      "status": "completed",
+      "expectedVerdict": "proven",
+      "verdict": "proven",
+      "protocolSha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+      "attemptId": "d314b618-0b8b-4630-88b5-dbf93d8a4da7",
+      "processInstanceId": "d8245ec9-3edf-4149-a744-c877b65c1c83",
+      "restartReceiptArtifactPath": "cells/0013/oracle/process.json",
+      "rawLedgerArtifactPath": "cells/0013/adapter/run-0013-d9c59744-0391-4470-8e53-f81ac71db728.workload.jsonl",
+      "rawArtifactPaths": [
+        "cells/0013/adapter/run-0013-d9c59744-0391-4470-8e53-f81ac71db728.oracle.jsonl",
+        "cells/0013/adapter/run-0013-d9c59744-0391-4470-8e53-f81ac71db728.workload.jsonl",
+        "cells/0013/cell-result.json",
+        "cells/0013/cell.json",
+        "cells/0013/oracle/process.json",
+        "cells/0013/oracle/stderr.txt",
+        "cells/0013/oracle/stdout.json",
+        "cells/0013/workload/process.json",
+        "cells/0013/workload/stderr.txt",
+        "cells/0013/workload/stdout.json"
+      ],
+      "resolution": {
+        "state": "resolved",
+        "detail": "Independent restart oracle and analyzer reached a terminal verdict."
+      }
+    },
+    {
+      "id": "main-r2-postgresql-c5",
+      "startedAt": "2026-09-01T20:39:48.868Z",
+      "endedAt": "2026-09-01T20:40:08.360Z",
+      "status": "completed",
+      "expectedVerdict": "proven",
+      "verdict": "proven",
+      "protocolSha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+      "attemptId": "d9885f69-96be-4fea-9625-64cdb4a8fe09",
+      "processInstanceId": "b69d2b9c-d6b8-4aab-90a6-d5ecf109b475",
+      "restartReceiptArtifactPath": "cells/0014/oracle/process.json",
+      "rawLedgerArtifactPath": "cells/0014/adapter/run-0014-41ee28ec-2ddf-4743-b499-ba8e479d0628.workload.jsonl",
+      "rawArtifactPaths": [
+        "cells/0014/adapter/run-0014-41ee28ec-2ddf-4743-b499-ba8e479d0628.oracle.jsonl",
+        "cells/0014/adapter/run-0014-41ee28ec-2ddf-4743-b499-ba8e479d0628.workload.jsonl",
+        "cells/0014/cell-result.json",
+        "cells/0014/cell.json",
+        "cells/0014/oracle/process.json",
+        "cells/0014/oracle/stderr.txt",
+        "cells/0014/oracle/stdout.json",
+        "cells/0014/workload/process.json",
+        "cells/0014/workload/stderr.txt",
+        "cells/0014/workload/stdout.json"
+      ],
+      "resolution": {
+        "state": "resolved",
+        "detail": "Independent restart oracle and analyzer reached a terminal verdict."
+      }
+    },
+    {
+      "id": "main-r2-sqlite-c1",
+      "startedAt": "2026-09-01T20:40:08.373Z",
+      "endedAt": "2026-09-01T20:40:29.003Z",
+      "status": "completed",
+      "expectedVerdict": "proven",
+      "verdict": "proven",
+      "protocolSha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+      "attemptId": "af170d86-ec60-421e-9d53-bec751b8e148",
+      "processInstanceId": "802cd816-7e6f-4b09-81d5-7fc5ba9b880a",
+      "restartReceiptArtifactPath": "cells/0015/oracle/process.json",
+      "rawLedgerArtifactPath": "cells/0015/adapter/run-0015-876f4794-a71c-4a98-a2d6-d828e015a370.workload.jsonl",
+      "rawArtifactPaths": [
+        "cells/0015/adapter/run-0015-876f4794-a71c-4a98-a2d6-d828e015a370.oracle.jsonl",
+        "cells/0015/adapter/run-0015-876f4794-a71c-4a98-a2d6-d828e015a370.workload.jsonl",
+        "cells/0015/cell-result.json",
+        "cells/0015/cell.json",
+        "cells/0015/database/cortex.sqlite3",
+        "cells/0015/oracle/process.json",
+        "cells/0015/oracle/stderr.txt",
+        "cells/0015/oracle/stdout.json",
+        "cells/0015/workload/process.json",
+        "cells/0015/workload/stderr.txt",
+        "cells/0015/workload/stdout.json"
+      ],
+      "resolution": {
+        "state": "resolved",
+        "detail": "Independent restart oracle and analyzer reached a terminal verdict."
+      }
+    },
+    {
+      "id": "main-r2-sqlite-c2",
+      "startedAt": "2026-09-01T20:40:29.016Z",
+      "endedAt": "2026-09-01T20:40:49.593Z",
+      "status": "completed",
+      "expectedVerdict": "proven",
+      "verdict": "proven",
+      "protocolSha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+      "attemptId": "44a9e1a6-2dfb-4fbe-9544-99ead9bb32c6",
+      "processInstanceId": "f77382cf-bad0-4c38-a536-0184181a7247",
+      "restartReceiptArtifactPath": "cells/0016/oracle/process.json",
+      "rawLedgerArtifactPath": "cells/0016/adapter/run-0016-0dc6b1ed-148b-43b3-8afe-bf8c93dd612f.workload.jsonl",
+      "rawArtifactPaths": [
+        "cells/0016/adapter/run-0016-0dc6b1ed-148b-43b3-8afe-bf8c93dd612f.oracle.jsonl",
+        "cells/0016/adapter/run-0016-0dc6b1ed-148b-43b3-8afe-bf8c93dd612f.workload.jsonl",
+        "cells/0016/cell-result.json",
+        "cells/0016/cell.json",
+        "cells/0016/database/cortex.sqlite3",
+        "cells/0016/oracle/process.json",
+        "cells/0016/oracle/stderr.txt",
+        "cells/0016/oracle/stdout.json",
+        "cells/0016/workload/process.json",
+        "cells/0016/workload/stderr.txt",
+        "cells/0016/workload/stdout.json"
+      ],
+      "resolution": {
+        "state": "resolved",
+        "detail": "Independent restart oracle and analyzer reached a terminal verdict."
+      }
+    },
+    {
+      "id": "main-r2-sqlite-c4",
+      "startedAt": "2026-09-01T20:40:49.605Z",
+      "endedAt": "2026-09-01T20:41:12.099Z",
+      "status": "completed",
+      "expectedVerdict": "proven",
+      "verdict": "proven",
+      "protocolSha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+      "attemptId": "c839ea82-4768-4c76-9131-9b74072a1462",
+      "processInstanceId": "516f9745-c98f-4913-87ad-9aa477d09e13",
+      "restartReceiptArtifactPath": "cells/0017/oracle/process.json",
+      "rawLedgerArtifactPath": "cells/0017/adapter/run-0017-2d8a7337-0716-4f7f-9e76-77f4acbd5701.workload.jsonl",
+      "rawArtifactPaths": [
+        "cells/0017/adapter/run-0017-2d8a7337-0716-4f7f-9e76-77f4acbd5701.oracle.jsonl",
+        "cells/0017/adapter/run-0017-2d8a7337-0716-4f7f-9e76-77f4acbd5701.workload.jsonl",
+        "cells/0017/cell-result.json",
+        "cells/0017/cell.json",
+        "cells/0017/database/cortex.sqlite3",
+        "cells/0017/oracle/process.json",
+        "cells/0017/oracle/stderr.txt",
+        "cells/0017/oracle/stdout.json",
+        "cells/0017/workload/process.json",
+        "cells/0017/workload/stderr.txt",
+        "cells/0017/workload/stdout.json"
+      ],
+      "resolution": {
+        "state": "resolved",
+        "detail": "Independent restart oracle and analyzer reached a terminal verdict."
+      }
+    },
+    {
+      "id": "main-r2-sqlite-c5",
+      "startedAt": "2026-09-01T20:41:12.114Z",
+      "endedAt": "2026-09-01T20:41:35.542Z",
+      "status": "completed",
+      "expectedVerdict": "proven",
+      "verdict": "proven",
+      "protocolSha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+      "attemptId": "a6f1829a-a9fa-45e5-9667-06679f201b3e",
+      "processInstanceId": "59a12184-6095-404f-9924-efa24afaad79",
+      "restartReceiptArtifactPath": "cells/0018/oracle/process.json",
+      "rawLedgerArtifactPath": "cells/0018/adapter/run-0018-a6a21d0c-ab88-4144-95d4-57475463c4f0.workload.jsonl",
+      "rawArtifactPaths": [
+        "cells/0018/adapter/run-0018-a6a21d0c-ab88-4144-95d4-57475463c4f0.oracle.jsonl",
+        "cells/0018/adapter/run-0018-a6a21d0c-ab88-4144-95d4-57475463c4f0.workload.jsonl",
+        "cells/0018/cell-result.json",
+        "cells/0018/cell.json",
+        "cells/0018/database/cortex.sqlite3",
+        "cells/0018/oracle/process.json",
+        "cells/0018/oracle/stderr.txt",
+        "cells/0018/oracle/stdout.json",
+        "cells/0018/workload/process.json",
+        "cells/0018/workload/stderr.txt",
+        "cells/0018/workload/stdout.json"
+      ],
+      "resolution": {
+        "state": "resolved",
+        "detail": "Independent restart oracle and analyzer reached a terminal verdict."
+      }
+    }
+  ]
+}

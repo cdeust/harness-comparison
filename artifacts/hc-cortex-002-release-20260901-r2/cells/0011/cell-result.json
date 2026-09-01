@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "workload-cell-result/v1",
+  "id": "main-r2-postgresql-c1",
+  "ordinal": 11,
+  "expectedVerdict": "proven",
+  "attemptId": "04f21ac8-1052-4820-b027-a022c86d5370",
+  "verdict": "proven",
+  "status": "passed",
+  "reason": null,
+  "failureScope": null,
+  "startedAt": "2026-09-01T20:38:46.518Z",
+  "endedAt": "2026-09-01T20:39:06.748Z",
+  "workloadProcessPath": "cells/0011/workload/process.json",
+  "oracleProcessPath": "cells/0011/oracle/process.json"
+}

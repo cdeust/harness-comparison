@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "workload-cell-input/v1",
+  "protocolId": "2026-08-30-hc-cortex-002-v1",
+  "protocolSha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+  "runAttemptId": "768ee081-6eef-4d1e-a4ba-6fa34f53e73c",
+  "attemptId": "c839ea82-4768-4c76-9131-9b74072a1462",
+  "runId": "run-0017-2d8a7337-0716-4f7f-9e76-77f4acbd5701",
+  "ordinal": 17,
+  "id": "main-r2-sqlite-c4",
+  "expectedVerdict": "proven",
+  "parameters": {
+    "sourceId": "cortex-candidate",
+    "backend": "sqlite",
+    "concurrency": 4,
+    "operationsPerType": 100,
+    "repetition": 2,
+    "phase": "main",
+    "callRate": "closed-loop",
+    "callCount": 100,
+    "duration": null,
+    "warmCold": "cold",
+    "faultIds": [
+      "fault-after-cas"
+    ]
+  },
+  "source": {
+    "id": "cortex-candidate",
+    "revision": "9faa80d3f36b1c7fd05edb4aca8202448a79fb27"
+  },
+  "database": {
+    "path": "database/cortex.sqlite3",
+    "databaseIdentitySha256": "dfdd3f567836bc37e56341b2fd75282020f7cb84902eeb3a995104fd66013d71"
+  },
+  "postgresqlService": null
+}
