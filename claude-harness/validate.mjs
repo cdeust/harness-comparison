@@ -54,6 +54,37 @@ for (const forbidden of ["\\$HOME/\\.claude", "process\\.env\\.HOME.*\\.claude",
   assert.doesNotMatch(runner, new RegExp(forbidden));
 }
 
+// The benchmark prompt roster must be complete before any revision run: a
+// missing prompt surfaces here, not as a mid-run ENOENT after hours of cells.
+for (const prompt of [
+  "step0-a", "step0-b", "ingest-a", "ingest-b",
+  "probe-a", "probe-b", "components-a", "components-b"
+]) {
+  assert.ok(existsSync(resolve(root, "prompts", `${prompt}.md`)), `prompts/${prompt}.md is missing`);
+}
+
+// The sequential probes runner must keep the evidence discipline: every
+// artifact create-exclusive, a pre-spawn attempt receipt, refusal over
+// partial prior artifacts, and full report-schema validation before a skip.
+const probesRunner = readFileSync(resolve(root, "run-probes-sequential.mjs"), "utf8");
+for (const required of [
+  "run-isolated.mjs", "\"wx\"", "attempt", "preserve or quarantine",
+  "validateReport", "COPYFILE_EXCL", "environmentSnapshot"
+]) {
+  assert.match(probesRunner, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `run-probes-sequential.mjs lost required primitive: ${required}`);
+}
+// Isolation stays run-isolated.mjs's job — the orchestrator must never point
+// a session at a config root itself.
+assert.doesNotMatch(probesRunner, /CLAUDE_CONFIG_DIR/);
+
+// The direct-stdio B ingestion driver must resolve ai-architect through the
+// isolated plugin config (the same path a real Harness B session resolves),
+// never a hardcoded binary path that can drift from what sessions run.
+const unboundedDriver = readFileSync(resolve(root, "run-b-ingestion-unbounded.mjs"), "utf8");
+assert.match(unboundedDriver, /runtime\/b\/claude-home\/installed_plugins\.json/);
+assert.match(unboundedDriver, /CLAUDE_PLUGIN_ROOT/);
+assert.doesNotMatch(unboundedDriver, /target\/release/);
+
 // Isolation invariant on the provisioned runtime, not just on the scripts
 // that are supposed to build it — this is what actually proves Finding #1
 // from the local-rev3 diagnostic (isolation enforced by prose only, never by
