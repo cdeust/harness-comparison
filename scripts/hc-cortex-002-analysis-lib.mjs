@@ -911,10 +911,24 @@ function recomputeOracleCheck(name, check, context) {
       observed.throughput_denominator === load?.throughput_denominator;
   }
   if (name === "load_window_exact") {
-    return observed?.start_monotonic_ns === workload.loadWindow.start_monotonic_ns &&
+    const loadWindowEvents = workload.records.filter((record) => record.event === "load_window");
+    const loadIntents = workload.intents.filter((intent) => intent.phase === "load");
+    const loadOutcomes = workload.outcomes.filter((outcome) => outcome.phase === "load");
+    const start = decimalBigInt(observed?.start_monotonic_ns, cellInput.id, "start_monotonic_ns");
+    const end = decimalBigInt(observed?.end_monotonic_ns, cellInput.id, "end_monotonic_ns");
+    const elapsed = decimalBigInt(observed?.elapsed_ns, cellInput.id, "elapsed_ns");
+    const summaryElapsed = workload.measurement.observations?.load?.elapsed_ns;
+    return loadWindowEvents.length === 1 && observed?.event_count === 1 &&
+      end >= start && end - start === elapsed &&
+      observed?.start_monotonic_ns === workload.loadWindow.start_monotonic_ns &&
       observed?.end_monotonic_ns === workload.loadWindow.end_monotonic_ns &&
       observed?.elapsed_ns === workload.loadWindow.elapsed_ns &&
-      check.expected === "end_monotonic_ns - start_monotonic_ns equals elapsed_ns";
+      typeof summaryElapsed === "number" && BigInt(summaryElapsed) === elapsed &&
+      observed?.summary_elapsed_ns === summaryElapsed &&
+      observed?.load_intent_count === loadIntents.length &&
+      observed?.load_outcome_count === loadOutcomes.length &&
+      loadIntents.every((intent) => BigInt(intent.monotonic_ns) >= start) &&
+      loadOutcomes.every((outcome) => BigInt(outcome.monotonic_ns) <= end);
   }
   if (name === "zero_model_remote_tool_boundary") {
     return equalJson(observed, {
@@ -956,11 +970,16 @@ function validateOracleLedger(ledger, workloadLedger, workload, cellInput, plann
   if (!equalJson(names, expectedCheckSet(planned.parameters.backend))) {
     failEvidence("ORACLE_CHECK_SET_INVALID", path, "Oracle check set differs from the registered HC-CORTEX-002 predicates");
   }
+  const persisted = persistedState(workload, result.observations, planned, path);
+  const expectedLive = 3 * planned.parameters.operationsPerType + 1;
+  if (persisted.expectedLive !== expectedLive) {
+    failEvidence("PERSISTED_STATE_COUNT_MISMATCH", path, "Marker-derived live count contradicts the registered operation formula");
+  }
   const recomputed = {};
   for (const name of names) {
     const check = result.checks[name];
     checkShape(check, `${path}#${name}`);
-    const passed = Boolean(recomputeOracleCheck(name, check, { workload, oracleStart: start, cellInput, planned }));
+    const passed = Boolean(recomputeOracleCheck(name, check, { workload, oracleStart: start, cellInput, planned, persisted }));
     if (check.passed !== passed) failEvidence("ORACLE_CHECK_VERDICT_MISMATCH", `${path}#${name}`, "Oracle pass flag contradicts its observations");
     recomputed[name] = passed;
   }

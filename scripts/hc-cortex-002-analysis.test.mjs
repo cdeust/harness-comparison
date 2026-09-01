@@ -209,36 +209,58 @@ function measurements() {
   };
 }
 
+// Row identities created by this fixture's operation mix (operationsPerType=1):
+// setup_seed(supersede_target)=1, setup_seed(delete_target)=2, setup_seed(fault_target)=3,
+// remember=4, supersede_atomic(target=1)=5 (row1 superseded_by row5); forget deletes row2;
+// faulted_supersede(target=3) is rejected and must leave row3 untouched.
+const operationPlans = [
+  { operation: "setup_seed", role: "supersede_target", index: 0, targetId: null, newId: 1, marker: true },
+  { operation: "setup_seed", role: "delete_target", index: 0, targetId: null, newId: 2, marker: true },
+  { operation: "setup_seed", role: "fault_target", index: 0, targetId: null, newId: 3, marker: true },
+  { operation: "faulted_supersede", role: null, index: 0, targetId: 3, newId: null, marker: true },
+  { operation: "remember", role: null, index: 0, targetId: null, newId: 4, marker: true },
+  { operation: "supersede_atomic", role: null, index: 0, targetId: 1, newId: 5, marker: true },
+  { operation: "forget", role: null, index: 0, targetId: 2, newId: null, marker: false },
+  { operation: "recovery_health", role: null, index: 0, targetId: null, newId: null, marker: false }
+];
+
+function operationId(runId, plan) {
+  return `${runId}:${plan.operation}:${plan.role ?? "normal"}:${plan.index}`;
+}
+
 function operationEvents(runId) {
-  const plans = [
-    ["setup_seed", "supersede_target", 0],
-    ["setup_seed", "delete_target", 0],
-    ["setup_seed", "fault_target", 0],
-    ["faulted_supersede", null, 0],
-    ["remember", null, 0],
-    ["supersede_atomic", null, 0],
-    ["forget", null, 0],
-    ["recovery_health", null, 0]
-  ];
   const events = [];
-  for (const [operation, role, index] of plans) {
-    const operationId = `${runId}:${operation}:${role ?? "normal"}:${index}`;
+  for (const plan of operationPlans) {
+    const { operation, role, index, targetId, newId, marker } = plan;
+    const id = operationId(runId, plan);
     const phase = operation === "setup_seed" ? "setup" : operation === "recovery_health" ? "recovery" : "load";
     events.push({
       event: "operation_intent",
-      operation_id: operationId,
+      operation_id: id,
       operation,
       phase,
-      marker: operation === "recovery_health" ? null : `marker-${operationId}`,
-      target_id: ["faulted_supersede", "supersede_atomic", "forget"].includes(operation) ? 1 : null,
+      marker: marker ? `marker-${id}` : null,
+      target_id: targetId,
       role,
       index,
       fsync_before_operation: true
     });
     const acknowledged = operation !== "faulted_supersede";
+    const result = !acknowledged ? null : operation === "recovery_health"
+      ? {
+          memory_count: 4,
+          fts_count: 4,
+          vector_count: 4,
+          vector_available: true,
+          sqlite_integrity: [{ integrity_check: "ok" }],
+          sqlite_foreign_key_violations: []
+        }
+      : operation === "forget"
+        ? { acknowledged: true, target_id: targetId }
+        : { acknowledged: true, memory_id: newId, head_id: operation === "supersede_atomic" ? targetId : newId };
     events.push({
       event: "operation_outcome",
-      operation_id: operationId,
+      operation_id: id,
       operation,
       phase,
       outcome: acknowledged ? "acknowledged" : "rejected",
@@ -252,16 +274,7 @@ function operationEvents(runId) {
         released_monotonic_ns: "10000000000000009",
         queued: false
       },
-      result: acknowledged ? (operation === "recovery_health"
-        ? {
-            memory_count: 4,
-            fts_count: 4,
-            vector_count: 4,
-            vector_available: true,
-            sqlite_integrity: [{ integrity_check: "ok" }],
-            sqlite_foreign_key_violations: []
-          }
-        : { acknowledged: true, memory_id: index + 1, head_id: 1 }) : null,
+      result,
       error: acknowledged ? null : { type: "InjectedFault", message: "fault-after-cas" }
     });
   }
@@ -274,6 +287,58 @@ function operationEvents(runId) {
     reason: "database-locked-after-fault"
   });
   return events;
+}
+
+function persistedStateObservations(runId, blocked) {
+  const rows = [
+    {
+      id: 1,
+      content: `marker-${runId}:setup_seed:supersede_target:0`,
+      supersedes_id: null,
+      superseded_by_id: 5,
+      fts_populated: true,
+      vector_populated: true
+    },
+    {
+      // Fault target (row 3). In the blocked-baseline control, the store has raw causal
+      // corruption: the fault target is linked to itself as though it were both superseded
+      // and its own successor, even though the fault operation was rejected. This is real
+      // row-level corruption, not merely a false oracle check.
+      id: 3,
+      content: `marker-${runId}:setup_seed:fault_target:0`,
+      supersedes_id: blocked ? 3 : null,
+      superseded_by_id: blocked ? 3 : null,
+      fts_populated: true,
+      vector_populated: true
+    },
+    {
+      id: 4,
+      content: `marker-${runId}:remember:normal:0`,
+      supersedes_id: null,
+      superseded_by_id: null,
+      fts_populated: true,
+      vector_populated: true
+    },
+    {
+      id: 5,
+      content: `marker-${runId}:supersede_atomic:normal:0`,
+      supersedes_id: 1,
+      superseded_by_id: null,
+      fts_populated: true,
+      vector_populated: true
+    }
+  ];
+  return {
+    persisted_state_schema: "hc-cortex-002/persisted-state/v1",
+    backend: "sqlite",
+    scope: { domain: "hc-cortex-002", agent_context: runId },
+    rows,
+    memory_count: rows.length,
+    fts_count: rows.filter((row) => row.fts_populated).length,
+    vector_count: rows.filter((row) => row.vector_populated).length,
+    vector_available: true,
+    postgresql_constraints: "not_applicable"
+  };
 }
 
 function check(passed, observed, expected) {
@@ -346,7 +411,7 @@ function oracleChecks(workloadStart, oracleStart, freshness, blocked) {
     marker_exactly_once_and_rejected_zero: check(true, { differences: {}, unexpected: [] }, "each expected live marker once; deleted and rejected markers zero"),
     supersession_state: check(true, [], "old head points to new row and new row points back to old head"),
     delete_state: check(true, [], []),
-    fault_rollback_state: check(!blocked, blocked ? [{ target_id: 1 }] : [], "fault target remains the open head and rejected row is absent"),
+    fault_rollback_state: check(!blocked, blocked ? [{ target_id: 3 }] : [], "fault target remains the open head and rejected row is absent"),
     final_live_count_formula: check(true, 4, 4),
     memory_count: check(true, { count: 4, available: true }, 4),
     fts_count: check(true, { count: 4, available: true }, 4),
@@ -366,10 +431,15 @@ function oracleChecks(workloadStart, oracleStart, freshness, blocked) {
       throughput_denominator: "common measured load wall time"
     }),
     load_window_exact: check(true, {
+      event_count: 1,
       start_monotonic_ns: "10000000000000000",
       end_monotonic_ns: "10000000000000040",
-      elapsed_ns: "40"
-    }, "end_monotonic_ns - start_monotonic_ns equals elapsed_ns"),
+      elapsed_ns: "40",
+      summary_elapsed_ns: 40,
+      load_intent_count: 4,
+      load_outcome_count: 4
+    }, "one canonical decimal window enclosing every measured intent/outcome; " +
+      "elapsed=end-start and equals measurement summary elapsed_ns"),
     zero_model_remote_tool_boundary: check(
       true,
       { model_calls: 0, remote_tool_calls: 0, attributable_cost: null, unit: "not-applicable" },
@@ -529,10 +599,7 @@ function writeCell(release, planned, ordinal, blocked) {
       verdict,
       checks,
       observations: {
-        memory_count: 4,
-        fts_count: 4,
-        vector_count: 4,
-        vector_available: true,
+        ...persistedStateObservations(runId, blocked),
         sqlite_integrity: [{ integrity_check: "ok" }],
         sqlite_foreign_key_violations: [],
         storage_bytes: { database: 4096 },
@@ -604,6 +671,34 @@ function rewriteWorkloadEvidence(release, cellFixture, ordinal, mutate) {
     if (copy.event === "workload_ledger_verified") copy.workload_sha256 = updated.sha256;
     return copy;
   });
+  const updatedOracle = writeLedger(oraclePath, oracleRecords, {
+    release_id: releaseId,
+    protocol_id: protocol.protocolId,
+    protocol_sha256: protocolSha256,
+    cell_id: cellFixture.cell.id,
+    attempt_id: cellFixture.cell.attemptId,
+    process_instance_id: cellFixture.oracleRecord.processInstanceId
+  });
+  const oracleProcessPath = join(release, `cells/${String(ordinal).padStart(4, "0")}/oracle/process.json`);
+  const oracleReceipt = JSON.parse(readFileSync(oracleProcessPath));
+  oracleReceipt.ledger.sha256 = updatedOracle.sha256;
+  oracleReceipt.ledger.bytes = updatedOracle.bytes.length;
+  json(oracleProcessPath, oracleReceipt);
+}
+
+// Rewrites only the oracle ledger (unlike rewriteWorkloadEvidence, which recomputes the
+// workload ledger and re-binds the oracle's workload_sha256 reference to it). Used to forge
+// the oracle's own reported observations/checks while leaving the workload ledger untouched,
+// so adversarial tests can prove Node never accepts a producer's self-reported verdict.
+function rewriteOracleEvidence(release, cellFixture, ordinal, mutate) {
+  const oraclePath = join(release, cellFixture.oracleRecord.ledger.path);
+  const oracleRecords = cellFixture.oracle.lines.map((entry) => {
+    const copy = structuredClone(entry);
+    for (const field of ["schema", "sequence", "recorded_at", "monotonic_ns", "prev_sha256", "line_sha256",
+      "release_id", "protocol_id", "protocol_sha256", "cell_id", "attempt_id", "process_instance_id"]) delete copy[field];
+    return copy;
+  });
+  mutate(oracleRecords);
   const updatedOracle = writeLedger(oraclePath, oracleRecords, {
     release_id: releaseId,
     protocol_id: protocol.protocolId,
@@ -1229,4 +1324,65 @@ test("privacy scanning parses JSON and JSONL secret keys and absolute paths stru
     secretMaterialRecorded: false
   };
   assert.deepEqual(privacyFindings("safe.json", Buffer.from(JSON.stringify(safe))), []);
+});
+
+test("a producer that reports proven while persisted-state row content is forged is rejected", () => {
+  const fixture = createRelease();
+  try {
+    rewriteOracleEvidence(fixture.release, fixture.candidate, 2, (records) => {
+      const result = records.find((entry) => entry.event === "oracle_result");
+      const forgedRow = result.observations.rows.find((entry) => entry.id === 5);
+      // The producer still reports every check as passing ("proven"), but the normalized
+      // row it published no longer carries the marker its own supersede_atomic intent wrote.
+      forgedRow.content = "forged-content-not-a-registered-marker";
+    });
+    expectCode(
+      () => analyzeHcCortex002Release(fixture.release, { write: false, generatedAt: fixedTime }),
+      "ORACLE_CHECK_VERDICT_MISMATCH"
+    );
+  } finally {
+    cleanup(fixture);
+  }
+});
+
+test("a producer that reports proven while a supersession edge is forged is rejected", () => {
+  const fixture = createRelease();
+  try {
+    rewriteOracleEvidence(fixture.release, fixture.candidate, 2, (records) => {
+      const result = records.find((entry) => entry.event === "oracle_result");
+      const forgedRow = result.observations.rows.find((entry) => entry.id === 1);
+      // Forge the reciprocal edge: row 1 (supersede_atomic's target) claims to have been
+      // superseded by row 4 (the unrelated "remember" row) instead of row 5, while every
+      // reported check -- including supersession_state -- still claims "proven".
+      forgedRow.superseded_by_id = 4;
+    });
+    expectCode(
+      () => analyzeHcCortex002Release(fixture.release, { write: false, generatedAt: fixedTime }),
+      "ORACLE_CHECK_VERDICT_MISMATCH"
+    );
+  } finally {
+    cleanup(fixture);
+  }
+});
+
+test("load_window_exact truth never rests on the producer's descriptive expected prose", () => {
+  const fixture = createRelease();
+  try {
+    rewriteOracleEvidence(fixture.release, fixture.candidate, 2, (records) => {
+      const result = records.find((entry) => entry.event === "oracle_result");
+      const check = result.checks.load_window_exact;
+      // Leave start/end/elapsed self-consistent and equal to the workload's own reported
+      // load-window fields (the field-equality checks alone would not catch this), and leave
+      // the descriptive "expected" prose untouched and correct-looking. Only forge the
+      // producer-supplied summary_elapsed_ns cross-reference, which Node must independently
+      // recompute against the raw measurement-summary evidence rather than trust as reported.
+      check.observed.summary_elapsed_ns = 41;
+    });
+    expectCode(
+      () => analyzeHcCortex002Release(fixture.release, { write: false, generatedAt: fixedTime }),
+      "ORACLE_CHECK_VERDICT_MISMATCH"
+    );
+  } finally {
+    cleanup(fixture);
+  }
 });

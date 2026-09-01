@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
@@ -8,7 +9,60 @@ import {
   validateBenchmarkReleaseSet,
   validationSchemaVersion
 } from "./benchmark-release-lib.mjs";
+import { safeRelativePath } from "./hc-cortex-002-evidence-lib.mjs";
 import { verifyHcCortex002Release } from "./verify-hc-cortex-002-release-lib.mjs";
+
+const hcCortex002ProtocolId = "2026-08-30-hc-cortex-002-v1";
+
+function issueError(path, message) {
+  return { code: "ISSUE_SPECIFIC_VERIFICATION_FAILED", path, message };
+}
+
+// Re-reads the manifest already validated by the generic pass and proves it did not change
+// in between (quiescence across generic + issue-specific verification), rather than trusting
+// the generic pass's in-memory result.
+function readQuiescentManifest(root, release, errors) {
+  const expectedSha256 = release.validation?.summary?.manifestSha256;
+  let bytes;
+  try {
+    bytes = readFileSync(resolve(root, "execution-manifest.json"));
+  } catch {
+    errors.push(issueError(release.path, "Discovered release manifest could not be inspected for its issue-specific verifier"));
+    return null;
+  }
+  if (typeof expectedSha256 !== "string" || createHash("sha256").update(bytes).digest("hex") !== expectedSha256) {
+    errors.push({
+      code: "RELEASE_CHANGED_DURING_VALIDATION",
+      path: release.path,
+      message: "Release manifest changed between generic and issue-specific verification"
+    });
+    return null;
+  }
+  try {
+    return JSON.parse(bytes.toString("utf8"));
+  } catch {
+    errors.push(issueError(release.path, "Discovered release manifest could not be inspected for its issue-specific verifier"));
+    return null;
+  }
+}
+
+// The generic manifest contract only guarantees a registered "protocol"-role artifact at
+// manifest.protocol.path; it is not necessarily named protocol.json or rooted at the release
+// root's top level (the fixture registers protocols/fixture.json). Safe-path checks are kept
+// because this path is untrusted release content, not a fixed literal.
+function resolveDeclaredProtocol(root, manifest, release, errors) {
+  const protocolPath = manifest?.protocol?.path;
+  if (typeof protocolPath !== "string" || !safeRelativePath(protocolPath)) {
+    errors.push(issueError(release.path, "Discovered release manifest does not declare a safe protocol snapshot path"));
+    return null;
+  }
+  try {
+    return JSON.parse(readFileSync(resolve(root, ...protocolPath.split("/")), "utf8"));
+  } catch {
+    errors.push(issueError(release.path, "Discovered release protocol could not be inspected for its issue-specific verifier"));
+    return null;
+  }
+}
 
 function withIssueSpecificVerification(generic, searchRoot) {
   if (!generic.valid || !Array.isArray(generic.summary?.releases)) return generic;
@@ -16,18 +70,11 @@ function withIssueSpecificVerification(generic, searchRoot) {
   const verified = [];
   for (const release of generic.summary.releases) {
     const root = release.path === "." ? resolve(searchRoot) : resolve(searchRoot, ...release.path.split("/"));
-    let protocol;
-    try {
-      protocol = JSON.parse(readFileSync(resolve(root, "protocol.json"), "utf8"));
-    } catch {
-      errors.push({
-        code: "ISSUE_SPECIFIC_VERIFICATION_FAILED",
-        path: release.path,
-        message: "Discovered release protocol could not be inspected for its issue-specific verifier"
-      });
-      continue;
-    }
-    if (protocol?.protocolId !== "2026-08-30-hc-cortex-002-v1") continue;
+    const manifest = readQuiescentManifest(root, release, errors);
+    if (!manifest) continue;
+    const protocol = resolveDeclaredProtocol(root, manifest, release, errors);
+    if (!protocol) continue;
+    if (protocol.protocolId !== hcCortex002ProtocolId) continue;
     try {
       const receipt = verifyHcCortex002Release(root);
       verified.push({ path: release.path, protocolId: protocol.protocolId, receipt });
