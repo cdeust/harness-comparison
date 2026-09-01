@@ -463,6 +463,13 @@ test("source revision and dirty-state mismatches fail before release creation", 
     assert.equal(mismatch.status, 1);
     assert.equal(errorCode(mismatch), "SOURCE_REVISION_MISMATCH");
     assert.equal(existsSync(revisionFixture.release), false);
+    // A fail-closed error must still carry its underlying cause in `details` -- a swallowed
+    // cause is a diagnosis-blocker -- but never a local path (the top-level `message` field is
+    // always the fixed generic string precisely because LadderRunnerError.message can embed one).
+    const mismatchResult = JSON.parse(mismatch.stderr);
+    assert.equal(mismatchResult.error.message, "Workload ladder failed closed");
+    assert.equal(mismatchResult.error.details.head, revisionFixture.revision);
+    assert.equal(JSON.stringify(mismatchResult).includes(revisionFixture.root), false);
   } finally {
     remove(revisionFixture);
   }
@@ -474,6 +481,10 @@ test("source revision and dirty-state mismatches fail before release creation", 
     assert.equal(dirty.status, 1);
     assert.equal(errorCode(dirty), "SOURCE_CHECKOUT_DIRTY");
     assert.equal(existsSync(dirtyFixture.release), false);
+    const dirtyResult = JSON.parse(dirty.stderr);
+    assert(dirtyResult.error.details.dirtyPaths.some((line) => line.includes("tracked.txt")));
+    assert.equal(JSON.stringify(dirtyResult).includes(dirtyFixture.root), false);
+    assert.equal(JSON.stringify(dirtyResult).includes(dirtyFixture.source), false);
   } finally {
     remove(dirtyFixture);
   }

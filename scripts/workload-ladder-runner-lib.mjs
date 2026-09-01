@@ -214,18 +214,23 @@ function parseBindings(values, label) {
   return result;
 }
 
+// Git's own stderr routinely echoes back the invocation's cwd/path arguments verbatim
+// (e.g. "fatal: cannot change to '<path>': No such file or directory"), so it is never
+// forwarded in details -- only the OS-level error code / exit status / signal, mirroring
+// gitFailure()'s existing safe summary pattern in benchmark-release-lib.mjs. subcommand is
+// the git subcommand only (e.g. "rev-parse", "status"), never the full argument vector,
+// which can itself carry a path in some call sites.
+function gitFailureDetails(subcommand, result) {
+  return { subcommand, status: result.status, signal: result.signal, errorCode: result.error?.code ?? null };
+}
+
 function git(checkout, arguments_) {
   const result = spawnSync("git", ["-C", checkout, ...arguments_], {
     encoding: "utf8",
     maxBuffer: 16 * 1024 * 1024
   });
   if (result.error || result.status !== 0 || result.signal) {
-    fail("GIT_INSPECTION_FAILED", `Git inspection failed for ${checkout}`, {
-      arguments: arguments_,
-      status: result.status,
-      signal: result.signal,
-      stderr: result.stderr?.trim()
-    });
+    fail("GIT_INSPECTION_FAILED", `Git inspection failed for ${checkout}`, gitFailureDetails(arguments_[0], result));
   }
   return result.stdout.trim();
 }
@@ -233,11 +238,7 @@ function git(checkout, arguments_) {
 function gitRaw(checkout, arguments_) {
   const result = spawnSync("git", ["-C", checkout, ...arguments_], { maxBuffer: 64 * 1024 * 1024 });
   if (result.error || result.status !== 0 || result.signal) {
-    fail("GIT_INSPECTION_FAILED", `Git inspection failed for ${checkout}`, {
-      arguments: arguments_,
-      status: result.status,
-      signal: result.signal
-    });
+    fail("GIT_INSPECTION_FAILED", `Git inspection failed for ${checkout}`, gitFailureDetails(arguments_[0], result));
   }
   return result.stdout;
 }
@@ -1688,13 +1689,21 @@ export async function executeWorkloadPlan(plan) {
 }
 
 export function errorResult(error) {
+  // The top-level message stays a fixed, non-leaking string -- LadderRunnerError.message
+  // frequently interpolates a local checkout/adapter path (see e.g. git()'s "Git inspection
+  // failed for ${checkout}") and must never reach the CLI. details is different: every fail()
+  // call site that supplies a third argument constructs it from already-sanitized fields only
+  // (JSON-pointer-style symbolic paths, OS error codes, exit/signal numbers, git-relative
+  // dirty paths) -- never raw stderr or an absolute host path -- so it is safe, and necessary
+  // for diagnosis, to surface as-is. A fail-closed error that swallows its own cause is a
+  // diagnosis-blocker; see the Windows CI investigation this was fixed to unblock.
   return {
     schemaVersion: "workload-ladder-error/v1",
     valid: false,
     error: {
       code: error instanceof LadderRunnerError ? error.code : "UNEXPECTED_ERROR",
       message: "Workload ladder failed closed",
-      details: null
+      details: error instanceof LadderRunnerError ? error.details : null
     }
   };
 }
