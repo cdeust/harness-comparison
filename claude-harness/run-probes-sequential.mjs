@@ -27,8 +27,12 @@ const corpusRoot = "/Users/cdeust/Developments/anthropic-partnership";
 const repoNames = ["zetetic-team-subagents", "ai-architect-mcp-codebase", "cortex-viz", "Cortex", "ai-architect-mcp-spec"];
 const dryRun = process.argv.includes("--dry-run");
 
-mkdirSync(probeRoot, { recursive: true });
-mkdirSync(manifestRoot, { recursive: true });
+// --dry-run must stay side-effect-free: no directory is created before the
+// flag decides whether this invocation writes anything at all.
+if (!dryRun) {
+  mkdirSync(probeRoot, { recursive: true });
+  mkdirSync(manifestRoot, { recursive: true });
+}
 
 // Both harnesses run the full five-repository corpus. codex-harness's own
 // runner slices the A side because that run's first A cell pre-existed; this
@@ -181,52 +185,53 @@ function validateReport(path, cell) {
   return parsed;
 }
 
-async function runCell(cell) {
-  const output = resolve(probeRoot, `${cell.id}.json`);
-  const logPath = resolve(probeRoot, `${cell.id}.run.log`);
-  const bracketPath = resolve(manifestRoot, `${cell.id}.json`);
-  const attemptPath = resolve(manifestRoot, `${cell.id}.attempt.json`);
-  if (existsSync(output)) {
-    validateReport(output, cell);
-    console.log(`SKIP ${cell.id}: existing validated report`);
-    return { id: cell.id, status: "existing" };
-  }
-  // An attempt receipt without a terminal bracket means a prior orchestrator
-  // died mid-cell: that attempt is indeterminate evidence, never a free retry.
-  if (existsSync(logPath) || existsSync(bracketPath) || existsSync(attemptPath)) {
-    throw new Error(`${cell.id}: partial prior artifacts exist; preserve or quarantine them before retrying`);
-  }
+function cellPaths(cell) {
+  return {
+    output: resolve(probeRoot, `${cell.id}.json`),
+    log: resolve(probeRoot, `${cell.id}.run.log`),
+    bracket: resolve(manifestRoot, `${cell.id}.json`),
+    attempt: resolve(manifestRoot, `${cell.id}.attempt.json`)
+  };
+}
 
+function stageCell(cell) {
   const stage = mkdtempSync(join(tmpdir(), `claude-rev1-${cell.id}-`));
-  const stagedReport = resolve(stage, "report.json");
   const stagedPrompt = resolve(stage, "prompt.md");
   copyFileSync(cell.prompt, stagedPrompt, fsConstants.COPYFILE_EXCL);
-  const before = environmentSnapshot(cell);
-  const promptText = readFileSync(stagedPrompt, "utf8");
-  // The attempt receipt lands on disk before the child spawns, so a killed
-  // orchestrator still leaves a terminal-state record with its conditions.
-  writeFileSync(attemptPath, `${JSON.stringify({
+  return {
+    stage,
+    stagedPrompt,
+    stagedReport: resolve(stage, "report.json"),
+    promptSha256: sha256(readFileSync(stagedPrompt, "utf8"))
+  };
+}
+
+// The attempt receipt lands on disk before the child spawns, so a killed
+// orchestrator still leaves a terminal-state record with its conditions.
+function writeAttemptReceipt(cell, paths, staging, before) {
+  writeFileSync(paths.attempt, `${JSON.stringify({
     cell: cell.id,
     orchestrator_pid: process.pid,
-    prompt_sha256: sha256(promptText),
-    staging_dir: stage,
+    prompt_sha256: staging.promptSha256,
+    staging_dir: staging.stage,
     before
   }, null, 2)}\n`, { flag: "wx" });
-  console.log(`START ${cell.id} ${before.utc} stage=${stage}`);
+}
 
+async function spawnHarnessChild(cell, paths, staging) {
   const args = [
     resolve(import.meta.dirname, "run-isolated.mjs"),
     "--harness", cell.harness,
-    "--cwd", stage,
-    "--prompt-file", stagedPrompt,
-    ...Object.entries({ ...cell.values, OUTPUT: stagedReport }).flatMap(([key, value]) => ["--value", `${key}=${value}`])
+    "--cwd", staging.stage,
+    "--prompt-file", staging.stagedPrompt,
+    ...Object.entries({ ...cell.values, OUTPUT: staging.stagedReport }).flatMap(([key, value]) => ["--value", `${key}=${value}`])
   ];
   const env = {
     ...process.env,
     GRAPHIFY_PROJECT: cell.repo === workspace ? resolve(corpusRoot, repoNames[0]) : cell.repo,
     HARNESS_A_OBSIDIAN_VAULT_PATH: resolve(import.meta.dirname, "runtime/a/obsidian-vault")
   };
-  const log = createWriteStream(logPath, { flags: "wx" });
+  const log = createWriteStream(paths.log, { flags: "wx" });
   const exit = await new Promise((fulfill) => {
     const child = spawn(process.execPath, args, { cwd: workspace, env, stdio: ["ignore", "pipe", "pipe"] });
     let spawnError = null;
@@ -240,28 +245,26 @@ async function runCell(cell) {
     child.once("close", (code, signal) => fulfill({ code, signal, error: spawnError?.message ?? null }));
   });
   await new Promise((fulfill) => log.end(fulfill));
-  const after = environmentSnapshot(cell);
+  return exit;
+}
+
+function writeBracket(cell, { paths, staging, before, after, exit }) {
   const bracket = {
     cell: cell.id,
     execution_policy: "fresh staged Claude Code process; sequential; no fixed wall-clock timeout",
-    attempt_receipt: attemptPath,
-    prompt_sha256: sha256(promptText),
-    staging_dir: stage,
+    attempt_receipt: paths.attempt,
+    prompt_sha256: staging.promptSha256,
+    staging_dir: staging.stage,
     before,
     after,
     elapsed_ms: Date.parse(after.utc) - Date.parse(before.utc),
     exit
   };
-  writeFileSync(bracketPath, `${JSON.stringify(bracket, null, 2)}\n`, { flag: "wx" });
+  writeFileSync(paths.bracket, `${JSON.stringify(bracket, null, 2)}\n`, { flag: "wx" });
+  return bracket;
+}
 
-  if (exit.code !== 0 || exit.signal !== null || exit.error !== null) {
-    console.log(`FAIL ${cell.id}: child did not exit cleanly: ${JSON.stringify(exit)}`);
-    return { id: cell.id, status: "failed", exit, error: "child did not exit cleanly" };
-  }
-  if (!existsSync(stagedReport)) {
-    console.log(`FAIL ${cell.id}: no staged report, exit=${JSON.stringify(exit)}`);
-    return { id: cell.id, status: "failed", exit };
-  }
+function repoChangedDuringCell(before, after) {
   const sourceChanged = before.git && (
     before.git.head !== after.git?.head ||
     before.git.status_sha256 !== after.git?.status_sha256 ||
@@ -269,19 +272,53 @@ async function runCell(cell) {
     before.git.untracked_source_sha256 !== after.git?.untracked_source_sha256
   );
   const artifactChanged = before.qualified_artifact?.sha256 !== after.qualified_artifact?.sha256;
-  if (sourceChanged || artifactChanged) {
+  return Boolean(sourceChanged || artifactChanged);
+}
+
+function acceptStagedReport(cell, { paths, staging, before, after, exit, bracket }) {
+  if (exit.code !== 0 || exit.signal !== null || exit.error !== null) {
+    console.log(`FAIL ${cell.id}: child did not exit cleanly: ${JSON.stringify(exit)}`);
+    return { id: cell.id, status: "failed", exit, error: "child did not exit cleanly" };
+  }
+  if (!existsSync(staging.stagedReport)) {
+    console.log(`FAIL ${cell.id}: no staged report, exit=${JSON.stringify(exit)}`);
+    return { id: cell.id, status: "failed", exit };
+  }
+  if (repoChangedDuringCell(before, after)) {
     console.log(`FAIL ${cell.id}: target repository changed while the cell ran`);
     return { id: cell.id, status: "failed", exit, error: "target repository changed during probe" };
   }
   try {
-    validateReport(stagedReport, cell);
+    validateReport(staging.stagedReport, cell);
   } catch (error) {
     console.log(`FAIL ${cell.id}: invalid staged report: ${error.message}`);
     return { id: cell.id, status: "failed", exit, error: error.message };
   }
-  copyFileSync(stagedReport, output, fsConstants.COPYFILE_EXCL);
+  copyFileSync(staging.stagedReport, paths.output, fsConstants.COPYFILE_EXCL);
   console.log(`DONE ${cell.id} ${after.utc} elapsed_ms=${bracket.elapsed_ms} exit=${JSON.stringify(exit)}`);
   return { id: cell.id, status: "ok", exit };
+}
+
+async function runCell(cell) {
+  const paths = cellPaths(cell);
+  if (existsSync(paths.output)) {
+    validateReport(paths.output, cell);
+    console.log(`SKIP ${cell.id}: existing validated report`);
+    return { id: cell.id, status: "existing" };
+  }
+  // An attempt receipt without a terminal bracket means a prior orchestrator
+  // died mid-cell: that attempt is indeterminate evidence, never a free retry.
+  if (existsSync(paths.log) || existsSync(paths.bracket) || existsSync(paths.attempt)) {
+    throw new Error(`${cell.id}: partial prior artifacts exist; preserve or quarantine them before retrying`);
+  }
+  const staging = stageCell(cell);
+  const before = environmentSnapshot(cell);
+  writeAttemptReceipt(cell, paths, staging, before);
+  console.log(`START ${cell.id} ${before.utc} stage=${staging.stage}`);
+  const exit = await spawnHarnessChild(cell, paths, staging);
+  const after = environmentSnapshot(cell);
+  const bracket = writeBracket(cell, { paths, staging, before, after, exit });
+  return acceptStagedReport(cell, { paths, staging, before, after, exit, bracket });
 }
 
 if (dryRun) {
