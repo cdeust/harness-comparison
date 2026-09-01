@@ -562,11 +562,28 @@ test("PostgreSQL requires a unique caller-supplied binding for every selected ce
       "--database", `pg-2=${second}`,
       "--postgresql-service-receipt", service.path
     ]);
-    assert.equal(executedWithoutLivePostgres.status, 1);
-    assert.equal(JSON.parse(executedWithoutLivePostgres.stdout).status, "failed");
+    // Diagnostic context for a genuinely empty stdout (a `JSON.parse` crash below would
+    // otherwise report only "Unexpected end of JSON input" with no way to tell an uncaught
+    // exception -- which now also fails closed with a machine-readable envelope on stderr,
+    // see run-workload-ladder.mjs's process-level handlers -- apart from anything else).
+    const executionContext = () => JSON.stringify({
+      status: executedWithoutLivePostgres.status,
+      signal: executedWithoutLivePostgres.signal,
+      stdoutLength: executedWithoutLivePostgres.stdout.length,
+      stderr: executedWithoutLivePostgres.stderr
+    });
+    assert.equal(executedWithoutLivePostgres.status, 1, executionContext());
+    let executedSummary;
+    try {
+      executedSummary = JSON.parse(executedWithoutLivePostgres.stdout);
+    } catch (error) {
+      assert.fail(`${error.message}: ${executionContext()}`);
+    }
+    assert.equal(executedSummary.status, "failed", executionContext());
     assert.equal(
-      JSON.parse(executedWithoutLivePostgres.stdout).cells[0].reason,
-      "POSTGRESQL_SERVICE_LIVE_VERIFICATION_FAILED"
+      executedSummary.cells[0].reason,
+      "POSTGRESQL_SERVICE_LIVE_VERIFICATION_FAILED",
+      executionContext()
     );
     const lock = readJson(join(fixture.release, "protocol-lock.json"));
     const copiedReceipt = readFileSync(join(fixture.release, "postgresql-service-receipt.json"));

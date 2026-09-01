@@ -51,6 +51,24 @@ function parseArguments(arguments_) {
   return options;
 }
 
+// A synchronous try/catch around the awaited call below only covers exceptions and rejections
+// that actually propagate through that await chain. It does not cover a genuinely unhandled
+// rejection (e.g. a spawned child process's detached event-listener callback throwing outside
+// any awaited promise) or an uncaught synchronous exception outside the try block entirely --
+// both terminate the process by default with a non-JSON Node stack trace on stderr, or on some
+// hosts no output at all, which is exactly the kind of swallowed-cause diagnosis-blocker this
+// CLI's error contract exists to prevent. These handlers are the last-resort net: still emit
+// the same machine-readable envelope, still exit non-zero, never let the process die silently.
+let reported = false;
+function reportFatal(error) {
+  if (reported) return;
+  reported = true;
+  process.stderr.write(`${JSON.stringify(errorResult(error), null, 2)}\n`);
+  process.exitCode = 1;
+}
+process.on("uncaughtException", reportFatal);
+process.on("unhandledRejection", reportFatal);
+
 try {
   const options = parseArguments(process.argv.slice(2));
   const plan = buildWorkloadPlan(options);
@@ -62,6 +80,5 @@ try {
     process.exitCode = summary.status === "completed" ? 0 : summary.status === "indeterminate" ? 2 : 1;
   }
 } catch (error) {
-  process.stderr.write(`${JSON.stringify(errorResult(error), null, 2)}\n`);
-  process.exitCode = 1;
+  reportFatal(error);
 }
