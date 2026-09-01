@@ -817,6 +817,10 @@ function persistedState(workload, observations, planned, path) {
 function recomputeOracleCheck(name, check, context) {
   const { workload, oracleStart, cellInput, planned, persisted } = context;
   const observed = check.observed;
+  // Derivation (adapters/hc-cortex-002/README.md "Executable fixture"): setup seeds 2N+1
+  // disjoint targets (N supersession + N deletion + 1 fault), load adds N new rows from
+  // supersede and N from plain remember, then removes the N deleted targets:
+  // (2N+1) + N (remember) + N (supersede result rows) - N (forgotten) = 3N+1.
   const expectedLive = 3 * planned.parameters.operationsPerType + 1;
   if (name === "workload_terminal") return workload.terminal.state === "complete";
   if (name === "release_protocol_cell_attempt_binding") {
@@ -978,6 +982,8 @@ function validateOracleLedger(ledger, workloadLedger, workload, cellInput, plann
     failEvidence("ORACLE_CHECK_SET_INVALID", path, "Oracle check set differs from the registered HC-CORTEX-002 predicates");
   }
   const persisted = persistedState(workload, result.observations, planned, path);
+  // Derivation (see the twin comment in recomputeOracleCheck): 2N+1 seeds, +N remembers,
+  // +N supersede-result rows, -N forgotten targets = 3N+1 live rows.
   const expectedLive = 3 * planned.parameters.operationsPerType + 1;
   if (persisted.expectedLive !== expectedLive) {
     failEvidence("PERSISTED_STATE_COUNT_MISMATCH", path, "Marker-derived live count contradicts the registered operation formula");

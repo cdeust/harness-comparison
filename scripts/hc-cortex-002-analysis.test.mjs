@@ -24,7 +24,10 @@ import { sealHcCortex002Release } from "./hc-cortex-002-seal-lib.mjs";
 import { verifyHcCortex002Release } from "./verify-hc-cortex-002-release-lib.mjs";
 
 const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
-const fixedTime = "2026-08-31T00:00:00Z";
+// Must postdate the registered protocol's frozen registeredAt
+// (protocols/2026-08-30-hc-cortex-002-v1.json), which PROTOCOL_REGISTERED_AFTER_CELL
+// requires to precede every cell's startedAt.
+const fixedTime = "2026-09-02T00:00:00Z";
 const protocolBytes = readFileSync(join(repositoryRoot, "protocols/2026-08-30-hc-cortex-002-v1.json"));
 const protocol = JSON.parse(protocolBytes);
 const protocolSha256 = hash(protocolBytes);
@@ -631,8 +634,8 @@ function writeCell(release, planned, ordinal, blocked) {
     status: "passed",
     reason: blocked ? "expected-negative-control" : null,
     failureScope: null,
-    startedAt: "2026-08-30T23:59:58Z",
-    endedAt: "2026-08-30T23:59:59Z",
+    startedAt: "2026-09-01T23:59:58Z",
+    endedAt: "2026-09-01T23:59:59Z",
     workloadProcessPath: `cells/${String(ordinal).padStart(4, "0")}/workload/process.json`,
     oracleProcessPath: `cells/${String(ordinal).padStart(4, "0")}/oracle/process.json`
   };

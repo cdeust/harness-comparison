@@ -1,10 +1,12 @@
 # HC-CORTEX-002 WIP handoff
 
 Status captured on 2026-08-31 because the session reached its quota threshold;
-updated 2026-09-01 at commit `93070fe` after items 1-4 below completed across
-two follow-up dispatches. This branch is still an intentionally incomplete
-engineering checkpoint. It is not a preregistered protocol release, benchmark
-result, or publishable score. **Resume from item 5.**
+updated 2026-09-01 across three follow-up dispatches against this file's own
+five-item list below: items 1-2 at commit `03e5ba2`, item 3 at `93070fe`,
+item 4 at `de80178`, item 5 (independent review, freeze, preregistration PR)
+in this update. The preregistration PR is open but **not merged**. Until it
+merges, this branch is still not a scored benchmark result or publishable
+score; no scored cell has run.
 
 ## Resume location
 
@@ -40,9 +42,13 @@ environment identity and `pyvenv.cfg` binding depend on the invocation path.
   It provisioned and tore down real infrastructure only — no cell executed —
   and is likewise unscored and must not enter the release matrix. Linux was
   not available on this host and remains untested for both PostgreSQL smokes.
-- `registeredAt` in the protocol is not the final freeze timestamp. Set it only
-  at the actual preregistration freeze, document all prior pilots as protocol
-  refinements, commit and push that exact protocol before any scored cell.
+- `registeredAt` is now the final freeze timestamp: `2026-09-01T17:31:11Z`,
+  set at this update. All prior pilots and smokes above are documented as
+  `declaredDeviations` entries in the frozen protocol
+  (`protocols/2026-08-30-hc-cortex-002-v1.json`), not as scored evidence.
+  Do not edit a frozen protocol's registered cells, parameters, or
+  `registeredAt` again — a correction after this point creates a new protocol
+  ID and states the deviation, per `protocols/README.md`.
 
 ## Implemented on this WIP branch
 
@@ -71,9 +77,12 @@ environment identity and `pyvenv.cfg` binding depend on the invocation path.
 
 ## Incomplete work at the checkpoint
 
-Items 1-4 are complete as of commit `93070fe`, verified with an integrated
-green run each time (see "Last known verification evidence" below). **Resume
-from item 5.**
+Items 1-2 completed at `03e5ba2`, item 3 at `93070fe`, item 4 at `de80178`,
+and item 5 in this update, each verified with an integrated green run (see
+"Last known verification evidence" below). Nothing is incomplete on this
+branch; the remaining step is external to it — the coordinator's CI check,
+freeze-delta re-verification, and merge decision on the open preregistration
+PR.
 
 1. ~~Finish the Node persisted-state recomputation in
    `scripts/hc-cortex-002-analysis-lib.mjs`.~~ **Done.** `persistedState()`
@@ -128,23 +137,34 @@ from item 5.**
      has run).
    - `.gitattributes` was added (previously absent) for LF-stable research
      artifacts.
-   - **`registeredAt` was deliberately NOT replaced.** That freeze, plus the
-     preregistration PR itself, is item 5's job — do not do it as a side
-     effect of a documentation pass.
+   - **`registeredAt` was deliberately NOT replaced at this step.** That
+     freeze, plus the preregistration PR itself, was item 5's job — see
+     below; it was not done as a side effect of this documentation pass.
 
-5. **Next.** Run independent release review, then open the harness
-   preregistration PR: replace the provisional `registeredAt` at the actual
-   freeze timestamp, document every prior pilot/smoke (including this
-   checkpoint's development smokes and the macOS-only PostgreSQL smoke) as
-   protocol refinements rather than scored evidence, commit and push that
-   exact protocol, and wait for the PR to merge before running any scored
-   cell. Do not merge the Cortex source PR (`cdeust/Cortex#452`) or execute
-   the 18 scored cells in the same step as the preregistration PR.
+5. ~~Run independent release review, then open the harness preregistration
+   PR.~~ **Done.**
+   - Independent release review returned `RELEASE-REVIEW: APPROVE` at commit
+     `de80178` (all suites re-executed by the reviewer, persisted-state
+     wiring confirmed at source, no seal-clean forgery path found).
+   - `registeredAt` is frozen at `2026-09-01T17:31:11Z` (see "Scientific
+     state" above). Every prior pilot/smoke — the pre-freeze C1/C2 tooling
+     pilots, the corrected baseline C2/W1 and candidate C5/W100 smokes, and
+     the PostgreSQL C1/W1 producer-to-oracle smoke — is recorded as a
+     `declaredDeviations` entry in the frozen protocol, not as scored
+     evidence. The macOS-only provisioner lifecycle smoke (§2 of the
+     runbook) is documented in the runbook/dossier only, since it selected
+     no registered parameter.
+   - The preregistration PR (`wip/hc-cortex-002-capstone-protocol` →
+     `main`) is open. **It is not merged** — the coordinator handles CI,
+     re-verification of the freeze delta, and the merge decision. Do not
+     merge the Cortex source PR (`cdeust/Cortex#452`) or execute any of the
+     18 scored cells until after this PR merges.
 
 ## Last known verification evidence
 
-These passes are current as of commit `93070fe` (items 1-4 complete), each
-re-run on the final state after the last edit that touched it:
+These passes were current as of `de80178` (item 4) and are re-run again on
+the frozen protocol commit that opens the preregistration PR (item 5); see
+the PR body for the exact final counts:
 
 - `hc-cortex-002-analysis.test.mjs`: 27/27
 - `validate-benchmark-release.test.mjs`: 27/27
@@ -159,9 +179,9 @@ re-run on the final state after the last edit that touched it:
   registered protocol): receipt captured in
   `protocols/HC-CORTEX-002-RUNBOOK.md` §2; Linux untested.
 
-Treat every suite as needing a fresh run before resuming item 5 — the commands
-below are unchanged, but re-run them on whatever commit you actually resume
-from.
+The commands below are unchanged for whoever re-verifies the merged
+preregistration PR or a later scored run; re-run every suite fresh rather
+than trusting this file's counts.
 
 ## Resume verification commands
 

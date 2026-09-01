@@ -116,8 +116,8 @@ from that file before changing or running the protocol.
 
 Handoff items 1-4 from `HC-CORTEX-002-HANDOFF.md`'s incomplete-work list are
 now complete. Item 5 (independent release review, then the harness
-preregistration PR) is next; `registeredAt` remains provisional until that
-freeze. Exact commands: [`protocols/HC-CORTEX-002-RUNBOOK.md`](../protocols/HC-CORTEX-002-RUNBOOK.md).
+preregistration PR) is complete as of the next dated entry below.
+`registeredAt` is now frozen. Exact commands: [`protocols/HC-CORTEX-002-RUNBOOK.md`](../protocols/HC-CORTEX-002-RUNBOOK.md).
 
 - Item 1 (persisted-state recomputation): `persistedState()` was implemented
   but never wired into `validateOracleLedger`'s context, so every check
@@ -154,6 +154,25 @@ freeze. Exact commands: [`protocols/HC-CORTEX-002-RUNBOOK.md`](../protocols/HC-C
   hardcodes the literal `"protocol.json"` path, so a fully-verified-positive
   HC-CORTEX-002 release at a nonstandard protocol path is architecturally
   impossible with this pipeline's own tooling today (see the runbook §8).
+
+### HC-CORTEX-002 review (2026-09-01, item 5 — freeze and preregistration PR)
+
+Independent release review returned `RELEASE-REVIEW: APPROVE` at `de80178`
+(all suites re-executed by the reviewer, persisted-state wiring confirmed at
+source, no seal-clean forgery path found).
+
+- Added a one-line derivation comment at the two `expectedLive = 3N+1` sites
+  in `scripts/hc-cortex-002-analysis-lib.mjs` (a reviewer-suggested,
+  non-obvious cross-file constraint from the adapter's `2N+1` seed formula).
+- Froze `protocols/2026-08-30-hc-cortex-002-v1.json`'s `registeredAt` at
+  `2026-09-01T17:31:11Z` and recorded every prior pilot/smoke as a
+  `declaredDeviations` entry: the pre-freeze C1/C2 tooling pilots, the
+  corrected baseline C2/W1 and candidate C5/W100 smokes, and the PostgreSQL
+  C1/W1 producer-to-oracle smoke. None selected a registered parameter after
+  the fact.
+- Opened the preregistration PR, `wip/hc-cortex-002-capstone-protocol` →
+  `main`. Not merged; the coordinator handles CI, freeze-delta
+  re-verification, and the merge decision. No scored cell was run.
 
 ## Claude-harness parity worklog review (2026-09-01)
 

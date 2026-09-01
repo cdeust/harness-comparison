@@ -11,8 +11,10 @@ benchmark contract in [`../BENCHMARK-PROCESS.md`](../BENCHMARK-PROCESS.md), or
 the fixture/oracle contract in
 [`../adapters/hc-cortex-002/README.md`](../adapters/hc-cortex-002/README.md).
 Read those first. Nothing here authorizes running a scored cell: scoring
-requires the preregistration freeze described in
-[`README.md`](README.md) and the pending item 5 preregistration PR.
+requires the preregistration freeze described in [`README.md`](README.md).
+`registeredAt` is now frozen at `2026-09-01T17:31:11Z` and the harness
+preregistration PR (`wip/hc-cortex-002-capstone-protocol` → `main`) is open;
+scoring still may not begin until that PR merges.
 
 Every command below was run on this repository's `wip/hc-cortex-002-capstone-
 protocol` branch at commit `93070fe` (after `origin/main` was merged in) to

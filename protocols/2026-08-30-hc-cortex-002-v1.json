@@ -2,7 +2,7 @@
   "schemaVersion": "benchmark-protocol/v1",
   "protocolId": "2026-08-30-hc-cortex-002-v1",
   "title": "Cortex SQLite request-transaction isolation under concurrent mutations",
-  "registeredAt": "2026-08-30T21:10:22Z",
+  "registeredAt": "2026-09-01T17:31:11Z",
   "researchQuestion": "Does Cortex candidate 9faa80d3f36b1c7fd05edb4aca8202448a79fb27 prevent one concurrent SQLite request from committing or rolling back another request's mutation, while preserving the same operation ledger under the PostgreSQL reference backend?",
   "systemBoundary": "The measured boundary is Cortex safe_handler admission, worker-thread dispatch, request transaction finalization, and the SQLite/PostgreSQL store methods insert_memory, supersede_atomic, and delete_memory. The adapter bypasses embedding, predictive write gating, wiki synchronization, MCP JSON-RPC serialization, the LLM, and host-specific Claude/Codex scheduling so those variables cannot be mistaken for database isolation.",
   "evidenceSources": [
@@ -725,6 +725,21 @@
       "id": "full-postgresql-reference-ladders",
       "description": "The dossier names a matched PostgreSQL reference cell; this protocol runs the complete four-level PostgreSQL ladder in both repetitions.",
       "rationale": "Using the same operation counts, concurrency levels and reversed repetition order avoids selecting one favorable PostgreSQL level after observing SQLite."
+    },
+    {
+      "id": "pre-freeze-c1-c2-tooling-pilots",
+      "description": "Temporary C1/C2 experiments run during runner/adapter development are development pilots only. They used a write recovery probe, an eager task backlog, the wrong queue boundary and no peak-connection observation; they are excluded from the release matrix and did not select any registered parameter.",
+      "rationale": "Documented here, at freeze, so the pre-freeze tooling history is traceable without being mistaken for scored evidence; RESEARCH-PROCESS.md requires pilot observations that inform the final protocol to be written before any scored cell."
+    },
+    {
+      "id": "pre-freeze-corrected-c2-w1-and-c5-w100-smokes",
+      "description": "After the C1/C2 pilots above were corrected, two development smokes ran unscored outside any sealed release: the pinned baseline at concurrency 2, operations-per-type 1, produced the expected blocked oracle; the pinned candidate at concurrency 5, operations-per-type 100, produced a proven oracle with 3W+1 = 301 measured terminal operations, five dispatcher requests in flight and one request observed at the source admission queue.",
+      "rationale": "These smokes validated the corrected runner/oracle machinery before registering the exact ladder levels and repetitions below; their temporary trees are excluded from publication and neither result selects a registered parameter after the fact."
+    },
+    {
+      "id": "pre-freeze-postgresql-c1-w1-producer-oracle-smoke",
+      "description": "A real PostgreSQL 17.9 producer-to-oracle smoke at concurrency 1, operations-per-type 1 ran during tooling development against the pinned candidate and returned a proven oracle verdict.",
+      "rationale": "Established that the workload/oracle chain reconciles against a live PostgreSQL 17 service before registering the PostgreSQL provisioner and the full ladder; it is unscored and excluded from the release matrix, and did not select any registered PostgreSQL parameter."
     }
   ]
 }
