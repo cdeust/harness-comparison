@@ -206,7 +206,7 @@ function git(path, arguments_) {
 }
 
 function createFixture(cells) {
-  const root = realpathSync(mkdtempSync(join(tmpdir(), "workload-ladder-runner-")));
+  const root = realpathSync.native(mkdtempSync(join(tmpdir(), "workload-ladder-runner-")));
   const source = join(root, "source");
   mkdirSync(source);
   git(source, ["init", "--quiet"]);
@@ -258,7 +258,7 @@ function postgresUrl(fixture, database) {
 function writePostgresqlReceipt(fixture, databases) {
   const protocolBytes = readFileSync(fixture.protocol);
   const protocol = JSON.parse(protocolBytes);
-  const socketRoot = realpathSync(fixture.postgresqlSocket);
+  const socketRoot = realpathSync.native(fixture.postgresqlSocket);
   const postgresqlCells = protocol.workload.cellOrder
     .map((id) => protocol.plannedCells.find((cell_) => cell_.id === id))
     .filter((cell_) => cell_.parameters.backend === "postgresql");

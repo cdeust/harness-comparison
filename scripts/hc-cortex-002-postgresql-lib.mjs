@@ -256,12 +256,12 @@ function prepareNewRoot(requestedRoot) {
   if (!parentStatus?.isDirectory()) {
     fail("PRIVATE_ROOT_PARENT_INVALID", "The private root parent must already be a real directory");
   }
-  const root = join(realpathSync(parent), requestedRoot.split(sep).at(-1));
+  const root = join(realpathSync.native(parent), requestedRoot.split(sep).at(-1));
   mkdirSync(root, { mode: privateDirectoryMode });
   chmodSync(root, privateDirectoryMode);
   const rootStatus = statSync(root);
   const ownerMatches = typeof process.getuid === "function" && rootStatus.uid === process.getuid();
-  if (realpathSync(root) !== root || (rootStatus.mode & 0o777) !== privateDirectoryMode || !ownerMatches) {
+  if (realpathSync.native(root) !== root || (rootStatus.mode & 0o777) !== privateDirectoryMode || !ownerMatches) {
     fail("PRIVATE_ROOT_MODE_INVALID", "The PostgreSQL private root could not be proven mode 0700");
   }
   mkdirSync(join(root, paths.socket), { mode: privateDirectoryMode });
@@ -288,7 +288,7 @@ function openExistingRoot(requestedRoot, dependencies) {
   if (!status?.isDirectory() || status.isSymbolicLink()) {
     fail("PRIVATE_ROOT_INVALID", "The private PostgreSQL root is missing or is not a real directory");
   }
-  const root = realpathSync(requestedRoot);
+  const root = realpathSync.native(requestedRoot);
   if ((status.mode & 0o777) !== privateDirectoryMode) {
     fail("PRIVATE_ROOT_MODE_INVALID", "The PostgreSQL private root is not mode 0700");
   }
@@ -485,7 +485,7 @@ function verifyLiveService(context, spec) {
     observed.socketPermissions !== "0700" || Number(observed.port) !== spec.port ||
     typeof observed.postmasterStartedAt !== "string" || !/^\d{4}-\d{2}-\d{2}T/u.test(observed.postmasterStartedAt) ||
     observed.serverInetAddress !== null ||
-    socketStatus.isSymbolicLink() || !socketStatus.isDirectory() || realpathSync(socket) !== socket ||
+    socketStatus.isSymbolicLink() || !socketStatus.isDirectory() || realpathSync.native(socket) !== socket ||
     socketMode !== privateDirectoryMode || directoryOwnerMatches !== true ||
     liveSocketStatus.isSymbolicLink() || !liveSocketStatus.isSocket() ||
     liveSocketMode !== privateDirectoryMode || liveSocketOwnerMatches !== true ||
@@ -500,7 +500,7 @@ function verifyLiveService(context, spec) {
     serverVersion: observed.serverVersion,
     serverVersionNum: String(observed.serverVersionNum),
     serverInetAddress: null,
-    socketDirectoryIdentitySha256: sha256(Buffer.from(realpathSync(socket), "utf8")),
+    socketDirectoryIdentitySha256: sha256(Buffer.from(realpathSync.native(socket), "utf8")),
     socketDirectoryMode: "0700",
     socketDirectoryOwnerMatchesProcessUser: true,
     unixSocketMode: "0700",
@@ -614,7 +614,7 @@ function stopAfterPrepareFailure(context) {
 }
 
 function databaseIdentity(root, port, database) {
-  return sha256(Buffer.from(`${realpathSync(join(root, paths.socket))}:${port}/${database}`, "utf8"));
+  return sha256(Buffer.from(`${realpathSync.native(join(root, paths.socket))}:${port}/${database}`, "utf8"));
 }
 
 function publicReceipt(root, spec, live, processId, serviceInstanceId) {
@@ -689,7 +689,7 @@ export function preparePostgresReference(options, dependencies = {}) {
     const live = verifyLiveService(context, spec);
     const processId = readPostmasterPid(root);
     const serviceInstanceId = sha256(Buffer.from(
-      `${spec.protocol.sha256}:${realpathSync(join(root, paths.socket))}:${spec.port}:${processId}:${live.postmasterStartedAt}`,
+      `${spec.protocol.sha256}:${realpathSync.native(join(root, paths.socket))}:${spec.port}:${processId}:${live.postmasterStartedAt}`,
       "utf8"
     ));
 

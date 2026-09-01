@@ -719,10 +719,10 @@ function rewriteOracleEvidence(release, cellFixture, ordinal, mutate) {
 
 function createRelease(options = {}) {
   const requestedTemporary = mkdtempSync(join(tmpdir(), "hc-cortex-002-analysis-"));
-  const temporary = realpathSync(requestedTemporary);
+  const temporary = realpathSync.native(requestedTemporary);
   const requestedRelease = join(requestedTemporary, releaseId);
   ensure(requestedRelease);
-  const realRelease = realpathSync(requestedRelease);
+  const realRelease = realpathSync.native(requestedRelease);
   writeFileSync(join(realRelease, "protocol.json"), protocolBytes);
   json(join(realRelease, "protocol-lock.json"), {
     schemaVersion: "workload-protocol-lock/v1",

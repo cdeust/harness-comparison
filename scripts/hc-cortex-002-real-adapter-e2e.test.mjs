@@ -250,7 +250,7 @@ function realAdapterProtocolFixture(candidateRevision) {
 }
 
 function createFixture() {
-  const root = realpathSync(mkdtempSync(join(tmpdir(), "hc-cortex-002-real-adapter-e2e-")));
+  const root = realpathSync.native(mkdtempSync(join(tmpdir(), "hc-cortex-002-real-adapter-e2e-")));
   const registration = join(root, "registration");
   const remote = join(root, "registration-origin.git");
   mkdirSync(registration);

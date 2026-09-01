@@ -29,7 +29,7 @@ import {
   stopPostgresReference
 } from "./hc-cortex-002-postgresql-lib.mjs";
 
-const repositoryRoot = realpathSync(fileURLToPath(new URL("../", import.meta.url)));
+const repositoryRoot = realpathSync.native(fileURLToPath(new URL("../", import.meta.url)));
 const protocolPath = join(repositoryRoot, "protocols/2026-08-30-hc-cortex-002-v1.json");
 const originalProtocol = JSON.parse(readFileSync(protocolPath, "utf8"));
 const temporaryRoots = [];
@@ -46,7 +46,7 @@ function sha256(value) {
 }
 
 function temporaryParent() {
-  const root = realpathSync(mkdtempSync(join(realpathSync(tmpdir()), "hc-cortex-002-pg-test-")));
+  const root = realpathSync.native(mkdtempSync(join(realpathSync.native(tmpdir()), "hc-cortex-002-pg-test-")));
   temporaryRoots.push(root);
   return root;
 }
@@ -231,7 +231,7 @@ test("derives the exact eight-cell PostgreSQL matrix and protocol port", () => {
 
 test("prepares one template0 database per cell and separates public from private data", () => {
   const { fake, receipt, root } = prepare();
-  const socket = realpathSync(join(root, "socket"));
+  const socket = realpathSync.native(join(root, "socket"));
   const spec = derivePostgresProtocolSpec(inspection());
 
   assert.equal(receipt.schemaVersion, serviceReceiptSchemaVersion);
