@@ -1,0 +1,92 @@
+name: Benchmark release gate
+
+on:
+  pull_request:
+    paths:
+      - "protocols/**"
+      - "adapters/**"
+      - "artifacts/**"
+      - "schemas/benchmark-protocol-v1.schema.json"
+      - "schemas/execution-manifest-v1.schema.json"
+      - "scripts/benchmark-release-lib.mjs"
+      - "scripts/fixtures/**"
+      - "scripts/hc-cortex-002-*.mjs"
+      - "scripts/analyze-hc-cortex-002.mjs"
+      - "scripts/provision-hc-cortex-002-postgresql.mjs"
+      - "scripts/run-workload-ladder*.mjs"
+      - "scripts/seal-hc-cortex-002.mjs"
+      - "scripts/validate-benchmark-release*.mjs"
+      - "scripts/workload-ladder-runner-lib.mjs"
+      - ".gitattributes"
+      - ".github/workflows/benchmark-release.yml"
+  push:
+    branches: [main]
+    paths:
+      - "protocols/**"
+      - "adapters/**"
+      - "artifacts/**"
+      - "schemas/benchmark-protocol-v1.schema.json"
+      - "schemas/execution-manifest-v1.schema.json"
+      - "scripts/benchmark-release-lib.mjs"
+      - "scripts/fixtures/**"
+      - "scripts/hc-cortex-002-*.mjs"
+      - "scripts/analyze-hc-cortex-002.mjs"
+      - "scripts/provision-hc-cortex-002-postgresql.mjs"
+      - "scripts/run-workload-ladder*.mjs"
+      - "scripts/seal-hc-cortex-002.mjs"
+      - "scripts/validate-benchmark-release*.mjs"
+      - "scripts/workload-ladder-runner-lib.mjs"
+      - ".gitattributes"
+      - ".github/workflows/benchmark-release.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  tooling-conformance:
+    name: Tooling conformance (${{ matrix.os }}; workload support not implied)
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Configure byte-exact Git checkout
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Materialize origin branch refs for offline reachability checks
+        run: git fetch --no-tags origin "+refs/heads/*:refs/remotes/origin/*"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test scripts/validate-benchmark-release.test.mjs scripts/run-workload-ladder.test.mjs scripts/hc-cortex-002-analysis.test.mjs
+      - name: Discover and validate every benchmark release under artifacts
+        run: node scripts/validate-benchmark-release.mjs --phase discover --source-repo . artifacts
+      - name: Validate the committed concrete protocol
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: node scripts/validate-benchmark-release.mjs --phase protocol protocols/2026-08-30-hc-cortex-002-v1.json
+
+  postgresql-provisioner-conformance:
+    name: PostgreSQL Unix-socket workload conformance (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Configure byte-exact Git checkout
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Materialize origin branch refs for offline reachability checks
+        run: git fetch --no-tags origin "+refs/heads/*:refs/remotes/origin/*"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Test the POSIX Unix-socket PostgreSQL workload provisioner
+        run: node --test scripts/hc-cortex-002-postgresql.test.mjs

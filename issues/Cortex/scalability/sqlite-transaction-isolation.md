@@ -37,13 +37,17 @@ Populate a disposable SQLite fixture with uniquely traceable rows. Execute a
 single-client baseline followed by concurrency levels preregistered before the
 run for mixed remember, supersede and forget operations, with a fault-injected
 rollback at every level. Use a fresh process per level. From the repository
-root, invoke the preregistered cell with
-`node codex-harness/run-isolated.mjs --harness B --cwd <pinned-checkout> --prompt-file <preregistered-cell>`.
-An independent operation ledger reconciles acknowledgements, rollbacks and
-persisted rows. Preserve operation ledgers, database/FTS/vector snapshots,
-throughput, p50/p95/p99, queueing, retries, CPU, memory, disk and recovery under
-`artifacts/<release>/issues/HC-CORTEX-002/raw/`. Stop at fixture corruption or
-the preregistered resource safety bound.
+root, validate
+[`protocols/2026-08-30-hc-cortex-002-v1.json`](../../../protocols/2026-08-30-hc-cortex-002-v1.json),
+then generate or execute its exact plan with
+`node scripts/run-workload-ladder.mjs --protocol <protocol> --release-root <new-release> --source <id=checkout> --runtime <id=executable> [--database <cell=url>]`.
+The focused deterministic adapter deliberately excludes the LLM and host
+scheduler; it measures the declared transaction boundary and makes no complete
+Claude/Codex parity claim. A distinct oracle process reconciles acknowledgements,
+rollbacks and persisted rows. Preserve operation ledgers,
+database/FTS/vector observations, throughput, p50/p95/p99, queueing, retries,
+CPU, memory, disk, connections and recovery in the content-addressed release.
+Stop according to the preregistered failure scope and resource policy.
 
 ## Acceptance criteria
 
@@ -69,11 +73,46 @@ SQLite ladder and the matched PostgreSQL reference cell.
 - [Shared SQLite connection](https://github.com/cdeust/Cortex/blob/8f5ae3b87b6969f3abcb3736859febfdab69304a/mcp_server/infrastructure/sqlite_store.py)
 - [Process-wide store cache](https://github.com/cdeust/Cortex/blob/8f5ae3b87b6969f3abcb3736859febfdab69304a/mcp_server/infrastructure/memory_store.py)
 - [Worker-thread dispatch](https://github.com/cdeust/Cortex/blob/8f5ae3b87b6969f3abcb3736859febfdab69304a/mcp_server/tool_error_handler.py)
+- [Preregistered HC-CORTEX-002 protocol](../../../protocols/2026-08-30-hc-cortex-002-v1.json)
 
 ## Dependencies and exclusions
 
 Requires an isolated filesystem and deterministic operation ledger. This issue
 does not prescribe per-thread connections, a pool, or global serialization.
+
+## Engineering readiness (2026-09-01, harness commit `93070fe`)
+
+No cell of the preregistered 18-cell matrix has run and no verdict below is
+upgraded by this note; it records what the pipeline that will produce that
+evidence has itself verified so far. Exact commands are in
+[`../../../protocols/HC-CORTEX-002-RUNBOOK.md`](../../../protocols/HC-CORTEX-002-RUNBOOK.md).
+
+- The runner, real Python adapter, independent analyzer, sealer, and
+  read-only verifier are now integration-tested end-to-end (not unit fakes)
+  on a disposable SQLite C1/W1 fixture against the pinned candidate
+  checkout — the first time this chain has been driven with real ledger
+  evidence rather than synthetic Node fixtures.
+  (`scripts/hc-cortex-002-real-adapter-e2e.test.mjs`.)
+- That real run surfaced and fixed two integration defects that no synthetic
+  fixture had exercised: the privacy scanner treated raw binary evidence
+  (a real SQLite database) as UTF-8 text and produced false-positive path
+  matches, and the analyzer's provenance-entry validator rejected the real
+  runner's own `gitBlob` field. Both are fixed at the source; see
+  `scripts/hc-cortex-002-evidence-lib.mjs` and
+  `scripts/hc-cortex-002-analysis-lib.mjs`.
+- A real PostgreSQL 17.9 (Homebrew) reference-service smoke — `prepare` /
+  `status` / `stop` against the actual `initdb`/`pg_ctl` binaries, no fakes —
+  completed on this macOS host: eight fresh `template0` databases created
+  (one per registered PostgreSQL cell), Unix-socket-only isolation verified
+  live, then a clean, non-destructive stop with the process confirmed gone.
+  **Linux is untested on this host**; a Linux PostgreSQL smoke remains
+  outstanding before any PostgreSQL cell is scored.
+- The read-only verifier's rehashed-but-forged rejection is now covered for
+  every output document class (analysis, negative evidence, and a manifest
+  projection with no separate artifact hash to rehash), not only scoring.
+- Remaining before any scored cell: the two-run SQLite ladder and the matched
+  PostgreSQL reference cell from the preregistered protocol, run against the
+  frozen protocol after the item-5 preregistration PR merges.
 
 ## Verdict ledger
 

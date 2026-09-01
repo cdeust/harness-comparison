@@ -21,7 +21,6 @@ components are never counted as separate competing products. External
 solutions are selected through the inclusion gate in [CAPSTONE-CHARTER.md](CAPSTONE-CHARTER.md)
 and may change as the ecosystem evolves.
 
-
 ## What is being measured
 
 This is a capstone research project, not a static product shootout. It runs
@@ -51,6 +50,9 @@ and publishes failures as well as successes.
 - [COMMUNICATION-FRAMEWORK.md](COMMUNICATION-FRAMEWORK.md) — one evidence-backed release adapted across channels.
 - [CAPSTONE-CHARTER.md](CAPSTONE-CHARTER.md) — research objective, three populations, inclusion gate, and sovereignty scorecard.
 - [candidates/](candidates/) — pinned reconnaissance cards and promotion decisions for frontier projects.
+- [protocols/](protocols/) — dated preregistrations validated against the
+  machine-checked contracts in [schemas/](schemas/).
+- [scripts/](scripts/) — fail-closed protocol, execution and release gates.
 - [claude-harness/](claude-harness/) and [codex-harness/](codex-harness/) — isolated configurations and runners.
 
 ## Public artifact
