@@ -45,3 +45,12 @@ These rules capture corrections that must remain true in later capstone cycles.
     the registration (clean, pushed), a runner fix can never repair an
     existing release: commit, push, re-provision, re-execute into a fresh root
     and preserve the invalidated tree as negative evidence.
+13. A strict-equality loop over receipt fields silently rejects every
+    structured field. The HC-CORTEX-002 analyzer compared `postgresqlService`
+    (an object) with `!==`, so no correctly bound PostgreSQL receipt could ever
+    pass; SQLite cells passed only because both sides were `null`. Compare
+    structured evidence canonically, and never trust a suite whose fixture
+    cannot reach a backend: the fixture never attempted a PostgreSQL cell, so
+    the first time that path ran was on the scored re-execution. Every backend
+    the protocol preregisters must be attempted by fixture evidence before a
+    scored run.

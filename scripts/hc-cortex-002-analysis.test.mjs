@@ -150,11 +150,11 @@ function writeLedger(path, records, identity) {
   return { lines, bytes, sha256: hash(bytes) };
 }
 
-function metric(completed, throughput, outcomes, errorEvents = 0, retryEvents = 0) {
+function metric(completed, elapsedNs, outcomes, errorEvents = 0, retryEvents = 0) {
   return {
     completed_operations: completed,
-    elapsed_ns: 40,
-    throughput_operations_per_second: throughput,
+    elapsed_ns: elapsedNs,
+    throughput_operations_per_second: completed * 1_000_000_000 / elapsedNs,
     throughput_denominator: "common measured load wall time",
     latency_quantile_method: "Hyndman-Fan type 1 (inverse empirical distribution function)",
     total_latency_ns: { p50: 10, p95: 10, p99: 10 },
@@ -166,34 +166,71 @@ function metric(completed, throughput, outcomes, errorEvents = 0, retryEvents = 
   };
 }
 
-function measurements(blocked) {
-  const retryEvents = blocked ? 0 : 1;
+// Every count the fixture must keep mutually consistent, derived from the planned cell's
+// parameters. operationsPerType n yields 2n+1 seeds, one faulted supersede, n remembers,
+// n atomic supersedes, n forgets and one recovery health (5n+3 intents, 3n+1 measured load
+// operations, 3n+1 live rows). The single permitted retry exists only for the candidate on
+// SQLite at concurrency >= 2 (adapters/hc-cortex-002/README.md; the analyzer's
+// fault_retry_choreography rule): the shared-handle baseline and every PostgreSQL cell
+// record zero retries.
+function cellShape(planned, blocked) {
+  const n = planned.parameters.operationsPerType;
+  const backend = planned.parameters.backend;
+  const concurrency = planned.parameters.concurrency;
+  const expectedRetries = backend === "sqlite" && concurrency >= 2 ? 1 : 0;
+  return {
+    n,
+    backend,
+    concurrency,
+    expectedRetries,
+    retries: blocked ? 0 : expectedRetries,
+    loadOperations: 3 * n + 1,
+    liveRows: 3 * n + 1,
+    intents: 5 * n + 3,
+    faultTargetId: 2 * n + 1,
+    elapsedNs: 40 * n
+  };
+}
+
+const windowStart = "10000000000000000";
+
+function windowEnd(shape) {
+  return String(10_000_000_000_000_000n + BigInt(shape.elapsedNs));
+}
+
+function healthResult(shape) {
+  return {
+    memory_count: shape.liveRows,
+    fts_count: shape.liveRows,
+    vector_count: shape.liveRows,
+    vector_available: true,
+    ...(shape.backend === "sqlite"
+      ? { sqlite_integrity: [{ integrity_check: "ok" }], sqlite_foreign_key_violations: [] }
+      : { sqlite_integrity: "not-applicable", sqlite_foreign_key_violations: "not-applicable" })
+  };
+}
+
+function measurements(shape) {
+  const { n, retries, elapsedNs } = shape;
   return {
     load: {
-      ...metric(4, 100_000_000, { acknowledged: 3, rejected: 1 }, 1, retryEvents),
+      ...metric(shape.loadOperations, elapsedNs, { acknowledged: 3 * n, rejected: 1 }, 1, retries),
       throughput_denominator: "common measured load wall time",
       latency_quantile_method: "Hyndman-Fan type 1 (inverse empirical distribution function)",
       max_queue_depth: 0,
       queue_boundary: "Cortex safe_handler source admission semaphore",
       max_dispatcher_inflight: 1,
       per_operation_type: {
-        faulted_supersede: metric(1, 25_000_000, { rejected: 1 }, 1, 0),
-        forget: metric(1, 25_000_000, { acknowledged: 1 }),
-        remember: metric(1, 25_000_000, { acknowledged: 1 }, 0, retryEvents),
-        supersede_atomic: metric(1, 25_000_000, { acknowledged: 1 })
+        faulted_supersede: metric(1, elapsedNs, { rejected: 1 }, 1, 0),
+        forget: metric(n, elapsedNs, { acknowledged: n }),
+        remember: metric(n, elapsedNs, { acknowledged: n }, 0, retries),
+        supersede_atomic: metric(n, elapsedNs, { acknowledged: n })
       }
     },
     recovery: {
       outcome: "acknowledged",
       timing: { pre_admission_ns: 1, queue_ns: 1, service_ns: 8, total_ns: 10 },
-      result: {
-        memory_count: 4,
-        fts_count: 4,
-        vector_count: 4,
-        vector_available: true,
-        sqlite_integrity: [{ integrity_check: "ok" }],
-        sqlite_foreign_key_violations: []
-      },
+      result: healthResult(shape),
       state_change: "none; read-only count observation"
     },
     resources: {
@@ -202,7 +239,7 @@ function measurements(blocked) {
       max_rss_bytes: 1024,
       max_rss_observation: "observed via fixture"
     },
-    storage_bytes: { database: 4096, wal: 0, shm: 0 },
+    storage_bytes: shape.backend === "sqlite" ? { database: 4096, wal: 0, shm: 0 } : { database: 4096 },
     connections: { method: "fixture", open_after_load: 1, peak_open: 2 },
     model_tool_cost: {
       model_calls: 0,
@@ -213,28 +250,41 @@ function measurements(blocked) {
   };
 }
 
-// Row identities created by this fixture's operation mix (operationsPerType=1):
-// setup_seed(supersede_target)=1, setup_seed(delete_target)=2, setup_seed(fault_target)=3,
-// remember=4, supersede_atomic(target=1)=5 (row1 superseded_by row5); forget deletes row2;
-// faulted_supersede(target=3) is rejected and must leave row3 untouched.
-const operationPlans = [
-  { operation: "setup_seed", role: "supersede_target", index: 0, targetId: null, newId: 1, marker: true },
-  { operation: "setup_seed", role: "delete_target", index: 0, targetId: null, newId: 2, marker: true },
-  { operation: "setup_seed", role: "fault_target", index: 0, targetId: null, newId: 3, marker: true },
-  { operation: "faulted_supersede", role: null, index: 0, targetId: 3, newId: null, marker: true },
-  { operation: "remember", role: null, index: 0, targetId: null, newId: 4, marker: true },
-  { operation: "supersede_atomic", role: null, index: 0, targetId: 1, newId: 5, marker: true },
-  { operation: "forget", role: null, index: 0, targetId: 2, newId: null, marker: false },
-  { operation: "recovery_health", role: null, index: 0, targetId: null, newId: null, marker: false }
-];
+// Row identities created by this fixture's operation mix for operationsPerType n:
+// setup_seed(supersede_target i)=i+1, setup_seed(delete_target i)=n+i+1,
+// setup_seed(fault_target)=2n+1, remember i=2n+2+i, supersede_atomic i (target i+1)=3n+2+i
+// (row i+1 superseded_by row 3n+2+i); forget i deletes row n+i+1; the single
+// faulted_supersede (target 2n+1) is rejected and must leave row 2n+1 untouched.
+function operationPlans(n) {
+  const plans = [];
+  for (let i = 0; i < n; i += 1) {
+    plans.push({ operation: "setup_seed", role: "supersede_target", index: i, targetId: null, newId: i + 1, marker: true });
+  }
+  for (let i = 0; i < n; i += 1) {
+    plans.push({ operation: "setup_seed", role: "delete_target", index: i, targetId: null, newId: n + i + 1, marker: true });
+  }
+  plans.push({ operation: "setup_seed", role: "fault_target", index: 0, targetId: null, newId: 2 * n + 1, marker: true });
+  plans.push({ operation: "faulted_supersede", role: null, index: 0, targetId: 2 * n + 1, newId: null, marker: true });
+  for (let i = 0; i < n; i += 1) {
+    plans.push({ operation: "remember", role: null, index: i, targetId: null, newId: 2 * n + 2 + i, marker: true });
+  }
+  for (let i = 0; i < n; i += 1) {
+    plans.push({ operation: "supersede_atomic", role: null, index: i, targetId: i + 1, newId: 3 * n + 2 + i, marker: true });
+  }
+  for (let i = 0; i < n; i += 1) {
+    plans.push({ operation: "forget", role: null, index: i, targetId: n + i + 1, newId: null, marker: false });
+  }
+  plans.push({ operation: "recovery_health", role: null, index: 0, targetId: null, newId: null, marker: false });
+  return plans;
+}
 
 function operationId(runId, plan) {
   return `${runId}:${plan.operation}:${plan.role ?? "normal"}:${plan.index}`;
 }
 
-function operationEvents(runId, blocked) {
+function operationEvents(runId, shape) {
   const events = [];
-  for (const plan of operationPlans) {
+  for (const plan of operationPlans(shape.n)) {
     const { operation, role, index, targetId, newId, marker } = plan;
     const id = operationId(runId, plan);
     const phase = operation === "setup_seed" ? "setup" : operation === "recovery_health" ? "recovery" : "load";
@@ -251,14 +301,7 @@ function operationEvents(runId, blocked) {
     });
     const acknowledged = operation !== "faulted_supersede";
     const result = !acknowledged ? null : operation === "recovery_health"
-      ? {
-          memory_count: 4,
-          fts_count: 4,
-          vector_count: 4,
-          vector_available: true,
-          sqlite_integrity: [{ integrity_check: "ok" }],
-          sqlite_foreign_key_violations: []
-        }
+      ? healthResult(shape)
       : operation === "forget"
         ? { acknowledged: true, target_id: targetId }
         : { acknowledged: true, memory_id: newId, head_id: operation === "supersede_atomic" ? targetId : newId };
@@ -285,7 +328,7 @@ function operationEvents(runId, blocked) {
   // The candidate peer remember observes one database-locked error inside the fault
   // window and retries once; the shared-handle baseline never observes the lock, so the
   // blocked control legitimately records zero retries (adapters/hc-cortex-002/README.md).
-  if (!blocked) {
+  if (shape.retries === 1) {
     events.push({
       event: "operation_retry",
       operation_id: `${runId}:remember:normal:0`,
@@ -298,55 +341,66 @@ function operationEvents(runId, blocked) {
   return events;
 }
 
-function persistedStateObservations(runId, blocked) {
-  const rows = [
-    {
-      id: 1,
-      content: `marker-${runId}:setup_seed:supersede_target:0`,
-      supersedes_id: null,
-      superseded_by_id: 5,
-      fts_populated: true,
-      vector_populated: true
-    },
-    {
-      // Fault target (row 3). In the blocked-baseline control, the store has raw causal
-      // corruption: the fault target is linked to itself as though it were both superseded
-      // and its own successor, even though the fault operation was rejected. This is real
-      // row-level corruption, not merely a false oracle check.
-      id: 3,
-      content: `marker-${runId}:setup_seed:fault_target:0`,
-      supersedes_id: blocked ? 3 : null,
-      superseded_by_id: blocked ? 3 : null,
-      fts_populated: true,
-      vector_populated: true
-    },
-    {
-      id: 4,
-      content: `marker-${runId}:remember:normal:0`,
-      supersedes_id: null,
-      superseded_by_id: null,
-      fts_populated: true,
-      vector_populated: true
-    },
-    {
-      id: 5,
-      content: `marker-${runId}:supersede_atomic:normal:0`,
-      supersedes_id: 1,
-      superseded_by_id: null,
-      fts_populated: true,
-      vector_populated: true
-    }
+// Constraint evidence a PostgreSQL oracle publishes: uniquely sorted by schema, table and
+// name, every constraint validated, and both memory supersession foreign keys present
+// (the analyzer's postgresql_constraints_validated rule).
+function postgresqlConstraints() {
+  const keyword = { primary_key: "PRIMARY KEY", foreign_key: "FOREIGN KEY" };
+  const constraint = (name, type, columns, referencesMemories) => ({
+    columns,
+    definition: `${keyword[type]} (${columns.join(", ")})`,
+    name,
+    referenced_columns: referencesMemories ? ["id"] : [],
+    referenced_schema: referencesMemories ? "public" : null,
+    referenced_table: referencesMemories ? "memories" : null,
+    schema: "public",
+    table: "memories",
+    type,
+    validated: true
+  });
+  return [
+    constraint("memories_pkey", "primary_key", ["id"], false),
+    constraint("memories_superseded_by_id_fkey", "foreign_key", ["superseded_by_id"], true),
+    constraint("memories_supersedes_id_fkey", "foreign_key", ["supersedes_id"], true)
   ];
+}
+
+function persistedStateObservations(runId, shape, blocked) {
+  const { n, faultTargetId } = shape;
+  const row = (id, content, supersedesId, supersededById) => ({
+    id,
+    content,
+    supersedes_id: supersedesId,
+    superseded_by_id: supersededById,
+    fts_populated: true,
+    vector_populated: true
+  });
+  const rows = [];
+  for (let i = 0; i < n; i += 1) {
+    rows.push(row(i + 1, `marker-${runId}:setup_seed:supersede_target:${i}`, null, 3 * n + 2 + i));
+  }
+  // Fault target. In the blocked-baseline control, the store has raw causal corruption:
+  // the fault target is linked to itself as though it were both superseded and its own
+  // successor, even though the fault operation was rejected. This is real row-level
+  // corruption, not merely a false oracle check.
+  rows.push(row(faultTargetId, `marker-${runId}:setup_seed:fault_target:0`,
+    blocked ? faultTargetId : null, blocked ? faultTargetId : null));
+  for (let i = 0; i < n; i += 1) {
+    rows.push(row(2 * n + 2 + i, `marker-${runId}:remember:normal:${i}`, null, null));
+  }
+  for (let i = 0; i < n; i += 1) {
+    rows.push(row(3 * n + 2 + i, `marker-${runId}:supersede_atomic:normal:${i}`, i + 1, null));
+  }
   return {
     persisted_state_schema: "hc-cortex-002/persisted-state/v1",
-    backend: "sqlite",
+    backend: shape.backend,
     scope: { domain: "hc-cortex-002", agent_context: runId },
     rows,
     memory_count: rows.length,
-    fts_count: rows.filter((row) => row.fts_populated).length,
-    vector_count: rows.filter((row) => row.vector_populated).length,
+    fts_count: rows.filter((entry) => entry.fts_populated).length,
+    vector_count: rows.filter((entry) => entry.vector_populated).length,
     vector_available: true,
-    postgresql_constraints: "not_applicable"
+    postgresql_constraints: shape.backend === "sqlite" ? "not_applicable" : postgresqlConstraints()
   };
 }
 
@@ -354,15 +408,27 @@ function check(passed, observed, expected) {
   return { passed, observed, expected };
 }
 
-function oracleChecks(workloadStart, oracleStart, freshness, blocked) {
+function oracleChecks(workloadStart, oracleStart, freshness, blocked, shape) {
+  const { n, liveRows, elapsedNs } = shape;
   const expectedCounts = {
     faulted_supersede: 1,
-    forget: 1,
+    forget: n,
     recovery_health: 1,
-    remember: 1,
-    setup_seed: 3,
-    supersede_atomic: 1
+    remember: n,
+    setup_seed: 2 * n + 1,
+    supersede_atomic: n
   };
+  const configuration = (start) => ({
+    process_start_count: 1,
+    backend: start.backend,
+    concurrency: start.concurrency,
+    operations_per_type: start.operations_per_type,
+    database_identity_sha256: start.database_identity_sha256,
+    postgresql_service: start.postgresql_service
+  });
+  const perOperationCompleted = { remember: n, supersede_atomic: n, forget: n, faulted_supersede: 1 };
+  const quantileMethod = "Hyndman-Fan type 1 (inverse empirical distribution function)";
+  const constraintsValidated = { missing_required_memory_foreign_keys: [], unvalidated: [] };
   const checks = {
     workload_terminal: check(true, { terminal_count: 1, last_event: "terminal" }, { terminal_count: 1, last_event: "terminal", state: "complete" }),
     release_protocol_cell_attempt_binding: check(true, {
@@ -378,21 +444,7 @@ function oracleChecks(workloadStart, oracleStart, freshness, blocked) {
       cell_id: oracleStart.cell_id,
       attempt_id: oracleStart.attempt_id
     }),
-    configuration_binding: check(true, {
-      process_start_count: 1,
-      backend: "sqlite",
-      concurrency: 2,
-      operations_per_type: 1,
-      database_identity_sha256: workloadStart.database_identity_sha256
-      ,postgresql_service: null
-    }, {
-      process_start_count: 1,
-      backend: "sqlite",
-      concurrency: 2,
-      operations_per_type: 1,
-      database_identity_sha256: workloadStart.database_identity_sha256
-      ,postgresql_service: null
-    }),
+    configuration_binding: check(true, configuration(workloadStart), configuration(oracleStart)),
     fresh_process_restart: check(true, {
       workload_boot_nonce: workloadStart.boot_nonce,
       oracle_boot_nonce: oracleStart.boot_nonce,
@@ -401,52 +453,54 @@ function oracleChecks(workloadStart, oracleStart, freshness, blocked) {
     }, "distinct boot nonce and process-instance identity"),
     fresh_empty_database_preflight: check(true, { preflight_count: 1, observation: freshness }, "one pre-store check proving zero user relations"),
     planned_operation_counts: check(true, expectedCounts, expectedCounts),
-    one_outcome_per_intent: check(true, { intents: 8, unique_intents: 8, outcomes: 8, duplicate_or_missing: [] }, "one terminal outcome for each unique intent and no orphan outcomes"),
+    one_outcome_per_intent: check(true, {
+      intents: shape.intents,
+      unique_intents: shape.intents,
+      outcomes: shape.intents,
+      duplicate_or_missing: []
+    }, "one terminal outcome for each unique intent and no orphan outcomes"),
     acknowledged_and_rejected_contract: check(true, [], "every non-fault operation acknowledged; faulted supersede rejected; no indeterminate"),
     post_load_health_is_read_only: check(true, {
       intent_count: 1,
       marker: null,
       target_id: null,
-      result: {
-        memory_count: 4,
-        fts_count: 4,
-        vector_count: 4,
-        vector_available: true,
-        sqlite_integrity: [{ integrity_check: "ok" }],
-        sqlite_foreign_key_violations: []
-      }
-    }, { marker: null, target_id: null, memory_fts_vector_count: 4, integrity: "backend-valid" }),
-    fault_retry_choreography: check(!blocked, blocked ? 0 : 1, 1),
+      result: healthResult(shape)
+    }, { marker: null, target_id: null, memory_fts_vector_count: liveRows, integrity: "backend-valid" }),
+    fault_retry_choreography: check(shape.retries === shape.expectedRetries, shape.retries, shape.expectedRetries),
     marker_exactly_once_and_rejected_zero: check(true, { differences: {}, unexpected: [] }, "each expected live marker once; deleted and rejected markers zero"),
     supersession_state: check(true, [], "old head points to new row and new row points back to old head"),
     delete_state: check(true, [], []),
-    fault_rollback_state: check(!blocked, blocked ? [{ target_id: 3 }] : [], "fault target remains the open head and rejected row is absent"),
-    final_live_count_formula: check(true, 4, 4),
-    memory_count: check(true, { count: 4, available: true }, 4),
-    fts_count: check(true, { count: 4, available: true }, 4),
-    vector_count: check(true, { count: 4, available: true }, 4),
-    sqlite_integrity: check(true, [{ integrity_check: "ok" }], [{ integrity_check: "ok" }]),
-    sqlite_foreign_keys: check(true, [], []),
+    fault_rollback_state: check(!blocked, blocked ? [{ target_id: shape.faultTargetId }] : [], "fault target remains the open head and rejected row is absent"),
+    final_live_count_formula: check(true, liveRows, liveRows),
+    memory_count: check(true, { count: liveRows, available: true }, liveRows),
+    fts_count: check(true, { count: liveRows, available: true }, liveRows),
+    vector_count: check(true, { count: liveRows, available: true }, liveRows),
+    ...(shape.backend === "sqlite"
+      ? {
+          sqlite_integrity: check(true, [{ integrity_check: "ok" }], [{ integrity_check: "ok" }]),
+          sqlite_foreign_keys: check(true, [], [])
+        }
+      : { postgresql_constraints_validated: check(true, constraintsValidated, constraintsValidated) }),
     load_telemetry_scope_and_types: check(true, {
       summary_count: 1,
-      completed_operations: 4,
-      per_operation_completed: { remember: 1, supersede_atomic: 1, forget: 1, faulted_supersede: 1 },
-      quantile_method: "Hyndman-Fan type 1 (inverse empirical distribution function)",
+      completed_operations: shape.loadOperations,
+      per_operation_completed: perOperationCompleted,
+      quantile_method: quantileMethod,
       throughput_denominator: "common measured load wall time"
     }, {
-      completed_operations: 4,
-      per_operation_completed: { remember: 1, supersede_atomic: 1, forget: 1, faulted_supersede: 1 },
-      quantile_method: "Hyndman-Fan type 1 (inverse empirical distribution function)",
+      completed_operations: shape.loadOperations,
+      per_operation_completed: perOperationCompleted,
+      quantile_method: quantileMethod,
       throughput_denominator: "common measured load wall time"
     }),
     load_window_exact: check(true, {
       event_count: 1,
-      start_monotonic_ns: "10000000000000000",
-      end_monotonic_ns: "10000000000000040",
-      elapsed_ns: "40",
-      summary_elapsed_ns: 40,
-      load_intent_count: 4,
-      load_outcome_count: 4
+      start_monotonic_ns: windowStart,
+      end_monotonic_ns: windowEnd(shape),
+      elapsed_ns: String(elapsedNs),
+      summary_elapsed_ns: elapsedNs,
+      load_intent_count: shape.loadOperations,
+      load_outcome_count: shape.loadOperations
     }, "one canonical decimal window enclosing every measured intent/outcome; " +
       "elapsed=end-start and equals measurement summary elapsed_ns"),
     zero_model_remote_tool_boundary: check(
@@ -481,14 +535,13 @@ function processRecord(mode, processId, cell, envelope, ledger, ordinal) {
         cellId: cell.id,
         attemptId: cell.attemptId,
         processInstanceId: processId,
-        backend: "sqlite",
-        concurrency: 2,
-        operationsPerType: 1,
+        backend: cell.parameters.backend,
+        concurrency: cell.parameters.concurrency,
+        operationsPerType: cell.parameters.operationsPerType,
         runId: cell.runId,
-        database: {
-          strategy: "release-cell-local",
-          databaseIdentitySha256: cell.database.databaseIdentitySha256
-        },
+        database: cell.parameters.backend === "sqlite"
+          ? { strategy: "release-cell-local", databaseIdentitySha256: cell.database.databaseIdentitySha256 }
+          : cell.database,
         postgresqlService: cell.postgresqlService
       }
     },
@@ -524,14 +577,24 @@ function writeProcess(release, mode, processId, cell, envelope, ledger, ordinal)
   return record;
 }
 
-function writeCell(release, planned, ordinal, blocked) {
+function writeCell(release, planned, ordinal, blocked, postgresql = null) {
   const cellRoot = join(release, "cells", String(ordinal).padStart(4, "0"));
   const adapterRoot = join(cellRoot, "adapter");
   ensure(adapterRoot);
-  ensure(join(cellRoot, "database"));
-  writeFileSync(join(cellRoot, "database", "cortex.sqlite3"), Buffer.from([0, 1, 2, ordinal]));
+  const shape = cellShape(planned, blocked);
   const attemptId = `00000000-0000-4000-8000-${String(ordinal).padStart(12, "0")}`;
   const runId = `run-${String(ordinal).padStart(4, "0")}-fixture`;
+  let database;
+  let databaseIdentity;
+  if (shape.backend === "sqlite") {
+    ensure(join(cellRoot, "database"));
+    writeFileSync(join(cellRoot, "database", "cortex.sqlite3"), Buffer.from([0, 1, 2, ordinal]));
+    databaseIdentity = hash(Buffer.from(`database-${ordinal}`));
+    database = { path: "database/cortex.sqlite3", databaseIdentitySha256: databaseIdentity };
+  } else {
+    databaseIdentity = postgresql.cell.databaseIdentitySha256;
+    database = { strategy: "caller-supplied-per-cell", databaseIdentitySha256: databaseIdentity, redacted: true };
+  }
   const cell = {
     schemaVersion: "workload-cell-input/v1",
     protocolId: protocol.protocolId,
@@ -544,61 +607,62 @@ function writeCell(release, planned, ordinal, blocked) {
     expectedVerdict: planned.expectedVerdict,
     parameters: planned.parameters,
     source: { id: planned.parameters.sourceId, revision: protocol.corpora.find((entry) => entry.id === planned.parameters.sourceId).revision },
-    database: { path: "database/cortex.sqlite3", databaseIdentitySha256: null },
-    postgresqlService: null
+    database,
+    postgresqlService: postgresql ? {
+      serviceInstanceId: postgresql.receipt.serviceInstanceId,
+      startedAt: postgresql.receipt.startedAt,
+      processId: postgresql.receipt.processId
+    } : null
   };
   const workloadProcessId = `00000000-0000-4000-9000-${String(ordinal).padStart(12, "0")}`;
   const oracleProcessId = `00000000-0000-4000-a000-${String(ordinal).padStart(12, "0")}`;
-  const databaseIdentity = hash(Buffer.from(`database-${ordinal}`));
-  cell.database.databaseIdentitySha256 = databaseIdentity;
   json(join(cellRoot, "cell.json"), cell);
   const common = { release_id: releaseId, protocol_id: protocol.protocolId, protocol_sha256: protocolSha256, cell_id: planned.id, attempt_id: attemptId };
   const workloadIdentity = { ...common, process_instance_id: workloadProcessId };
   const oracleIdentity = { ...common, process_instance_id: oracleProcessId };
-  const workloadStart = {
+  const ledgerService = postgresql ? {
+    service_instance_id: postgresql.receipt.serviceInstanceId,
+    started_at: postgresql.receipt.startedAt,
+    server_inet_address: null
+  } : null;
+  const processStart = (mode, pid, bootNonce) => ({
     event: "process_start",
-    mode: "workload",
-    pid: 101 + ordinal,
-    boot_nonce: `workload-boot-${ordinal}`,
-    backend: "sqlite",
+    mode,
+    pid,
+    boot_nonce: bootNonce,
+    backend: shape.backend,
     database_identity_sha256: databaseIdentity,
-    concurrency: 2,
-    operations_per_type: 1,
+    concurrency: shape.concurrency,
+    operations_per_type: shape.n,
     run_id: runId,
-    runtime: runtimeObservation(cell.source.id)
-    ,postgresql_service: null
+    runtime: runtimeObservation(cell.source.id),
+    postgresql_service: ledgerService
+  });
+  const workloadStart = processStart("workload", 101 + ordinal, `workload-boot-${ordinal}`);
+  const freshness = {
+    checked_before_store_initialization: true,
+    method: shape.backend === "sqlite" ? "fixture" : "pg_catalog_non_system_non_extension_relations",
+    empty: true,
+    user_relation_count: 0
   };
-  const freshness = { checked_before_store_initialization: true, method: "fixture", empty: true, user_relation_count: 0 };
   const workloadEvents = [
     workloadStart,
     { event: "backend_preflight", observation: freshness },
-    ...operationEvents(runId, blocked),
+    ...operationEvents(runId, shape),
     {
       event: "load_window",
-      start_monotonic_ns: "10000000000000000",
-      end_monotonic_ns: "10000000000000040",
-      elapsed_ns: "40"
+      start_monotonic_ns: windowStart,
+      end_monotonic_ns: windowEnd(shape),
+      elapsed_ns: String(shape.elapsedNs)
     },
-    { event: "measurement_summary", observations: measurements(blocked) },
+    { event: "measurement_summary", observations: measurements(shape) },
     { event: "terminal", state: "complete", resolution: "pending_oracle", store_closed: true }
   ];
   const workloadName = `${runId}.workload.jsonl`;
   const workload = writeLedger(join(adapterRoot, workloadName), workloadEvents, workloadIdentity);
   workload.name = workloadName;
-  const oracleStart = {
-    event: "process_start",
-    mode: "oracle",
-    pid: 201 + ordinal,
-    boot_nonce: `oracle-boot-${ordinal}`,
-    backend: "sqlite",
-    database_identity_sha256: databaseIdentity,
-    concurrency: 2,
-    operations_per_type: 1,
-    run_id: runId,
-    runtime: runtimeObservation(cell.source.id)
-    ,postgresql_service: null
-  };
-  const checks = oracleChecks({ ...workloadStart, ...workloadIdentity }, { ...oracleStart, ...oracleIdentity }, freshness, blocked);
+  const oracleStart = processStart("oracle", 201 + ordinal, `oracle-boot-${ordinal}`);
+  const checks = oracleChecks({ ...workloadStart, ...workloadIdentity }, { ...oracleStart, ...oracleIdentity }, freshness, blocked, shape);
   const verdict = blocked ? "blocked" : "proven";
   const oracleEvents = [
     oracleStart,
@@ -608,9 +672,9 @@ function writeCell(release, planned, ordinal, blocked) {
       verdict,
       checks,
       observations: {
-        ...persistedStateObservations(runId, blocked),
-        sqlite_integrity: [{ integrity_check: "ok" }],
-        sqlite_foreign_key_violations: [],
+        ...persistedStateObservations(runId, shape, blocked),
+        sqlite_integrity: shape.backend === "sqlite" ? [{ integrity_check: "ok" }] : "not_applicable",
+        sqlite_foreign_key_violations: shape.backend === "sqlite" ? [] : "not_applicable",
         storage_bytes: { database: 4096 },
         connections: { method: "fixture", open_after_load: 1, peak_open: 2 },
         model_tool_cost: {
@@ -772,7 +836,23 @@ function createRelease(options = {}) {
   const baseline = writeCell(realRelease, protocol.plannedCells[0], 1, options.baselineBlocked !== false);
   const candidate = writeCell(realRelease, protocol.plannedCells[1], 2, options.candidateBlocked === true);
   cells.push(baseline.result, candidate.result);
+  // Optionally attempt the first preregistered PostgreSQL main cell against a bound
+  // service receipt, so the analyzer's PostgreSQL-attempted path (structured service
+  // binding through cell input, process receipts and both ledgers) is exercised by
+  // fixture evidence and not only by a live run.
+  let postgresql = null;
+  if (options.attemptPostgresql) {
+    const receipt = writePostgresqlReceipt(realRelease);
+    const index = protocol.plannedCells.findIndex((cell) => cell.parameters.backend === "postgresql");
+    const planned = protocol.plannedCells[index];
+    const serviceCell = receipt.cells.find((entry) => entry.cellId === planned.id);
+    postgresql = writeCell(realRelease, planned, index + 1, false, { receipt, cell: serviceCell });
+  }
   for (let index = 2; index < protocol.plannedCells.length; index += 1) {
+    if (postgresql && postgresql.cell.ordinal === index + 1) {
+      cells.push(postgresql.result);
+      continue;
+    }
     cells.push({
       id: protocol.plannedCells[index].id,
       ordinal: index + 1,
@@ -802,7 +882,7 @@ function createRelease(options = {}) {
     reason: entry.reason
   }));
   writeFileSync(join(realRelease, "negative-log.jsonl"), `${negative.map((entry) => JSON.stringify(entry)).join("\n")}\n`);
-  return { temporary, release: realRelease, requestedRelease, baseline, candidate };
+  return { temporary, release: realRelease, requestedRelease, baseline, candidate, postgresql };
 }
 
 function writePostgresqlReceipt(release, mutate = (value) => value, bind = true) {
@@ -854,6 +934,7 @@ function writePostgresqlReceipt(release, mutate = (value) => value, bind = true)
     };
     json(lockPath, lock);
   }
+  return receipt;
 }
 
 function cleanup(fixture) {
@@ -1503,6 +1584,40 @@ test("a retry check whose observed count contradicts the workload ledger is reje
       result.checks.fault_retry_choreography.observed = 0;
     });
     expectCode(() => analyzeHcCortex002Release(fixture.release, { write: false, generatedAt: fixedTime }), "ORACLE_CHECK_VERDICT_MISMATCH");
+  } finally {
+    cleanup(fixture);
+  }
+});
+
+test("an attempted PostgreSQL cell binds its structured service identity through every receipt", () => {
+  const fixture = createRelease({ attemptPostgresql: true });
+  try {
+    const result = analyzeHcCortex002Release(fixture.release, { write: false, generatedAt: fixedTime });
+    const attempted = result.analysis.postgresqlService.cells.filter((cell) => cell.executionState === "attempted");
+    assert.deepEqual(attempted.map((cell) => cell.cellId), [fixture.postgresql.cell.id]);
+    const cell = result.analysis.cells.find((entry) => entry.id === fixture.postgresql.cell.id);
+    assert.equal(cell.backend, "postgresql");
+    assert.equal(cell.observedVerdict, "proven");
+    assert.equal(cell.expectationMatch, true);
+    assert.deepEqual(cell.failedChecks, []);
+    assert.equal(cell.metrics.retries, 0);
+  } finally {
+    cleanup(fixture);
+  }
+});
+
+test("a PostgreSQL process receipt whose service binding drifts from its cell is rejected", () => {
+  const fixture = createRelease({ attemptPostgresql: true });
+  try {
+    const ordinal = fixture.postgresql.cell.ordinal;
+    const path = join(fixture.release, `cells/${String(ordinal).padStart(4, "0")}/workload/process.json`);
+    const record = JSON.parse(readFileSync(path));
+    record.command.logicalArguments.postgresqlService.processId += 1;
+    json(path, record);
+    expectCode(
+      () => analyzeHcCortex002Release(fixture.release, { write: false, generatedAt: fixedTime }),
+      "PROCESS_BINDING_INVALID"
+    );
   } finally {
     cleanup(fixture);
   }

@@ -281,7 +281,7 @@ a refactor performed in this pass: changing the sealer's literal-path
 assumption would touch the manifest contract for every existing sealed
 release and is out of scope here.
 
-## 9. First scored execution (2026-09-01) — invalidated by two harness defects
+## 9. First scored execution (2026-09-01) — invalidated by two harness defects; a third found at re-analysis
 
 The first full 18-cell execution of the frozen protocol ran from harness
 `main` at `dc53c6fa0e334509f9968e72e014c256d7911d62` into
@@ -318,6 +318,32 @@ refuses) and the matrix is re-executed from the pushed fix into a fresh
 release root with a fresh PostgreSQL root (§2). The protocol bytes, cells and
 `registeredAt` are unchanged; this is a harness correction, not a protocol
 correction (`protocols/README.md`).
+
+### 9.1 Re-execution `hc-cortex-002-release-20260901-r2` and a third, analyzer-only defect
+
+The re-execution ran from the pushed fix `baecc89` (runner exit 0,
+20:35:01Z–20:41:35Z, 18/18 `passed`, 17 `proven`, the baseline `blocked`).
+Its first analysis failed at the first PostgreSQL cell with
+`PROCESS_BINDING_INVALID` ("Logical process argument postgresqlService is not
+bound to the cell"):
+
+3. The analyzer compared every logical process argument of a receipt with
+   strict scalar equality. `postgresqlService` is a structured value
+   (`serviceInstanceId`, `startedAt`, `processId`), so a correctly bound
+   PostgreSQL receipt could never pass; SQLite cells passed only because both
+   sides are `null`. The synthetic analysis fixture never attempted a
+   PostgreSQL cell (all eight were `provisioned-not-attempted`), so the suite
+   was green while the path was unreachable.
+
+Fixed in `scripts/hc-cortex-002-analysis-lib.mjs` (structured arguments are
+compared canonically, as `database` already was). The fixture now derives
+every count from the planned cell parameters and can attempt a PostgreSQL cell
+against a bound service receipt, with a regression test confirmed red against
+the pre-fix analyzer. Unlike defects 1–2 this one lives only in the analyzer,
+which is not bound into the raw evidence: the r2 root is unchanged and
+analyzable as-is (no third execution), and §6 verification recomputes the
+analysis from raw evidence with the committed analyzer, so the committed
+release itself guards this path in CI.
 
 ## Command index
 

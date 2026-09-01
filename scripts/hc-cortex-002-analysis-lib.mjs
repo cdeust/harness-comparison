@@ -502,7 +502,9 @@ function validateProcess(snapshot, path, mode, cellInput, planned, bindings) {
     postgresqlService: cellInput.postgresqlService ?? null
   };
   for (const [field, expected] of Object.entries(expectedLogical)) {
-    if (logical?.[field] !== expected) failEvidence("PROCESS_BINDING_INVALID", path, `Logical process argument ${field} is not bound to the cell`);
+    if (!equalJson(logical?.[field] ?? null, expected)) {
+      failEvidence("PROCESS_BINDING_INVALID", path, `Logical process argument ${field} is not bound to the cell`);
+    }
   }
   const expectedDatabase = planned.parameters.backend === "sqlite"
     ? { strategy: "release-cell-local", databaseIdentitySha256: cellInput.database?.databaseIdentitySha256 }
