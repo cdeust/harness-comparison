@@ -1622,3 +1622,21 @@ test("a PostgreSQL process receipt whose service binding drifts from its cell is
     cleanup(fixture);
   }
 });
+
+test("a process receipt whose logical service argument is absent rather than null is rejected", () => {
+  const fixture = createRelease();
+  try {
+    const ordinal = fixture.candidate.cell.ordinal;
+    const path = join(fixture.release, `cells/${String(ordinal).padStart(4, "0")}/workload/process.json`);
+    const record = JSON.parse(readFileSync(path));
+    assert.equal(record.command.logicalArguments.postgresqlService, null);
+    delete record.command.logicalArguments.postgresqlService;
+    json(path, record);
+    expectCode(
+      () => analyzeHcCortex002Release(fixture.release, { write: false, generatedAt: fixedTime }),
+      "PROCESS_BINDING_INVALID"
+    );
+  } finally {
+    cleanup(fixture);
+  }
+});

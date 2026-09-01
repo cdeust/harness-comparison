@@ -502,7 +502,7 @@ function validateProcess(snapshot, path, mode, cellInput, planned, bindings) {
     postgresqlService: cellInput.postgresqlService ?? null
   };
   for (const [field, expected] of Object.entries(expectedLogical)) {
-    if (!equalJson(logical?.[field] ?? null, expected)) {
+    if (!equalJson(logical?.[field], expected)) {
       failEvidence("PROCESS_BINDING_INVALID", path, `Logical process argument ${field} is not bound to the cell`);
     }
   }
