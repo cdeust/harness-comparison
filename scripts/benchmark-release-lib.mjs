@@ -240,9 +240,33 @@ function sameTree(left, right) {
     JSON.stringify([...right.entries()].sort(([a], [b]) => lexicalCompare(a, b)));
 }
 
+// Reports WHICH safeRelativePath() rule rejected a candidate, without echoing the
+// candidate's own bytes (which could be an absolute host path on the failure path this
+// diagnoses -- the value itself must never reach a public error message; the *reason* is
+// safe and, for this specific host-portability class of defect, necessary to diagnose at
+// all without reproducing on the failing platform).
+function unsafePathReason(value) {
+  if (typeof value !== "string" || value.length === 0) return "empty-or-non-string";
+  if (value.includes("\\")) return "contains-backslash";
+  if (value.includes("\0")) return "contains-nul";
+  if (isAbsolute(value)) return "absolute-posix";
+  if (win32.isAbsolute(value)) return "absolute-win32";
+  if (value.normalize("NFC") !== value) return "not-nfc-normalized";
+  const segments = value.split("/");
+  const windowsReserved = /^(?:con|prn|aux|nul|clock\$|conin\$|conout\$|com[1-9]|lpt[1-9])(?:\..*)?$/iu;
+  if (segments.some((segment) => segment === "")) return "empty-segment";
+  if (segments.some((segment) => segment === "." || segment === "..")) return "dot-segment";
+  if (segments.some((segment) => /[\u0000-\u001f<>:"|?*]/u.test(segment))) return "reserved-character";
+  if (segments.some((segment) => segment.endsWith(".") || segment.endsWith(" "))) return "trailing-dot-or-space";
+  if (segments.some((segment) => windowsReserved.test(segment))) return "windows-reserved-name";
+  if (posix.normalize(value) !== value) return "not-posix-normalized";
+  return "unknown";
+}
+
 function resolveArtifact(root, artifactPath, errors, errorPath) {
   if (!safeRelativePath(artifactPath)) {
-    add(errors, "UNSAFE_ARTIFACT_PATH", errorPath, "Artifact path must be normalized and release-relative");
+    add(errors, "UNSAFE_ARTIFACT_PATH", errorPath,
+      `Artifact path must be normalized and release-relative (${unsafePathReason(artifactPath)})`);
     return null;
   }
   const absolutePath = resolve(root, ...artifactPath.split("/"));
