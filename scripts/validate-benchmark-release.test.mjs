@@ -71,7 +71,7 @@ function value(value_, unit, rationale) {
   return { value: value_, unit, rationale, evidenceSourceIds };
 }
 
-function protocolFixture(cellCount = 1) {
+function protocolFixture(cellCount = 1, protocolId = "fixture-protocol-v1") {
   const phases = Array.from({ length: cellCount }, (_, index) => `phase-${index + 1}`);
   const plannedCells = phases.map((phase, index) => ({
     id: `cell-${index + 1}`,
@@ -94,7 +94,7 @@ function protocolFixture(cellCount = 1) {
   }));
   return {
     schemaVersion: "benchmark-protocol/v1",
-    protocolId: "fixture-protocol-v1",
+    protocolId,
     title: "Validator fixture protocol",
     registeredAt: "2020-01-01T00:00:00Z",
     researchQuestion: "Does the release gate reject unanchored or incomplete evidence?",
@@ -210,7 +210,11 @@ function protocolFixture(cellCount = 1) {
   };
 }
 
-function createRegistrationRepository({ cellCount = 1 } = {}) {
+function createRegistrationRepository({
+  cellCount = 1,
+  protocolId = "fixture-protocol-v1",
+  protocolArtifactPath = "protocols/fixture.json"
+} = {}) {
   const base = mkdtempSync(join(tmpdir(), "benchmark-git-fixture-"));
   const origin = join(base, "origin.git");
   const source = join(base, "source");
@@ -222,9 +226,10 @@ function createRegistrationRepository({ cellCount = 1 } = {}) {
   git(source, "config", "core.autocrlf", "false");
   git(source, "branch", "-M", "main");
   git(source, "remote", "add", "origin", origin);
-  mkdirSync(join(source, "protocols"), { recursive: true });
-  json(join(source, "protocols", "fixture.json"), protocolFixture(cellCount));
-  git(source, "add", "protocols/fixture.json");
+  const protocolSegments = protocolArtifactPath.split("/");
+  mkdirSync(join(source, ...protocolSegments.slice(0, -1)), { recursive: true });
+  json(join(source, ...protocolSegments), protocolFixture(cellCount, protocolId));
+  git(source, "add", protocolArtifactPath);
   git(source, "commit", "-m", "Register fixture protocol");
   git(source, "push", "-u", "origin", "main");
   git(origin, "symbolic-ref", "HEAD", "refs/heads/main");
@@ -232,7 +237,8 @@ function createRegistrationRepository({ cellCount = 1 } = {}) {
     base,
     origin,
     source,
-    protocolPath: join(source, "protocols", "fixture.json"),
+    protocolPath: join(source, ...protocolSegments),
+    protocolArtifactPath,
     registrationRevision: git(source, "rev-parse", "HEAD")
   };
 }
@@ -267,12 +273,14 @@ function createRelease(registration, {
   const root = published
     ? join(registration.source, "artifacts", releaseId)
     : join(registration.base, releaseId);
-  mkdirSync(join(root, "protocols"), { recursive: true });
+  const protocolArtifactPath = registration.protocolArtifactPath ?? "protocols/fixture.json";
+  const protocolSegments = protocolArtifactPath.split("/");
+  mkdirSync(join(root, ...protocolSegments.slice(0, -1)), { recursive: true });
   mkdirSync(join(root, "raw"), { recursive: true });
   mkdirSync(join(root, "reports"), { recursive: true });
-  writeFileSync(join(root, "protocols", "fixture.json"), readFileSync(registration.protocolPath));
+  writeFileSync(join(root, ...protocolSegments), readFileSync(registration.protocolPath));
   const protocol = JSON.parse(readFileSync(registration.protocolPath, "utf8"));
-  const protocolObserved = observed(join(root, "protocols", "fixture.json"));
+  const protocolObserved = observed(join(root, ...protocolSegments));
   const selectedIds = status === "PREREGISTERED"
     ? []
     : executedIds ?? protocol.workload.cellOrder;
@@ -332,7 +340,7 @@ function createRelease(registration, {
   writeFileSync(join(root, "reports", "reproduce.md"), "Run the validator test suite.\n", "utf8");
   writeFileSync(join(root, "reports", "changes.md"), "Initial fixture release.\n", "utf8");
 
-  const artifacts = [artifact(root, "protocols/fixture.json", "protocol")];
+  const artifacts = [artifact(root, protocolArtifactPath, "protocol")];
   for (const id of selectedIds) {
     artifacts.push(artifact(root, `raw/${id}/ledger.jsonl`, "raw"));
     artifacts.push(artifact(root, `raw/${id}/restart-receipt.json`, "raw"));
@@ -361,12 +369,12 @@ function createRelease(registration, {
       externalBinding: published ? "git-commit" : "validation-snapshot"
     },
     protocol: {
-      path: "protocols/fixture.json",
+      path: protocolArtifactPath,
       sha256: protocolObserved.sha256,
       sourceRegistration: {
         repository: registration.origin,
         revision: registration.registrationRevision,
-        path: "protocols/fixture.json"
+        path: protocolArtifactPath
       }
     },
     environment: {
@@ -1095,6 +1103,44 @@ test("discovery validates every nested release root and fails the set when one m
     assert(codes(invalidResult).has("RELEASE_SET_MEMBER_INVALID"));
     assert.equal(invalidResult.summary.releases.find((entry) => entry.path.endsWith("discovered-release-b"))
       .validation.errors[0].code, "INVALID_JSON");
+  } finally {
+    rmSync(registration.base, { recursive: true, force: true });
+  }
+});
+
+test("discovery locates an HC-CORTEX-002-identified protocol at a nonstandard manifest-declared path, not a hardcoded protocol.json", () => {
+  // The real HC-CORTEX-002 pipeline (scripts/hc-cortex-002-seal-lib.mjs) always names its own
+  // protocol snapshot "protocol.json" -- that is its own internal contract, not the generic
+  // manifest contract's. The generic contract (schemas/execution-manifest-v1.schema.json)
+  // only guarantees a `protocol.path` field pointing SOMEWHERE inside the release; the fixture
+  // here deliberately registers it at a nested, nonstandard path to prove
+  // withIssueSpecificVerification derives the location from that manifest field, the way
+  // it now does after the protocol.json-hardcoding fix, rather than assuming the literal name.
+  const registration = createRegistrationRepository({
+    protocolId: "2026-08-30-hc-cortex-002-v1",
+    protocolArtifactPath: "protocols/nested/hc-cortex-002-snapshot.json"
+  });
+  try {
+    const release = createRelease(registration, { releaseId: "hc-cortex-002-nonstandard-path" });
+    const expectedReleasePath = release.root.slice(registration.base.length + 1);
+    const arguments_ = [cliPath, "--phase", "discover", "--source-repo", registration.source, registration.base];
+    const execution = spawnSync(process.execPath, arguments_, { encoding: "utf8", windowsHide: true });
+    // This fixture is a generic-shaped release, not real HC-CORTEX-002 raw evidence, so
+    // verifyHcCortex002Release must still reject it on the evidentiary merits -- proving
+    // discovery is not merely made permissive. The regression under test is specifically
+    // that this rejection happens for the RIGHT reason (found the protocol, dispatched to
+    // the HC-CORTEX-002 verifier, which then correctly found the evidence wanting) and not
+    // the WRONG reason (protocol.json missing at the release root, a plumbing failure).
+    assert.equal(execution.status, 1, execution.stdout);
+    const result = JSON.parse(execution.stderr);
+    assert.equal(result.valid, false);
+    const releaseEntry = result.summary.releases.find((entry) => entry.path === expectedReleasePath);
+    assert(releaseEntry, JSON.stringify(result.summary.releases));
+    assert.equal(releaseEntry.validation.valid, true, JSON.stringify(releaseEntry.validation.errors));
+    const resultCodes = codes(result);
+    assert(resultCodes.has("HC_CORTEX_002_DERIVED_EVIDENCE_INVALID"), JSON.stringify(result.errors));
+    assert(!resultCodes.has("ISSUE_SPECIFIC_VERIFICATION_FAILED"), JSON.stringify(result.errors));
+    assert.deepEqual(result.summary.issueSpecificVerification.hcCortex002, []);
   } finally {
     rmSync(registration.base, { recursive: true, force: true });
   }

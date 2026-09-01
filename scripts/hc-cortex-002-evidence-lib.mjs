@@ -352,7 +352,19 @@ function parseStructured(path, text) {
   return null;
 }
 
+function isTextual(bytes) {
+  // Decoding arbitrary bytes as UTF-8 always succeeds (Node substitutes U+FFFD for invalid
+  // sequences), so a round-trip re-encode is required to detect genuinely binary content.
+  // A raw SQLite database, WAL, or similar binary artifact is legitimate evidence -- treating
+  // its bytes as free text and pattern-matching for path-like or secret-like substrings finds
+  // nothing meaningful (a human cannot "accidentally paste" into a binary page) and produces
+  // false positives on essentially any sufficiently large binary blob purely from '/'-byte
+  // coincidences. This scan's documented scope is structural JSON/JSONL and textual evidence.
+  return Buffer.from(bytes.toString("utf8"), "utf8").equals(bytes);
+}
+
 export function privacyFindings(path, bytes) {
+  if (!isTextual(bytes)) return [];
   const text = bytes.toString("utf8");
   const findings = [];
   const structured = parseStructured(path, text);

@@ -1246,25 +1246,83 @@ test("sealing fails closed when raw bytes mutate after analysis", () => {
   }
 });
 
+// Forges a derived JSON artifact and rewrites the manifest's own digest for it, so a consumer
+// trusting the manifest's recorded sha256 (instead of independently recomputing the artifact
+// from raw evidence, as verifyHcCortex002Release does) would see a self-consistent forgery.
+function forgeArtifactAndRehashManifest(fixture, artifactPath, mutate) {
+  const artifactFsPath = join(fixture.release, ...artifactPath.split("/"));
+  const value = JSON.parse(readFileSync(artifactFsPath));
+  mutate(value);
+  json(artifactFsPath, value);
+  const bytes = readFileSync(artifactFsPath);
+  const manifestPath = join(fixture.release, "execution-manifest.json");
+  const manifest = JSON.parse(readFileSync(manifestPath));
+  const artifact = manifest.artifacts.find((entry) => entry.path === artifactPath);
+  artifact.sha256 = hash(bytes);
+  artifact.bytes = bytes.length;
+  json(manifestPath, manifest);
+}
+
 test("read-only release verification recomputes derived claims instead of trusting rehashed bytes", () => {
   const fixture = createRelease();
   try {
     analyzeHcCortex002Release(fixture.release, { generatedAt: fixedTime });
     sealHcCortex002Release(fixture.release, { releaseStatus: "PILOT", generatedAt: fixedTime });
     assert.equal(verifyHcCortex002Release(fixture.release).valid, true);
+    forgeArtifactAndRehashManifest(fixture, "scoring/scoring.json", (scoring) => {
+      scoring.studyVerdict.label = "PASS";
+    });
+    expectCode(() => verifyHcCortex002Release(fixture.release), "DERIVED_ARTIFACT_RECOMPUTATION_MISMATCH");
+  } finally {
+    cleanup(fixture);
+  }
+});
 
-    const scoringPath = join(fixture.release, "scoring/scoring.json");
-    const scoring = JSON.parse(readFileSync(scoringPath));
-    scoring.studyVerdict.label = "PASS";
-    json(scoringPath, scoring);
-    const scoringBytes = readFileSync(scoringPath);
+test("read-only release verification rejects a rehashed but forged analysis document", () => {
+  const fixture = createRelease();
+  try {
+    analyzeHcCortex002Release(fixture.release, { generatedAt: fixedTime });
+    sealHcCortex002Release(fixture.release, { releaseStatus: "PILOT", generatedAt: fixedTime });
+    assert.equal(verifyHcCortex002Release(fixture.release).valid, true);
+    forgeArtifactAndRehashManifest(fixture, "analysis/analysis.json", (analysis) => {
+      analysis.cells[0].correctnessLabel = analysis.cells[0].correctnessLabel === "PASS" ? "FAIL" : "PASS";
+    });
+    expectCode(() => verifyHcCortex002Release(fixture.release), "DERIVED_ARTIFACT_RECOMPUTATION_MISMATCH");
+  } finally {
+    cleanup(fixture);
+  }
+});
+
+test("read-only release verification rejects a rehashed but forged negative-evidence document", () => {
+  const fixture = createRelease();
+  try {
+    analyzeHcCortex002Release(fixture.release, { generatedAt: fixedTime });
+    sealHcCortex002Release(fixture.release, { releaseStatus: "PILOT", generatedAt: fixedTime });
+    assert.equal(verifyHcCortex002Release(fixture.release).valid, true);
+    forgeArtifactAndRehashManifest(fixture, "analysis/negative-evidence.json", (negative) => {
+      assert.ok(negative.entries.length > 1, "fixture must carry more than one negative-evidence entry to forge one away");
+      negative.entries = negative.entries.slice(0, -1);
+    });
+    expectCode(() => verifyHcCortex002Release(fixture.release), "DERIVED_ARTIFACT_RECOMPUTATION_MISMATCH");
+  } finally {
+    cleanup(fixture);
+  }
+});
+
+test("read-only release verification rejects a forged manifest projection with no separate artifact to rehash", () => {
+  const fixture = createRelease();
+  try {
+    analyzeHcCortex002Release(fixture.release, { generatedAt: fixedTime });
+    sealHcCortex002Release(fixture.release, { releaseStatus: "PILOT", generatedAt: fixedTime });
+    assert.equal(verifyHcCortex002Release(fixture.release).valid, true);
     const manifestPath = join(fixture.release, "execution-manifest.json");
     const manifest = JSON.parse(readFileSync(manifestPath));
-    const artifact = manifest.artifacts.find((entry) => entry.path === "scoring/scoring.json");
-    artifact.sha256 = hash(scoringBytes);
-    artifact.bytes = scoringBytes.length;
+    // The manifest's own cell verdict is a projection derived from raw evidence, not a
+    // separately hashed artifact -- there is nothing to "rehash" here, unlike the artifact
+    // forgeries above. A consumer that trusted the manifest's own bytes instead of rebuilding
+    // it fresh from raw evidence would accept this.
+    manifest.cells[0].verdict = manifest.cells[0].verdict === "proven" ? "blocked" : "proven";
     json(manifestPath, manifest);
-
     expectCode(() => verifyHcCortex002Release(fixture.release), "DERIVED_ARTIFACT_RECOMPUTATION_MISMATCH");
   } finally {
     cleanup(fixture);

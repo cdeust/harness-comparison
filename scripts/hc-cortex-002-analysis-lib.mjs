@@ -87,9 +87,16 @@ function canonicalJson(value) {
   return JSON.stringify(value);
 }
 
+const gitBlobPattern = /^[0-9a-f]{40}$/u;
+
 function validateDigestEntry(entry, path) {
-  if (!exactKeys(entry, ["bytes", "path", "sha256"]) || !safeRelativePath(entry.path) ||
-      !digestPattern(entry.sha256) || !integerNonNegative(entry.bytes)) {
+  // The real runner's boundGitFile() (workload-ladder-runner-lib.mjs) additionally carries the
+  // file's Git blob SHA-1 alongside its content-addressed sha256/bytes -- a legitimate second
+  // provenance reference, not noise. Entries produced without it (e.g. hand-authored fixtures
+  // predating the real runner's own end-to-end evidence) remain equally valid.
+  const shapeValid = exactKeys(entry, ["bytes", "path", "sha256"]) ||
+    (exactKeys(entry, ["bytes", "gitBlob", "path", "sha256"]) && gitBlobPattern.test(entry.gitBlob));
+  if (!shapeValid || !safeRelativePath(entry.path) || !digestPattern(entry.sha256) || !integerNonNegative(entry.bytes)) {
     failEvidence("PROVENANCE_DIGEST_INVALID", path, "Provenance file entry is not content addressed");
   }
 }
