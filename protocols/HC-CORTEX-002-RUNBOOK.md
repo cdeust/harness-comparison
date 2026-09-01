@@ -128,9 +128,19 @@ node scripts/run-workload-ladder.mjs \
   --source cortex-candidate=<pinned-candidate-checkout> \
   --runtime python-3.12=<pinned-candidate-venv>/bin/python \
   [--database <postgresql-cell-id>=<postgresql-url>] \
+  [--postgresql-service-receipt <pg-root>/postgresql-service-receipt.json] \
   [--cell <cell-id>] \
   [--plan]
 ```
+
+- The runner refuses to start unless the harness checkout is exactly the
+  protocol's registered revision, clean, and remotely reachable
+  (`HARNESS_REVISION_MISMATCH` / `HARNESS_CHECKOUT_DIRTY`; the registration
+  itself is derived from `HEAD` and checked against a fetched `origin` ref).
+  A change to any runner input therefore means: commit, push, `prepare` a
+  fresh PostgreSQL root (§2, the receipt binds the registration revision),
+  and execute into a fresh `<new-release-root>`. Never re-execute into an
+  existing release root.
 
 - `--source <id>=<checkout>` binds a protocol-declared `corpora[].id` to a
   real, clean Git checkout at exactly the corpus's registered revision.
@@ -139,9 +149,17 @@ node scripts/run-workload-ladder.mjs \
   selected cells must be bound or the runner fails closed
   (`SOURCE_BINDING_MISSING` / `RUNTIME_BINDING_MISSING`).
 - `--database` is required per PostgreSQL cell (§2's `prepare` writes the
-  exact `--database <cellId>=<url>` bindings to
-  `<root>/postgresql-bindings.json` for reuse); SQLite cells are runner-owned
-  and must not be bound (`SQLITE_DATABASE_OVERRIDE`).
+  exact `--database <cellId>=<url>` bindings to `<root>/runner-bindings.json`
+  as `runnerArguments[]`, for reuse); SQLite cells are runner-owned and must
+  not be bound (`SQLITE_DATABASE_OVERRIDE`). The bound URLs contain `&`, so
+  pass them as quoted array arguments — in zsh,
+  `args=("${(@f)$(jq -r '.runnerArguments[]' <root>/runner-bindings.json)}")`
+  then `"${args[@]}"`; never splice them unquoted into a shell line.
+- `--postgresql-service-receipt` is required whenever a selected cell uses
+  PostgreSQL: it points at §2's immutable pre-run receipt, whose bytes the
+  runner binds into `protocol-lock.json` and re-verifies live before and
+  after every PostgreSQL process. Omitting it fails closed with
+  `POSTGRESQL_SERVICE_RECEIPT_MISSING` before any artifact is written.
 - `--cell <id>` selects and executes exactly one declared cell; every other
   cell in `workload.cellOrder` is recorded in `run-summary.json` as
   `"status": "not-run", "reason": "excluded-by-explicit-cell-selection"`.
@@ -263,6 +281,44 @@ a refactor performed in this pass: changing the sealer's literal-path
 assumption would touch the manifest contract for every existing sealed
 release and is out of scope here.
 
+## 9. First scored execution (2026-09-01) — invalidated by two harness defects
+
+The first full 18-cell execution of the frozen protocol ran from harness
+`main` at `dc53c6fa0e334509f9968e72e014c256d7911d62` into
+`hc-cortex-002-release-20260901` (runner exit 0, 19:59:14Z–20:05:34Z, every
+cell `passed`, 17 `proven`, `regression-baseline-sqlite-c2` `blocked` as
+preregistered). It could **not** be analyzed, sealed or scored, because §4's
+analyzer rejected its own runner's raw evidence at the RED control:
+
+1. `RETRY_CHOREOGRAPHY_INVALID` — the analyzer's workload-ledger validation
+   demanded exactly one `operation_retry` for every SQLite cell at
+   concurrency ≥ 2. The shared-handle baseline legitimately records zero (the
+   peer remember never observes `SQLITE_BUSY` on a shared connection), which
+   the adapter's oracle already reports as the failed, treatment-sensitive
+   `fault_retry_choreography` check. A treatment-sensitive predicate had been
+   duplicated as an evidence gate, so the negative control was unanalyzable
+   by construction; the synthetic analysis fixture hid it by emitting a retry
+   for the blocked baseline too.
+2. `PROCESS_RECEIPT_INCOMPLETE` — the runner wrote `status: "failed"` into
+   every process receipt whose child exited non-zero, although the oracle
+   exits 1 by contract to report `blocked` and the runner's own cell
+   classifier accepts that as an observation. The analyzer requires a
+   `complete` lifecycle status for a blocked oracle receipt.
+
+Both are fixed at the source in the same change that records this section
+(`scripts/hc-cortex-002-analysis-lib.mjs`: structural retry bound only, count
+judged by the oracle check and bound to the ledger;
+`scripts/workload-ladder-runner-lib.mjs`: receipt status describes the
+lifecycle, exit codes are interpreted per mode), with regression tests that
+were confirmed red against the pre-fix code. Because the runner binds the
+harness `HEAD` (§3), the fix cannot repair an already-executed release: the
+first tree is preserved unsealed as negative engineering evidence (it is not
+a `PILOT` release — no manifest can be built from receipts the analyzer
+refuses) and the matrix is re-executed from the pushed fix into a fresh
+release root with a fresh PostgreSQL root (§2). The protocol bytes, cells and
+`registeredAt` are unchanged; this is a harness correction, not a protocol
+correction (`protocols/README.md`).
+
 ## Command index
 
 | Stage | Command |
@@ -272,7 +328,7 @@ release and is out of scope here.
 | PostgreSQL status | `node scripts/provision-hc-cortex-002-postgresql.mjs status --root <root>` |
 | PostgreSQL stop | `node scripts/provision-hc-cortex-002-postgresql.mjs stop --root <root>` |
 | Runner (plan) | `node scripts/run-workload-ladder.mjs --protocol <p> --release-root <r> --source ... --runtime ... --plan` |
-| Runner (execute) | `node scripts/run-workload-ladder.mjs --protocol <p> --release-root <r> --source ... --runtime ... [--database ...] [--cell <id>]` |
+| Runner (execute) | `node scripts/run-workload-ladder.mjs --protocol <p> --release-root <r> --source ... --runtime ... [--database ...] [--postgresql-service-receipt <receipt>] [--cell <id>]` |
 | Analysis | `node scripts/analyze-hc-cortex-002.mjs <release-root>` |
 | Sealing | `node scripts/seal-hc-cortex-002.mjs --status PILOT\|VERIFIED\|PUBLISHED <release-root>` |
 | Deep verification | `node scripts/verify-hc-cortex-002-release.mjs <release-root>` |

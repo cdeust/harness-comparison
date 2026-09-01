@@ -166,10 +166,11 @@ function metric(completed, throughput, outcomes, errorEvents = 0, retryEvents = 
   };
 }
 
-function measurements() {
+function measurements(blocked) {
+  const retryEvents = blocked ? 0 : 1;
   return {
     load: {
-      ...metric(4, 100_000_000, { acknowledged: 3, rejected: 1 }, 1, 1),
+      ...metric(4, 100_000_000, { acknowledged: 3, rejected: 1 }, 1, retryEvents),
       throughput_denominator: "common measured load wall time",
       latency_quantile_method: "Hyndman-Fan type 1 (inverse empirical distribution function)",
       max_queue_depth: 0,
@@ -178,7 +179,7 @@ function measurements() {
       per_operation_type: {
         faulted_supersede: metric(1, 25_000_000, { rejected: 1 }, 1, 0),
         forget: metric(1, 25_000_000, { acknowledged: 1 }),
-        remember: metric(1, 25_000_000, { acknowledged: 1 }, 0, 1),
+        remember: metric(1, 25_000_000, { acknowledged: 1 }, 0, retryEvents),
         supersede_atomic: metric(1, 25_000_000, { acknowledged: 1 })
       }
     },
@@ -231,7 +232,7 @@ function operationId(runId, plan) {
   return `${runId}:${plan.operation}:${plan.role ?? "normal"}:${plan.index}`;
 }
 
-function operationEvents(runId) {
+function operationEvents(runId, blocked) {
   const events = [];
   for (const plan of operationPlans) {
     const { operation, role, index, targetId, newId, marker } = plan;
@@ -281,14 +282,19 @@ function operationEvents(runId) {
       error: acknowledged ? null : { type: "InjectedFault", message: "fault-after-cas" }
     });
   }
-  events.push({
-    event: "operation_retry",
-    operation_id: `${runId}:remember:normal:0`,
-    operation: "remember",
-    phase: "load",
-    attempt: 1,
-    reason: "database-locked-after-fault"
-  });
+  // The candidate peer remember observes one database-locked error inside the fault
+  // window and retries once; the shared-handle baseline never observes the lock, so the
+  // blocked control legitimately records zero retries (adapters/hc-cortex-002/README.md).
+  if (!blocked) {
+    events.push({
+      event: "operation_retry",
+      operation_id: `${runId}:remember:normal:0`,
+      operation: "remember",
+      phase: "load",
+      attempt: 1,
+      reason: "database-locked-after-fault"
+    });
+  }
   return events;
 }
 
@@ -410,7 +416,7 @@ function oracleChecks(workloadStart, oracleStart, freshness, blocked) {
         sqlite_foreign_key_violations: []
       }
     }, { marker: null, target_id: null, memory_fts_vector_count: 4, integrity: "backend-valid" }),
-    fault_retry_choreography: check(true, 1, 1),
+    fault_retry_choreography: check(!blocked, blocked ? 0 : 1, 1),
     marker_exactly_once_and_rejected_zero: check(true, { differences: {}, unexpected: [] }, "each expected live marker once; deleted and rejected markers zero"),
     supersession_state: check(true, [], "old head points to new row and new row points back to old head"),
     delete_state: check(true, [], []),
@@ -566,14 +572,14 @@ function writeCell(release, planned, ordinal, blocked) {
   const workloadEvents = [
     workloadStart,
     { event: "backend_preflight", observation: freshness },
-    ...operationEvents(runId),
+    ...operationEvents(runId, blocked),
     {
       event: "load_window",
       start_monotonic_ns: "10000000000000000",
       end_monotonic_ns: "10000000000000040",
       elapsed_ns: "40"
     },
-    { event: "measurement_summary", observations: measurements() },
+    { event: "measurement_summary", observations: measurements(blocked) },
     { event: "terminal", state: "complete", resolution: "pending_oracle", store_closed: true }
   ];
   const workloadName = `${runId}.workload.jsonl`;
@@ -1443,6 +1449,60 @@ test("load_window_exact truth never rests on the producer's descriptive expected
       () => analyzeHcCortex002Release(fixture.release, { write: false, generatedAt: fixedTime }),
       "ORACLE_CHECK_VERDICT_MISMATCH"
     );
+  } finally {
+    cleanup(fixture);
+  }
+});
+
+test("the blocked baseline records zero retries and fails only treatment-sensitive checks", () => {
+  const fixture = createRelease();
+  try {
+    const result = analyzeHcCortex002Release(fixture.release, { write: false, generatedAt: fixedTime });
+    const baseline = result.analysis.cells[0];
+    assert.equal(baseline.observedVerdict, "blocked");
+    assert.equal(baseline.expectationMatch, true);
+    assert.deepEqual(baseline.failedChecks, ["fault_retry_choreography", "fault_rollback_state"]);
+    assert.equal(baseline.metrics.retries, 0);
+    assert.equal(result.analysis.cells[1].metrics.retries, 1);
+    assert.equal(result.scoring.causalContrast.label, "PASS");
+  } finally {
+    cleanup(fixture);
+  }
+});
+
+test("a second retry or a retry outside the peer remember invalidates the ledger", () => {
+  const duplicated = createRelease();
+  try {
+    rewriteWorkloadEvidence(duplicated.release, duplicated.candidate, 2, (records) => {
+      const retry = records.find((record) => record.event === "operation_retry");
+      records.splice(records.indexOf(retry) + 1, 0, structuredClone(retry));
+    });
+    expectCode(() => analyzeHcCortex002Release(duplicated.release, { write: false, generatedAt: fixedTime }), "RETRY_CHOREOGRAPHY_INVALID");
+  } finally {
+    cleanup(duplicated);
+  }
+  const misattributed = createRelease();
+  try {
+    rewriteWorkloadEvidence(misattributed.release, misattributed.candidate, 2, (records) => {
+      const retry = records.find((record) => record.event === "operation_retry");
+      const forget = records.find((record) => record.event === "operation_intent" && record.operation === "forget");
+      retry.operation = "forget";
+      retry.operation_id = forget.operation_id;
+    });
+    expectCode(() => analyzeHcCortex002Release(misattributed.release, { write: false, generatedAt: fixedTime }), "RETRY_CHOREOGRAPHY_INVALID");
+  } finally {
+    cleanup(misattributed);
+  }
+});
+
+test("a retry check whose observed count contradicts the workload ledger is rejected", () => {
+  const fixture = createRelease();
+  try {
+    rewriteOracleEvidence(fixture.release, fixture.candidate, 2, (records) => {
+      const result = records.find((record) => record.event === "oracle_result");
+      result.checks.fault_retry_choreography.observed = 0;
+    });
+    expectCode(() => analyzeHcCortex002Release(fixture.release, { write: false, generatedAt: fixedTime }), "ORACLE_CHECK_VERDICT_MISMATCH");
   } finally {
     cleanup(fixture);
   }
