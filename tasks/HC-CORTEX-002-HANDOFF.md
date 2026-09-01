@@ -1,8 +1,10 @@
 # HC-CORTEX-002 WIP handoff
 
-Status captured on 2026-08-31 because the session reached its quota threshold.
-This branch is an intentionally incomplete engineering checkpoint. It is not a
-preregistered protocol release, benchmark result, or publishable score.
+Status captured on 2026-08-31 because the session reached its quota threshold;
+updated 2026-09-01 at commit `93070fe` after items 1-4 below completed across
+two follow-up dispatches. This branch is still an intentionally incomplete
+engineering checkpoint. It is not a preregistered protocol release, benchmark
+result, or publishable score. **Resume from item 5.**
 
 ## Resume location
 
@@ -31,6 +33,13 @@ environment identity and `pyvenv.cfg` binding depend on the invocation path.
 - A real PostgreSQL 17.9 C1/W1 producer-to-oracle smoke was run during tooling
   development and returned `proven`; it is also unscored and must not enter the
   release matrix.
+- A second, separately-scoped real PostgreSQL 17.9 smoke ran at commit
+  `93070fe`: the *provisioner's* full prepare/status/stop infrastructure
+  lifecycle against the real registered protocol (§2 of
+  `protocols/HC-CORTEX-002-RUNBOOK.md`), not a workload/oracle producer run.
+  It provisioned and tore down real infrastructure only — no cell executed —
+  and is likewise unscored and must not enter the release matrix. Linux was
+  not available on this host and remains untested for both PostgreSQL smokes.
 - `registeredAt` in the protocol is not the final freeze timestamp. Set it only
   at the actual preregistration freeze, document all prior pilots as protocol
   refinements, commit and push that exact protocol before any scored cell.
@@ -62,78 +71,97 @@ environment identity and `pyvenv.cfg` binding depend on the invocation path.
 
 ## Incomplete work at the checkpoint
 
-The tree is syntactically valid, but the latest cross-contract changes have not
-received an integrated green run. Resume from these items in order.
+Items 1-4 are complete as of commit `93070fe`, verified with an integrated
+green run each time (see "Last known verification evidence" below). **Resume
+from item 5.**
 
-1. Finish the Node persisted-state recomputation in
-   `scripts/hc-cortex-002-analysis-lib.mjs`.
-   - The initial normalized-row/edge/count/constraint implementation was added
-     immediately before this checkpoint.
-   - Fix the `load_window_exact` consumer to match the producer contract. The
-     producer `observed` object contains `event_count`, start/end/elapsed,
-     `summary_elapsed_ns`, `load_intent_count`, and `load_outcome_count`.
-     Recompute the BigInt arithmetic and enclosure directly; do not make truth
-     depend on the producer's explanatory `expected` prose.
-   - Pass the independently recomputed persisted state into every relevant
-     oracle predicate and validate the normalized snapshot before accepting the
-     producer verdict.
-   - Update analysis fixtures with realistic row IDs, markers, reciprocal
-     supersession edges, the deleted target, the rejected fault row, scope, and
-     `postgresql_constraints: "not_applicable"` for SQLite. The blocked
-     baseline fixture must contain raw causal corruption, not merely a false
-     producer check.
-   - Add adversarial tests where a producer reports `proven` while normalized
-     row content or an edge is forged; Node must reject both.
+1. ~~Finish the Node persisted-state recomputation in
+   `scripts/hc-cortex-002-analysis-lib.mjs`.~~ **Done.** `persistedState()`
+   is now wired into `validateOracleLedger`'s context (it was implemented but
+   never called at the prior checkpoint, so every dependent check crashed);
+   `load_window_exact` independently recomputes BigInt arithmetic, enclosure,
+   and the producer's `summary_elapsed_ns`/`load_intent_count`/
+   `load_outcome_count` fields rather than trusting `expected` prose; analysis
+   fixtures carry a coherent row/marker/edge story with raw causal corruption
+   in the blocked-baseline control; adversarial forged-row/forged-edge tests
+   are green against the fix and were confirmed red against the pre-fix code.
 
-2. Repair issue-specific verification in discovery.
-   - The latest `validate-benchmark-release.mjs` integration assumes
-     `<release>/protocol.json`.
-   - The generic manifest contract permits another registered protocol snapshot
-     path, and the validator fixture uses `protocols/fixture.json`.
-   - Derive the protocol location from the already validated manifest, retain
-     safe-path checks, and add quiescence across generic plus issue-specific
-     verification. A release-gate reviewer reproduced this regression before
-     the session stopped.
+2. ~~Repair issue-specific verification in discovery.~~ **Done.**
+   `withIssueSpecificVerification` derives the protocol location from the
+   already-validated manifest's `protocol.path` field (re-verified with a
+   manifest-digest quiescence check) instead of assuming
+   `<release>/protocol.json`; regression-tested against a nonstandard path,
+   confirmed to fail with `ISSUE_SPECIFIC_VERIFICATION_FAILED` on the pre-fix
+   code.
 
-3. Complete the real contract E2E.
-   - Add a runner -> real Python adapter -> analyzer -> sealer -> read-only
-     verifier SQLite C1/W1 conformance test against the pinned candidate.
-   - Keep a separate real PostgreSQL 17 smoke on Linux and macOS. Unit fakes do
-     not establish workload support.
-   - The read-only verifier must reject rehashed but forged analysis, scoring,
-     negative evidence, and manifest projections.
+3. ~~Complete the real contract E2E.~~ **Done**, with two caveats noted
+   honestly rather than glossed over:
+   - `scripts/hc-cortex-002-real-adapter-e2e.test.mjs` chains the real runner
+     into the real Python adapter (pinned candidate) and the analyzer/sealer/
+     verifier, on a disposable SQLite C1/W1 fixture — 1/1 green, ~20s wall
+     time. This surfaced and fixed two previously latent integration defects
+     no synthetic fixture had exercised (privacy scanner false-positiving on
+     real binary SQLite evidence; the analyzer's provenance validator
+     rejecting the real runner's own `gitBlob` field). See
+     `protocols/HC-CORTEX-002-RUNBOOK.md` §8 for the sealer's own
+     `protocol.json` limitation this uncovered.
+   - The PostgreSQL smoke completed on **macOS only** (Homebrew PostgreSQL
+     17.9, real `initdb`/`pg_ctl`, no fakes) — see
+     `protocols/HC-CORTEX-002-RUNBOOK.md` §2. **Linux was never available on
+     this host and remains untested**; do not treat macOS conformance as
+     Linux conformance (this is the same POSIX-host-specificity rule already
+     stated below).
+   - The read-only verifier's rehashed-but-forged rejection is now covered
+     for analysis, negative evidence, and a manifest projection, in addition
+     to the scoring case that was already tested.
 
-4. Reconcile documentation and preregistration.
-   - Add an exact runbook for protocol validation, PostgreSQL prepare/status/
-     stop, runner bindings, analysis, sealing, deep verification, and generic
-     release validation.
-   - Update the Cortex issue dossier and `tasks/todo.md` only from the final
-     integrated state.
-   - Add `.gitattributes` for LF-stable research artifacts if it is still
-     absent.
-   - Replace the provisional `registeredAt` at freeze time, commit and push the
-     preregistration PR, and wait for merge before running scored cells.
+4. ~~Reconcile documentation and preregistration.~~ **Partially done, by
+   design** — everything except the `registeredAt` freeze:
+   - `protocols/HC-CORTEX-002-RUNBOOK.md` (new) has the exact runbook:
+     protocol validation, PostgreSQL prepare/status/stop (with the git-push
+     gotcha), runner bindings, analysis, sealing, deep verification, and
+     generic release validation/discovery, linked from `protocols/README.md`.
+   - The Cortex issue dossier
+     (`issues/Cortex/scalability/sqlite-transaction-isolation.md`) and
+     `tasks/todo.md` are updated from the final integrated state only; no
+     verdict-ledger row was upgraded (all remain `pending` — no scored cell
+     has run).
+   - `.gitattributes` was added (previously absent) for LF-stable research
+     artifacts.
+   - **`registeredAt` was deliberately NOT replaced.** That freeze, plus the
+     preregistration PR itself, is item 5's job — do not do it as a side
+     effect of a documentation pass.
 
-5. Run independent release review, then open the harness preregistration PR.
-   Do not merge the Cortex source PR or execute the 18 scored cells in the same
-   step.
+5. **Next.** Run independent release review, then open the harness
+   preregistration PR: replace the provisional `registeredAt` at the actual
+   freeze timestamp, document every prior pilot/smoke (including this
+   checkpoint's development smokes and the macOS-only PostgreSQL smoke) as
+   protocol refinements rather than scored evidence, commit and push that
+   exact protocol, and wait for the PR to merge before running any scored
+   cell. Do not merge the Cortex source PR (`cdeust/Cortex#452`) or execute
+   the 18 scored cells in the same step as the preregistration PR.
 
 ## Last known verification evidence
 
-These passes occurred before the final incomplete persisted-state/CLI edits:
+These passes are current as of commit `93070fe` (items 1-4 complete), each
+re-run on the final state after the last edit that touched it:
 
-- runner conformance: 9/9
-- independent analysis/sealing: 21/21
-- generic release validator: 26/26
-- PostgreSQL provisioner targeted suite: 12/12, followed by the security
-  review's combined targeted 33/33
-- candidate adapter: 23/23, Ruff clean
-- Cortex candidate source suite: 7,669 tests plus 123 subtests, with draft PR CI
-  green
+- `hc-cortex-002-analysis.test.mjs`: 27/27
+- `validate-benchmark-release.test.mjs`: 27/27
+- `hc-cortex-002-real-adapter-e2e.test.mjs` (new): 1/1, real Python adapter
+  against the pinned candidate, ~20s wall time
+- `hc-cortex-002-postgresql.test.mjs`: 15/15
+- `run-workload-ladder.test.mjs`: 9/9
+- Candidate adapter pytest: 23/23
+- Issue registry: PROVEN (55 dossiers, 2 candidate cards)
+- `git diff --check`: clean
+- Real macOS PostgreSQL 17.9 smoke (prepare/status/stop against the
+  registered protocol): receipt captured in
+  `protocols/HC-CORTEX-002-RUNBOOK.md` §2; Linux untested.
 
-After the final edits, only syntax was checked successfully for the runner,
-analyzer, and release-validator CLI. Treat every behavioral suite as needing a
-fresh run.
+Treat every suite as needing a fresh run before resuming item 5 — the commands
+below are unchanged, but re-run them on whatever commit you actually resume
+from.
 
 ## Resume verification commands
 
@@ -141,17 +169,25 @@ Run focused tests first:
 
 ```sh
 node --check scripts/hc-cortex-002-analysis-lib.mjs
+node --check scripts/hc-cortex-002-evidence-lib.mjs
 node --check scripts/validate-benchmark-release.mjs
+node --check scripts/hc-cortex-002-real-adapter-e2e.test.mjs
 node --test scripts/hc-cortex-002-analysis.test.mjs
 node --test scripts/validate-benchmark-release.test.mjs
+node --test scripts/hc-cortex-002-real-adapter-e2e.test.mjs
 node --test scripts/hc-cortex-002-postgresql.test.mjs
 node --test scripts/run-workload-ladder.test.mjs
 /private/tmp/cortex-hc-cortex-002/.venv/bin/python -m pytest -q adapters/hc-cortex-002/tests
+node scripts/validate-issue-registry.mjs
 ```
 
 Then run repository gates, formatting/type checks applicable to the adapter,
-`git diff --check`, a publication privacy scan, the real SQLite E2E, and the
-real PostgreSQL smoke. Preserve exact stdout/stderr and version receipts.
+`git diff --check`, and a publication privacy scan. `hc-cortex-002-real-
+adapter-e2e.test.mjs` already exercises the real SQLite E2E on every run; the
+real PostgreSQL smoke commands are in `protocols/HC-CORTEX-002-RUNBOOK.md`
+§2 (run them explicitly — they are not part of the `node --test` suites, since
+they provision and tear down a real local PostgreSQL cluster). Preserve exact
+stdout/stderr and version receipts.
 
 ## Release gates that remain mandatory
 

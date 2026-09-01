@@ -30,3 +30,8 @@ node scripts/validate-benchmark-release.mjs artifacts/<release>
 
 The normative research gates remain in
 [`RESEARCH-PROCESS.md`](../RESEARCH-PROCESS.md).
+
+For HC-CORTEX-002 specifically, the exact operational commands (protocol
+validation, PostgreSQL reference-service lifecycle, runner bindings,
+independent analysis, sealing, deep verification, and generic release
+discovery) live in [`HC-CORTEX-002-RUNBOOK.md`](HC-CORTEX-002-RUNBOOK.md).

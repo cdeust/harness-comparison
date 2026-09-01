@@ -1,0 +1,29 @@
+# LF-stable text for research artifacts (protocols, schemas, ledgers, scripts,
+# and dossiers). HC-CORTEX-002's raw JSONL ledgers are content-addressed
+# hash-chains; verifyLedgerBytes() (scripts/hc-cortex-002-evidence-lib.mjs)
+# fails closed on any CR byte (LEDGER_FRAMING_INVALID), and every produced
+# JSON/JSONL artifact is LF-terminated by construction. A CRLF-normalizing
+# checkout (Windows core.autocrlf=true without this file) would silently
+# corrupt those digests on clone. Git's own gitattributes documentation
+# recommends this exact baseline: https://git-scm.com/docs/gitattributes
+* text=auto eol=lf
+
+*.json text eol=lf
+*.jsonl text eol=lf
+*.md text eol=lf
+*.mjs text eol=lf
+*.py text eol=lf
+*.yml text eol=lf
+*.sh text eol=lf
+
+# No binary research artifact is committed to this repository today (raw
+# SQLite databases and PostgreSQL clusters are runtime-generated, never
+# checked in); these entries exist so a future binary addition does not
+# silently fall through text normalization.
+*.sqlite3 binary
+*.db binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary

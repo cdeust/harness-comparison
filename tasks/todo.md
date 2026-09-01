@@ -104,12 +104,56 @@ from that file before changing or running the protocol.
 - Cross-contract review prevented two post-hoc repairs: the runner now emits a
   unique attempt ID per cell rather than one release-wide ID, and persists the
   complete external Git protocol registration required by the sealer.
-- PostgreSQL is still `unverified`: the protocol now requires an owner-only
-  Unix socket, no TCP listener, rejected host authentication and one fresh
-  `template0` database per PostgreSQL cell. The provisioner and receipt gate
-  must pass before a live smoke or main run.
+- PostgreSQL is still `unverified` for scoring purposes: the protocol
+  requires an owner-only Unix socket, no TCP listener, rejected host
+  authentication and one fresh `template0` database per PostgreSQL cell.
+  A real macOS PostgreSQL 17.9 (Homebrew) prepare/status/stop smoke against
+  the registered protocol completed (see below); Linux remains untested.
 - Benchmark status: `pending`. No workload or PostgreSQL result is publishable
   until the protocol hash and artifact validator are sealed.
+
+### HC-CORTEX-002 review (2026-09-01 continuation, commit `93070fe`)
+
+Handoff items 1-4 from `HC-CORTEX-002-HANDOFF.md`'s incomplete-work list are
+now complete. Item 5 (independent release review, then the harness
+preregistration PR) is next; `registeredAt` remains provisional until that
+freeze. Exact commands: [`protocols/HC-CORTEX-002-RUNBOOK.md`](../protocols/HC-CORTEX-002-RUNBOOK.md).
+
+- Item 1 (persisted-state recomputation): `persistedState()` was implemented
+  but never wired into `validateOracleLedger`'s context, so every check
+  depending on it crashed. Wired it in, added a marker-derived-vs-formula
+  cross-check, and rewrote `load_window_exact` to independently recompute
+  BigInt arithmetic, load-window enclosure, and the producer's
+  `summary_elapsed_ns`/`load_intent_count`/`load_outcome_count` fields
+  against raw ledger data rather than trusting `expected` prose. Rebuilt the
+  analysis fixtures with a coherent row/marker/edge story and raw causal
+  corruption in the blocked-baseline control (not merely a false check).
+- Item 2 (discovery path fix): `validate-benchmark-release.mjs`'s
+  `withIssueSpecificVerification` hardcoded `<release>/protocol.json`; the
+  generic manifest contract only guarantees `manifest.protocol.path`. Fixed
+  to derive the path from the already-validated manifest with a quiescence
+  check; regression-tested against a nonstandard path.
+- Item 3 (real E2E): first test in the repository to chain the real runner
+  into the real Python adapter (pinned candidate `9faa80d3`) and the
+  analyzer/sealer/verifier chain (`scripts/hc-cortex-002-real-adapter-e2e.test.mjs`),
+  on a disposable SQLite C1/W1 fixture. Surfaced and fixed two previously
+  latent integration defects no synthetic fixture had exercised: the privacy
+  scanner false-positived on raw binary SQLite evidence (treated it as UTF-8
+  text), and the analyzer's provenance validator rejected the real runner's
+  own `gitBlob` field. A real PostgreSQL 17.9 smoke (prepare/status/stop, no
+  fakes) completed on macOS; Linux is untested on this host. Extended the
+  read-only verifier's adversarial coverage to analysis, negative evidence,
+  and manifest-projection forgery (previously only scoring was covered).
+- Item 4 (documentation): added `protocols/HC-CORTEX-002-RUNBOOK.md` with
+  every exact command, including the PostgreSQL provisioner's git-registration
+  gotcha (needs a pushed commit, not merely a committed one); added
+  `.gitattributes`; updated the Cortex issue dossier's engineering-readiness
+  note without upgrading any verdict-ledger row; documented the sealer's
+  hardcoded `protocol.json` limitation as a known limitation, not refactored.
+- Known limitation carried forward, not fixed here: `hc-cortex-002-seal-lib.mjs`
+  hardcodes the literal `"protocol.json"` path, so a fully-verified-positive
+  HC-CORTEX-002 release at a nonstandard protocol path is architecturally
+  impossible with this pipeline's own tooling today (see the runbook §8).
 
 ## Claude-harness parity worklog review (2026-09-01)
 
