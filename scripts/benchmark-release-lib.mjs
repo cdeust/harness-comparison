@@ -164,12 +164,39 @@ function portableCollisionKey(value) {
   return value.normalize("NFC").toLowerCase();
 }
 
+// See portablePath()'s comment: git-reported and Node-realpathSync'd paths to the identical
+// directory can disagree in segment casing on Windows. Every "is this git root the same
+// directory as that Node-resolved root" check must tolerate that, or it fails closed with a
+// false GIT_ROOT_MISMATCH-style error on an otherwise-correct Windows checkout.
+function sameHostPath(left, right) {
+  if (left === right) return true;
+  return process.platform === "win32" && typeof left === "string" && typeof right === "string" &&
+    left.toLowerCase() === right.toLowerCase();
+}
+
 function portablePath(root, absolutePath) {
-  // See workload-ladder-runner-lib.mjs::portablePath for why this normalizes to forward
-  // slashes before computing the relative path rather than after: node:path's native
-  // relative() is win32-flavored on Windows, and swapping separators post hoc does not by
-  // itself guarantee the result is POSIX-relative end to end.
-  return posix.relative(root.split(sep).join("/"), absolutePath.split(sep).join("/"));
+  // Windows filesystems are case-insensitive, and git's own path reporting (e.g.
+  // `git rev-parse --show-toplevel`) can disagree in segment casing with Node's independent
+  // realpathSync of the identical on-disk directory -- observed directly on GitHub Actions
+  // windows-latest, where this produced a spurious ".." climb (UNSAFE_ARTIFACT_PATH,
+  // "dot-segment") even after separator normalization alone. Find the longest common
+  // path-segment prefix comparing case-insensitively on win32 (case-sensitively elsewhere,
+  // where this is a no-op), then return the remaining segments using their ORIGINAL casing
+  // from absolutePath -- never lowercased in the result. If root is not actually a
+  // (case-insensitive) prefix of absolutePath, fall back to a plain POSIX-relative
+  // computation, which correctly yields an escaping/unsafe path for a genuine mismatch.
+  const rootSegments = root.split(sep).filter(Boolean);
+  const pathSegments = absolutePath.split(sep).filter(Boolean);
+  const caseFold = process.platform === "win32" ? (value) => value.toLowerCase() : (value) => value;
+  let common = 0;
+  while (
+    common < rootSegments.length && common < pathSegments.length &&
+    caseFold(rootSegments[common]) === caseFold(pathSegments[common])
+  ) common += 1;
+  if (common !== rootSegments.length) {
+    return posix.relative(root.split(sep).join("/"), absolutePath.split(sep).join("/"));
+  }
+  return pathSegments.slice(common).join("/");
 }
 
 function lexicalCompare(left, right) {
@@ -507,8 +534,8 @@ function verifyGitRegistration(registration, repositoryRoot, expectedBytes, erro
     return null;
   }
   const discovered = gitRootFromPath(join(root, "placeholder"), errors, errorPath);
-  if (!discovered || discovered !== root) {
-    if (discovered && discovered !== root) {
+  if (!discovered || !sameHostPath(discovered, root)) {
+    if (discovered && !sameHostPath(discovered, root)) {
       add(errors, "GIT_ROOT_MISMATCH", errorPath, "Configured source root is not the Git repository root");
     }
     return null;
@@ -559,8 +586,8 @@ function verifyProtocolCheckout(protocolPath, bytes, errors, options) {
         try { return realpathSync(resolve(options.sourceRepositoryRoot)); } catch { return null; }
       })()
     : inferredRoot;
-  if (!root || !inferredRoot || root !== inferredRoot) {
-    if (root && inferredRoot && root !== inferredRoot) {
+  if (!root || !inferredRoot || !sameHostPath(root, inferredRoot)) {
+    if (root && inferredRoot && !sameHostPath(root, inferredRoot)) {
       add(errors, "GIT_ROOT_MISMATCH", "$.sourceRegistration", "Protocol is outside the configured source repository");
     }
     return null;
@@ -1241,8 +1268,8 @@ function verifyPublishedRelease(root, tree, snapshots, manifestSnapshot, manifes
     return null;
   }
   const discovered = gitRootFromPath(join(root, manifestFileName), errors, "$.releaseRegistration");
-  if (!discovered || discovered !== sourceRoot) {
-    if (discovered && discovered !== sourceRoot) {
+  if (!discovered || !sameHostPath(discovered, sourceRoot)) {
+    if (discovered && !sameHostPath(discovered, sourceRoot)) {
       add(errors, "PUBLISHED_RELEASE_REPOSITORY_MISMATCH", "$.releaseRegistration", "Published release is outside the source Git repository");
     }
     return null;

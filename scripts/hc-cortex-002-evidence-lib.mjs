@@ -63,13 +63,29 @@ export function safeRelativePath(value) {
     posix.normalize(value) === value;
 }
 
-function portablePath(root, path) {
-  // node:path's native relative() is win32-flavored on Windows; swapping separators
-  // post hoc does not by itself guarantee a POSIX-relative result (drive-letter/UNC and
-  // casing quirks live in relative()'s own computation, not just its separators). Normalize
-  // both inputs to forward slashes first, then compute the relative path with POSIX
-  // semantics throughout, so the result is host-separator-independent end to end.
-  return posix.relative(root.split(sep).join("/"), path.split(sep).join("/"));
+function portablePath(root, absolutePath) {
+  // Windows filesystems are case-insensitive, and git's own path reporting (e.g.
+  // `git rev-parse --show-toplevel`) can disagree in segment casing with Node's independent
+  // realpathSync of the identical on-disk directory -- observed directly on GitHub Actions
+  // windows-latest, where this produced a spurious ".." climb (UNSAFE_ARTIFACT_PATH,
+  // "dot-segment") even after separator normalization alone. Find the longest common
+  // path-segment prefix comparing case-insensitively on win32 (case-sensitively elsewhere,
+  // where this is a no-op), then return the remaining segments using their ORIGINAL casing
+  // from absolutePath -- never lowercased in the result. If root is not actually a
+  // (case-insensitive) prefix of absolutePath, fall back to a plain POSIX-relative
+  // computation, which correctly yields an escaping/unsafe path for a genuine mismatch.
+  const rootSegments = root.split(sep).filter(Boolean);
+  const pathSegments = absolutePath.split(sep).filter(Boolean);
+  const caseFold = process.platform === "win32" ? (value) => value.toLowerCase() : (value) => value;
+  let common = 0;
+  while (
+    common < rootSegments.length && common < pathSegments.length &&
+    caseFold(rootSegments[common]) === caseFold(pathSegments[common])
+  ) common += 1;
+  if (common !== rootSegments.length) {
+    return posix.relative(root.split(sep).join("/"), absolutePath.split(sep).join("/"));
+  }
+  return pathSegments.slice(common).join("/");
 }
 
 function fileIdentity(status) {
