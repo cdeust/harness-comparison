@@ -76,6 +76,48 @@ references the real, shared Claude Code configuration; and both
 harness's plugin roster and no other, and are dev-symlink mounted rather than
 vendored.
 
+## Benchmark runners
+
+Parity with `codex-harness/`'s revision tooling; the governing procedure is
+`../BENCHMARK-PROCESS.md` (already the single source of truth — no third copy
+of the revision contract lives here).
+
+- `run-b-ingestion-unbounded.mjs` — drives AI Architect's `analyze_codebase`
+  through a direct stdio MCP connection with no fixed wall-clock ceiling, so
+  a host client timeout never becomes a product measurement. Claude-specific
+  difference from the codex driver: Harness B has no file-based MCP servers,
+  so the server is resolved the way Claude Code itself resolves it —
+  `runtime/b/claude-home/installed_plugins.json` → the plugin's
+  `.claude-plugin/plugin.json` → its `.mcp.json` with `${CLAUDE_PLUGIN_ROOT}`
+  substituted — never a hardcoded binary path.
+
+  ```sh
+  node claude-harness/run-b-ingestion-unbounded.mjs \
+    --repo /absolute/corpus/repo \
+    --output-dir <result-root>/harness-b-unbounded/graphs/<repo> \
+    --report <result-root>/harness-b-unbounded/<repo>.json
+  ```
+
+- `run-probes-sequential.mjs` — runs the P1–P3 repository probes and C1–C5
+  component probes, one fresh staged Claude Code process per cell, strictly
+  sequential. Every cell records before/after environment brackets (UTC,
+  uptime, load, free disk, peer processes, git snapshot, qualified artifact
+  hash), writes every artifact create-exclusive, validates the full report
+  schema before accepting or skipping a cell, and refuses to retry over
+  partial prior artifacts. A pre-spawn attempt receipt lands on disk before
+  each child starts, so a killed orchestrator leaves an indeterminate record
+  instead of silence; reconcile it from a separate process before retrying.
+  The result root defaults to `results/claude-rev1-isolated` and can be
+  overridden with `CLAUDE_HARNESS_RESULT_ROOT`. `--dry-run` lists cell
+  status without side effects.
+
+Both harnesses cover the full five-repository corpus symmetrically. Rebuild
+Harness A's Graphify artifact per corpus repository before A cells and run B
+ingestion cells before A ingestion cells, as `../BENCHMARK-PROCESS.md`
+requires. This repository never invokes these runners from another Claude
+session: execute them manually in a terminal after the environment gate is
+green.
+
 ## Running a Step 0 check
 
 ```sh
