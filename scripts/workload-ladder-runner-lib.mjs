@@ -119,7 +119,16 @@ function writeExclusiveJsonLines(path, values) {
 }
 
 function portablePath(root, path) {
-  return relative(root, path).split(sep).join("/");
+  // node:path's native relative() is win32-flavored on Windows (backslash separators, and
+  // its own drive-letter/casing computation); swapping separators after the fact does not
+  // by itself guarantee a POSIX-relative result. Normalize both inputs to forward slashes
+  // first, then compute the relative path with POSIX semantics throughout, so every
+  // manifest/ledger-embedded path (adapter tree provenance, artifact lists, runner inputs)
+  // is host-separator-independent end to end. Root cause of the Windows CI failure this
+  // fixes: git rev-parse --show-toplevel plus realpathSync produced a repository root that
+  // relative()'s win32 codepath could not cleanly relativize against the protocol path,
+  // surfacing as UNSAFE_ARTIFACT_PATH at $.sourceRegistration.path.
+  return posix.relative(root.split(sep).join("/"), path.split(sep).join("/"));
 }
 
 function normalizedRelativePath(value) {

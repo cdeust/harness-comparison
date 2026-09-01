@@ -64,7 +64,12 @@ export function safeRelativePath(value) {
 }
 
 function portablePath(root, path) {
-  return relative(root, path).split(sep).join("/");
+  // node:path's native relative() is win32-flavored on Windows; swapping separators
+  // post hoc does not by itself guarantee a POSIX-relative result (drive-letter/UNC and
+  // casing quirks live in relative()'s own computation, not just its separators). Normalize
+  // both inputs to forward slashes first, then compute the relative path with POSIX
+  // semantics throughout, so the result is host-separator-independent end to end.
+  return posix.relative(root.split(sep).join("/"), path.split(sep).join("/"));
 }
 
 function fileIdentity(status) {

@@ -165,7 +165,11 @@ function portableCollisionKey(value) {
 }
 
 function portablePath(root, absolutePath) {
-  return relative(root, absolutePath).split(sep).join("/");
+  // See workload-ladder-runner-lib.mjs::portablePath for why this normalizes to forward
+  // slashes before computing the relative path rather than after: node:path's native
+  // relative() is win32-flavored on Windows, and swapping separators post hoc does not by
+  // itself guarantee the result is POSIX-relative end to end.
+  return posix.relative(root.split(sep).join("/"), absolutePath.split(sep).join("/"));
 }
 
 function lexicalCompare(left, right) {
