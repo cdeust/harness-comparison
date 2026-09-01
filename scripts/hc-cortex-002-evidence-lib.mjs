@@ -63,7 +63,27 @@ export function safeRelativePath(value) {
     posix.normalize(value) === value;
 }
 
-function portablePath(root, absolutePath) {
+// Shared by every script in this family (benchmark-release-lib.mjs, workload-ladder-runner-
+// lib.mjs, and this file) that builds or compares a canonical directory root -- extracted here
+// (2026-09-01) after a release review found the same ~20-line, security-relevant, Windows-
+// path-portability logic duplicated three ways, each independently touched by the same PR: a
+// divergence risk a single change was already worsening. hc-cortex-002-evidence-lib.mjs was
+// chosen over a new module because it already owns safeRelativePath() (the sibling path-safety
+// check these two compose with) and is already imported by the whole family; a dedicated
+// hc-cortex-002-path-lib.mjs remains the fallback if this file's own SRP is later strained by
+// growth unrelated to path portability.
+//
+// git-reported and Node-realpathSync'd paths to the identical directory can disagree in
+// segment casing on Windows. Every "is this git root the same directory as that Node-resolved
+// root" check must tolerate that, or it fails closed with a false root-mismatch error on an
+// otherwise-correct Windows checkout.
+export function sameHostPath(left, right) {
+  if (left === right) return true;
+  return process.platform === "win32" && typeof left === "string" && typeof right === "string" &&
+    left.toLowerCase() === right.toLowerCase();
+}
+
+export function portablePath(root, absolutePath) {
   // Windows filesystems are case-insensitive, and git's own path reporting (e.g.
   // `git rev-parse --show-toplevel`) can disagree in segment casing with Node's independent
   // realpathSync of the identical on-disk directory -- observed directly on GitHub Actions
