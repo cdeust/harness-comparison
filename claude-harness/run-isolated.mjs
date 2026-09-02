@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 import { existsSync, readFileSync, writeFileSync, mkdtempSync } from "node:fs";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { resolve, join } from "node:path";
 import { tmpdir } from "node:os";
 
 function usage() {
-  console.error("usage: run-isolated.mjs --harness A|B --cwd <repo> --prompt-file <file> [--value KEY=VALUE ...]");
+  console.error("usage: run-isolated.mjs --harness A|B --cwd <repo> --prompt-file <file> [--value KEY=VALUE ...] [--envelope-out <path>]");
   process.exit(64);
 }
 
@@ -31,7 +31,13 @@ const option = (name) => {
 const harness = option("--harness");
 const cwd = option("--cwd");
 const promptFile = option("--prompt-file");
+const envelopeOut = option("--envelope-out");
 if (!new Set(["A", "B"]).has(harness) || !cwd || !promptFile) usage();
+// Create-exclusive discipline, same as the rest of this harness: refuse
+// before spawning rather than silently overwriting a prior cell's envelope.
+if (envelopeOut && existsSync(envelopeOut)) {
+  throw new Error(`refusing to start: envelope output already exists: ${envelopeOut}`);
+}
 
 const manifestPath = resolve(import.meta.dirname, `harness-${harness.toLowerCase()}.mcp.json`);
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
@@ -82,5 +88,32 @@ const args = [
 // No --cd flag exists on the Claude Code CLI (unlike Codex) — cwd is set on
 // the spawned process instead, matching run-rev2.sh/run-probes.sh's existing
 // pattern in this repository.
-const result = spawnSync("claude", args, { stdio: "inherit", env: isolatedEnv, cwd: resolve(cwd) });
-process.exit(result.status ?? 1);
+//
+// Async spawn + streams here, not spawnSync's bounded maxBuffer — a result
+// envelope large enough to include verbose tool-use metadata must never be
+// silently truncated.
+async function spawnWithEnvelopeCapture(spawnArgs, spawnEnv, spawnCwd, outputPath) {
+  const chunks = [];
+  const status = await new Promise((fulfill) => {
+    const child = spawn("claude", spawnArgs, { stdio: ["inherit", "pipe", "inherit"], env: spawnEnv, cwd: spawnCwd });
+    child.stdout.on("data", (chunk) => {
+      chunks.push(chunk);
+      process.stdout.write(chunk);
+    });
+    child.once("error", (error) => {
+      process.stderr.write(`${error.stack || error.message}\n`);
+      fulfill(1);
+    });
+    child.once("close", (code, signal) => fulfill(signal ? 1 : (code ?? 1)));
+  });
+  writeFileSync(outputPath, Buffer.concat(chunks), { flag: "wx" });
+  return status;
+}
+
+if (!envelopeOut) {
+  const result = spawnSync("claude", args, { stdio: "inherit", env: isolatedEnv, cwd: resolve(cwd) });
+  process.exit(result.status ?? 1);
+} else {
+  const status = await spawnWithEnvelopeCapture(args, isolatedEnv, resolve(cwd), resolve(envelopeOut));
+  process.exit(status);
+}

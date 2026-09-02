@@ -278,12 +278,23 @@ Vérification nommée avant d'agir : un validateur de schéma du ledger
 réelle ; l'agrégateur recalcule byte-exact la réduction et son intervalle
 à partir des JSON bruts.
 
-- [ ] Capturer l'enveloppe `claude -p --output-format json` dans un fichier
+- [x] Capturer l'enveloppe `claude -p --output-format json` dans un fichier
   par cellule (`usage.input_tokens`, `output_tokens`,
   `cache_creation_input_tokens`, `cache_read_input_tokens`,
   `total_cost_usd`, `num_turns`, `duration_ms`) ; vérifier les noms de
   champs contre la documentation du CLI et la version installée avant
   d'écrire le schéma.
+  - Champs vérifiés contre https://code.claude.com/docs/en/agent-sdk/typescript
+    (type `SDKResultMessage`) et https://code.claude.com/docs/en/headless, et
+    contre l'enveloppe mesurée du CLI 2.1.258 installé
+    (`claude-harness/fixtures/result-envelope.claude-2.1.258.json` +
+    `.provenance.json`). Livrés : `claude-harness/run-isolated.mjs`
+    (`--envelope-out`, écriture create-exclusive `"wx"`),
+    `claude-harness/result-envelope.mjs` (validateur pur +
+    `readResultEnvelope`), `claude-harness/result-envelope.test.mjs`,
+    branchés dans `claude-harness/run-probes-sequential.mjs` (un rapport
+    sans enveloppe compte comme artefact partiel, jamais comme cellule
+    terminée) et `claude-harness/validate.mjs`.
 - [ ] Définir le bras témoin « exploration fichier par fichier » : Claude
   Code sans serveur MCP mémoire, auto-memory désactivée
   (`CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`), Read/Grep/Glob autorisés, mêmes
@@ -375,3 +386,24 @@ notée.
 6. Candidats issue déjà signalés sans numéro : `scripts/hc-cortex-002-analysis-lib.mjs`
    (1622 lignes) et `scripts/hc-cortex-002-analysis.test.mjs` (1642 lignes)
    dépassent le plafond de 500 lignes ; seul l'owner ouvre les issues.
+
+Arbitrage 2026-09-02 — l'owner délègue (« Pour les différents choix, je te
+laisse prendre la meilleure option ») ; choix retenus, enregistrés Cortex
+4355909-4355915 :
+
+1. Deux étapes (Stein 1945) : pilote préinscrit pour la variance, `n`
+   dérivé d'une demi-largeur cible déclarée ; intervalle bootstrap
+   percentile ; `n` publié par cellule. `n` fixe rejeté (constante inventée).
+2. « Aucun chiffre traçable » en tête pour Fable 5 / Opus 5 ; ledger
+   tokens/coût publié car mesuré ; plage proxy en annexe seulement, marquée
+   `model-arch-not-released`.
+3. Mix mondial Our World in Data en tête : l'enveloppe du CLI 2.1.258
+   rapporte `usage.inference_geo: "not_available"`, la région d'inférence
+   n'est pas divulguée ; région en sensibilité déclarée seulement.
+4. Corpus synthétique déterministe (graine et digest dans le manifeste) ;
+   dépôts réels en validation externe hors courbe.
+5. Zikkaron : troisième bras du v2, même corpus, mêmes tâches, même ledger.
+6. Les deux candidats issue sont ouverts par délégation de l'owner : #8
+   (`scripts/hc-cortex-002-analysis-lib.mjs`, 1622 l.) et #9
+   (`scripts/hc-cortex-002-analysis.test.mjs`, 1642 l.) ; dette préexistante
+   non aggravée, aucun refactor dans les chantiers.
