@@ -1,0 +1,162 @@
+// Pure module: the frugality-ledger-v1 document assembler and validator
+// (tasks/todo.md, chantier A, etape 4: "Schema frugality-ledger-v1.schema.json
+// + agrégateur indépendant"). No I/O — claude-harness/build-frugality-ledger.mjs
+// is the only place that reads files and writes the ledger; this module only
+// ever sees already-read JSON plus already-computed evidence hashes.
+import { basename } from "node:path";
+import { validateAgainstSchema } from "../scripts/json-schema-subset-lib.mjs";
+import { validateResultEnvelope, validateUsage } from "./result-envelope.mjs";
+import { precomputeLedgerLine } from "./precompute-ledger.mjs";
+import ledgerSchema from "../schemas/frugality-ledger-v1.schema.json" with { type: "json" };
+
+function usageFromEnvelope(envelope) {
+  // provider is added here, never carried by the raw envelope: the CLI's
+  // usage block has no provider field of its own (result-envelope.mjs's
+  // validateUsage pins exactly the four token fields). "anthropic" is the
+  // only value this ledger version admits — see
+  // schemas/frugality-ledger-v1.schema.json's usage $def description.
+  return {
+    provider: "anthropic",
+    input_tokens: envelope.usage.input_tokens,
+    output_tokens: envelope.usage.output_tokens,
+    cache_creation_input_tokens: envelope.usage.cache_creation_input_tokens,
+    cache_read_input_tokens: envelope.usage.cache_read_input_tokens
+  };
+}
+
+function harnessAndTaskFromCellId(cellId) {
+  // Cell ids are always "${harness}-${task}" with harness a single letter
+  // (run-probes-sequential.mjs's repoCells/componentCells): "A-components",
+  // "B-zetetic-team-subagents". Splitting on the first "-" recovers both
+  // without assuming anything about task's own internal dashes.
+  const separator = cellId.indexOf("-");
+  return { harness: cellId.slice(0, separator), task: cellId.slice(separator + 1) };
+}
+
+// Contract:
+// pre: cellId is "${harness}-${task}"; bracket is the parsed
+//      manifest/probe-brackets/<cellId>.json object written by
+//      run-probes-sequential.mjs's writeBracket (carries prompt_sha256 and
+//      envelope.sha256); envelope is the parsed raw result-envelope JSON
+//      (validated here, not before); evidence is
+//      { envelope: {path, sha256}, bracket: {path, sha256},
+//        report: {path, sha256}, prompt_sha256 } — already computed by the
+//      caller from the bytes on disk at ledger-build time.
+// post: returns the pinned entries[] row (schemas/frugality-ledger-v1's
+//       #/$defs/entry). Throws one Error, naming cellId, when the envelope
+//       is invalid OR when evidence's hashes disagree with what the bracket
+//       itself recorded at cell-completion time — the binding that catches
+//       a report or envelope tampered with after the cell finished (evidence
+//       must be hash-bound to the terminal artifact, not merely present).
+//       The prompt_sha256 check is weaker by construction: no persisted
+//       artifact survives the staging tmpdir to re-hash independently, so it
+//       verifies internal consistency between bracket and evidence rather
+//       than re-deriving the hash from bytes.
+export function ledgerEntryFromCell({ cellId, replicate, host, bracket, envelope, evidence }) {
+  const { valid, errors } = validateResultEnvelope(envelope);
+  if (!valid) throw new Error(`ledgerEntryFromCell(${cellId}): invalid result envelope: ${errors.join("; ")}`);
+
+  const bindingErrors = [];
+  if (bracket.envelope?.sha256 !== evidence.envelope.sha256) {
+    bindingErrors.push(`envelope sha256 mismatch: bracket recorded ${bracket.envelope?.sha256}, evidence carries ${evidence.envelope.sha256}`);
+  }
+  if (bracket.prompt_sha256 !== evidence.prompt_sha256) {
+    bindingErrors.push(`prompt sha256 mismatch: bracket recorded ${bracket.prompt_sha256}, evidence carries ${evidence.prompt_sha256}`);
+  }
+  if (bindingErrors.length > 0) throw new Error(`ledgerEntryFromCell(${cellId}): ${bindingErrors.join("; ")}`);
+
+  const { harness, task } = harnessAndTaskFromCellId(cellId);
+  return {
+    cell_id: cellId,
+    harness,
+    task,
+    replicate,
+    host,
+    usage: usageFromEnvelope(envelope),
+    total_cost_usd: envelope.total_cost_usd,
+    num_turns: envelope.num_turns,
+    duration_ms: envelope.duration_ms,
+    duration_api_ms: envelope.duration_api_ms,
+    evidence
+  };
+}
+
+// Contract:
+// pre: receipt satisfies precomputeLedgerLine's own precondition
+//      (validatePrecomputeReceipt); amortizationTaskCount is the accepted
+//      entries[] count for this receipt's (harness, task, replicate) — the
+//      caller refuses a zero count before calling this, never this function.
+// post: returns the pinned precompute[] row (schemas/frugality-ledger-v1's
+//       #/$defs/precomputeItem): line is precomputeLedgerLine's own return
+//       value, never re-derived or re-shaped. task is basename(receipt.repo)
+//       — the repository directory name, matching entries[].task for the
+//       same repository.
+export function precomputeLedgerEntry({ receipt, replicate, amortizationTaskCount, evidence }) {
+  const line = precomputeLedgerLine(receipt, { amortizationTaskCount });
+  return { harness: line.harness, task: basename(line.repo), replicate, line, evidence };
+}
+
+function pushSchemaErrors(doc, errors) {
+  for (const schemaError of validateAgainstSchema(doc, ledgerSchema)) {
+    errors.push(`${schemaError.path}: ${schemaError.message}`);
+  }
+}
+
+function pushReplicateErrors(doc, errors) {
+  const declared = new Set(doc.replicates?.map((replicate) => replicate.id) ?? []);
+  for (const entry of doc.entries ?? []) {
+    if (!declared.has(entry.replicate)) errors.push(`entries[${entry.cell_id}]: undeclared replicate "${entry.replicate}"`);
+  }
+  for (const line of doc.precompute ?? []) {
+    if (!declared.has(line.replicate)) errors.push(`precompute[${line.harness}-${line.task}]: undeclared replicate "${line.replicate}"`);
+  }
+}
+
+function pushEntryErrors(doc, errors) {
+  const seen = new Set();
+  for (const entry of doc.entries ?? []) {
+    const key = `${entry.cell_id} ${entry.replicate}`;
+    if (seen.has(key)) errors.push(`entries: duplicate (cell_id, replicate) = (${entry.cell_id}, ${entry.replicate})`);
+    seen.add(key);
+    if (entry.cell_id !== `${entry.harness}-${entry.task}`) {
+      errors.push(`entries[${entry.cell_id}]: cell_id does not equal "${entry.harness}-${entry.task}"`);
+    }
+    validateUsage(entry.usage, errors, `entries[${entry.cell_id}].usage`);
+  }
+}
+
+function pushPrecomputeErrors(doc, errors) {
+  for (const line of doc.precompute ?? []) {
+    const label = `precompute[${line.harness}-${line.task}]`;
+    if (line.harness === doc.controlHarness) errors.push(`${label}: harness equals controlHarness "${doc.controlHarness}"`);
+    const accepted = (doc.entries ?? []).filter(
+      (entry) => entry.harness === line.harness && entry.task === line.task && entry.replicate === line.replicate
+    ).length;
+    if (line.line?.amortization?.n !== accepted) {
+      errors.push(`${label}: amortization.n (${line.line?.amortization?.n}) does not equal the accepted entries count (${accepted})`);
+    }
+  }
+}
+
+// Contract:
+// pre: doc is arbitrary JSON — never throws for shape reasons alone; every
+//      violation is collected before deciding.
+// post: returns doc unchanged when it satisfies both the JSON Schema
+//       (schemas/frugality-ledger-v1.schema.json) and every semantic pin the
+//       schema cannot express (declared replicates, (cell_id, replicate)
+//       uniqueness, per-entry usage re-validation, amortization.n matching
+//       the accepted-entries count, precompute never on the control harness,
+//       cell_id matching harness/task). Otherwise throws one Error joining
+//       every violation with "; " (same contract shape as
+//       precompute-ledger.mjs's validatePrecomputeReceipt).
+export function validateFrugalityLedger(doc) {
+  const errors = [];
+  pushSchemaErrors(doc, errors);
+  if (errors.length === 0) {
+    pushReplicateErrors(doc, errors);
+    pushEntryErrors(doc, errors);
+    pushPrecomputeErrors(doc, errors);
+  }
+  if (errors.length > 0) throw new Error(`invalid frugality ledger: ${errors.join("; ")}`);
+  return doc;
+}

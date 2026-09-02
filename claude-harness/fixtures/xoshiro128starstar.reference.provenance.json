@@ -1,0 +1,14 @@
+{
+  "generatorAlgorithm": "xoshiro128** 1.1",
+  "referenceSourceUrl": "https://prng.di.unimi.it/xoshiro128starstar.c",
+  "referenceSourceSha256": "2e3e540e15e1b1edf6144509ba3a71bc4611e3676d52e03d567a0f230a141a67",
+  "fetchedAt": "2026-09-03T00:00:00Z",
+  "compiler": "Apple clang version 17.0.0 (https://github.com/swiftlang/llvm-project.git f403f1080b28ed3bf592ccbc491dadda2a5d4814)",
+  "compiledOn": "2026-09-03",
+  "seedString": "harness-comparison frugality reference vector",
+  "seedDerivation": "sha256(seedString) read as four big-endian uint32 words, used verbatim as the generator's initial state s[0..3]",
+  "derivedStateWords": [2947191363, 2495157789, 3359594899, 897495208],
+  "derivedStateWordsHex": ["0xafaa9243", "0x94b9161d", "0xc83f5993", "0x357eb0a8"],
+  "referenceProgram": "A `next()` port from the reference file, unmodified, plus a small main() that calls set_state(...) with derivedStateWords and prints 16 calls to next() as decimal uint32, one per line. Not committed to the repository — reproducible from this provenance file plus the reference C source at referenceSourceUrl.",
+  "note": "The C source and compiled binary are not committed (task instruction, D1 item 1). This provenance file plus claude-harness/frugality-bootstrap.mjs's createSeededGenerator/nextUint32 reproduce the same 16 outputs recorded in xoshiro128starstar.reference.json — verified byte-for-byte against a JS port during development (see the engineer's report for the transcript)."
+}

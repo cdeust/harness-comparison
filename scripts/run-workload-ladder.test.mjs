@@ -29,6 +29,7 @@ const registeredFiles = [
   "scripts/hc-cortex-002-evidence-lib.mjs",
   "scripts/hc-cortex-002-postgresql-lib.mjs",
   "scripts/hc-cortex-002-seal-lib.mjs",
+  "scripts/json-schema-subset-lib.mjs",
   "scripts/provision-hc-cortex-002-postgresql.mjs",
   "scripts/run-workload-ladder.mjs",
   "scripts/seal-hc-cortex-002.mjs",

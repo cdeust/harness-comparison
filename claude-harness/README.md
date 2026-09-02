@@ -319,6 +319,197 @@ node claude-harness/precompute-line.mjs \
 directly on this machine — field-shape and unit evidence only, not a
 benchmark measurement.
 
+## Frugality ledger (chantier A, etape 4)
+
+`claude-harness/frugality-ledger.mjs` (pure) assembles and validates one
+`frugality-ledger-v1` document (`schemas/frugality-ledger-v1.schema.json`)
+from already-read cell evidence: `ledgerEntryFromCell` turns one accepted
+probe cell's bracket + validated result envelope + evidence hashes into an
+`entries[]` row, `precomputeLedgerEntry` wraps `precomputeLedgerLine`
+(etape 3) into a `precompute[]` row, and `validateFrugalityLedger` checks
+both the JSON Schema and the semantic pins the schema cannot express
+(declared replicates, `(cell_id, replicate)` uniqueness, `amortization.n`
+matching the accepted-entries count, no precompute row on the control
+harness, `cell_id` matching `${harness}-${task}`). The schema validation
+itself runs through `scripts/json-schema-subset-lib.mjs` — the same JSON
+Schema subset validator `scripts/benchmark-release-lib.mjs` already used,
+extracted into its own pure module once a third real consumer (this ledger)
+needed it (coding-standards.md §3.3: three concrete uses).
+
+`claude-harness/build-frugality-ledger.mjs` is the only I/O: it reads every
+accepted cell (`probes/run-summary.json` status `ok` or `existing`) under
+one or more replicate result roots, hashes `manifest/probe-brackets/<cell>.json`,
+`probes/<cell>.envelope.json`, and `probes/<cell>.json`, and reads every
+`precompute/<harness>-<task>.receipt.json` present (optional directory).
+
+```sh
+node claude-harness/build-frugality-ledger.mjs \
+  --result-root <result-root-1> [--result-root <result-root-2> ...] \
+  --out <path-to-ledger.json>
+```
+
+**What is in the ledger:**
+- Raw usage per cell (`usage.input_tokens`, `output_tokens`,
+  `cache_creation_input_tokens`, `cache_read_input_tokens`,
+  `total_cost_usd`, `num_turns`, `duration_ms`, `duration_api_ms`), each row
+  hash-bound to its source envelope, bracket, and report — a report or
+  envelope tampered with after the cell finished produces a hash mismatch
+  and the whole ledger build refuses.
+- Precompute lines (etape 3) unchanged from `precomputeLedgerLine`'s own
+  output: raw figures next to per-task amortized figures, `n` always shown.
+- `host.tool` / `host.version` per cell, from the probe bracket's
+  `before.host_tool` (`run-probes-sequential.mjs`'s `hostToolSnapshot`,
+  measured via `claude --version` on the same PATH the cell itself resolved
+  `claude` from — Cortex memory 4356573: the result envelope carries no CLI
+  version field of its own). `version` is `null`, never fabricated, on a
+  bracket that predates this capture or when the version probe itself
+  failed at cell time.
+
+**What is deliberately absent:**
+- No derived fields (e.g. no `tokens_total`): the independent aggregator
+  (`claude-harness/frugality-aggregate.mjs`) recomputes every reduction and
+  its bootstrap-percentile confidence interval byte-exact from these raw
+  fields, never from a value this ledger already summed.
+- No absolute filesystem paths: every `evidence.*.path` is relative to its
+  own replicate's result root (`tasks/lessons.md`, lesson 7 — private paths
+  stay out of public artifacts).
+- `usage.provider` is an enum with the single admitted value `"anthropic"`.
+  Codex's usage semantics (whether `cached_input_tokens` is already folded
+  into `input_tokens`) have not been verified against a source, so a Codex
+  cell is not admitted by this ledger version yet (coding-standards.md §8:
+  no source, no implementation).
+
+Run the ledger's own tests with:
+
+```sh
+node --test claude-harness/frugality-ledger.test.mjs claude-harness/build-frugality-ledger.test.mjs
+```
+
+## Frugality aggregator (chantier A, etape 4)
+
+`frugality-bootstrap.mjs` (PRNG + resampling primitives, ledger-agnostic) and
+`frugality-aggregate.mjs` (ledger-specific cell/comparison/pooled logic) are
+the independent aggregator of the measured-frugality ledger. Both are pure —
+no I/O, no clock. `aggregate-frugality-ledger.mjs` is the only I/O: it reads the ledger file
+and the parameters file, validates the ledger first
+(`validateFrugalityLedger`), hashes both files' exact bytes on disk, runs
+`aggregateFrugalityLedger`, and writes one `frugality-summary/v1` document
+create-exclusively (`wx`). Usage errors exit 64 (`sysexits(3)`); any refusal
+exits 1 with the reason on stderr and no output file.
+
+```sh
+node claude-harness/aggregate-frugality-ledger.mjs \
+  --ledger <path-to-ledger.json> \
+  --parameters <path-to-parameters.json> \
+  --out <path-to-summary.json>
+```
+
+The written summary is the pure module's output plus one `files` block
+(`files.ledger.{path,sha256}`, `files.parameters.{path,sha256}` — basenames
+only, sha256 of the bytes read). End to end, one replicate campaign is:
+
+```sh
+node claude-harness/build-frugality-ledger.mjs --result-root <r1> --result-root <r2> --out ledger.json
+node claude-harness/aggregate-frugality-ledger.mjs --ledger ledger.json --parameters parameters.json --out summary.json
+node --test claude-harness/aggregate-frugality-ledger.test.mjs   # the CLI's own tests
+```
+
+### Parameter file — every field required, no defaults
+
+`aggregateFrugalityLedger(ledger, parameters)` refuses any parameters object
+missing one of these fields, naming every violation in one thrown message
+(never silently filling in a default — `tasks/lessons.md` lesson 5: never
+invent thresholds or weights):
+
+| Field | Type | Notes |
+|---|---|---|
+| `schemaVersion` | `"frugality-aggregation-parameters/v1"` | exact match |
+| `control_harness` | non-empty string | e.g. `"C"` |
+| `confidence_level` | number in `(0, 1)` | e.g. `0.95` |
+| `bootstrap_replicates` | integer ≥ 1 | must produce an integer percentile rank — see below |
+| `seed` | non-empty string | root of every derived per-comparison seed |
+| `stage` | `"pilot"` \| `"scored"` | |
+| `declared_n_per_cell` | `null` when `stage: "pilot"`; integer ≥ 1 when `stage: "scored"` | never inferred |
+| `metrics` | non-empty subset of `["tokens_inference", "tokens_total", "total_cost_usd", "duration_ms", "num_turns"]` | declared order becomes output order |
+
+### The integer-rank rule
+
+The percentile interval's ranks are `k = (replicates + 1) * alpha / 2` and
+its mirror `replicates + 1 - k`: the percentile interval
+(θ̂\*<sub>((R+1)α)</sub>, θ̂\*<sub>((R+1)(1−α))</sub>) on the ordered
+replicates, α being one tail's probability — Davison, *Bootstrap Methods and
+their Application*, short-course handout (February 2021), slide 45 "Other
+confidence intervals",
+<https://statistique.cuso.ch/fileadmin/statistique/user_upload/BootShortHandout.pdf>
+(read 2026-09-03; its own examples use R = 999). The book (Davison & Hinkley
+1997, Cambridge University Press, DOI `10.1017/cbo9780511802843`) was only
+verified bibliographically, so the refusal below is stated as a consequence
+of the handout's formula, not as a rule quoted from the book. `percentileRanks` **refuses** any `(replicates,
+confidence_level)` pair whose `k` is not an integer ≥ 1 — no interpolation
+rule is chosen by this code. Compatible pairs used by this module's tests:
+`replicates: 999` or `1999` at `confidence_level: 0.95` (`k = 25` / `50`),
+`replicates: 19` at `confidence_level: 0.90` (`k = 1`). The protocol file
+that drives a real run must declare a compatible pair — this module never
+picks one for you.
+
+### Seed derivation
+
+`createSeededGenerator(seedString)` derives the xoshiro128** initial state
+from `sha256(seedString)`, read as four big-endian `uint32` words. Every
+comparison and pooled result gets its own seed, so each is independently
+reproducible without replaying the whole aggregation:
+
+- per-comparison: `` `${parameters.seed} ${task} ${treatment} ${metric}` ``
+- pooled: `` `${parameters.seed} pooled ${treatment} ${metric}` ``
+
+### Reference-vector fixture
+
+`fixtures/xoshiro128starstar.reference.json` pins the first 16 outputs of
+the seed string `"harness-comparison frugality reference vector"`, produced
+by compiling the reference C implementation
+(https://prng.di.unimi.it/xoshiro128starstar.c) with a small `main()` that
+sets the four state words derived from that seed and prints `next()` 16
+times. `fixtures/xoshiro128starstar.reference.provenance.json` records the
+URL, the reference file's sha256, the compiler version, the derivation, and
+the state words — the C source and compiled binary are **not** committed;
+the provenance is enough to reproduce both the C run and the JS run this
+module's own test asserts against.
+
+### Honesty statements printed in every summary
+
+- **Degenerate intervals at n < 2.** `bootstrapPercentileInterval` sets
+  `degenerate: true` whenever either sample has fewer than 2 observations —
+  every resample is then identical to the original sample by construction.
+  This is reported, not hidden or refused.
+- **Precompute coverage.** `tokens_total` for a treatment cell (harness ≠
+  `control_harness`) is published as `null` with an explicit
+  `reason: "precompute line missing for <k> of <n> observations"` when any
+  observation in that cell has no matching precompute line — never silently
+  computed from the observations that do have one (`tasks/lessons.md` lesson
+  6: preserve negative evidence, never repair by substitution). The control
+  arm never requires a precompute line (it has none by construction).
+- **`tokens_total` vs `tokens_inference`.** `tokens_inference` is the sum of
+  the four Anthropic usage token classes for the scored cell alone.
+  `tokens_total` adds the matching precompute line's amortized
+  `llm_tokens` (0 when the precompute step is deterministic, i.e.
+  `llm_usage: null`). Precompute CPU/RSS cost is published per treatment
+  cell in a separate `precompute: { lines, cpu_seconds_per_task,
+  max_rss_bytes }` block — never folded into a token figure.
+- **Undefined ratios.** `relativeReduction` throws when `mean(control) ===
+  0`; the aggregator catches this at the one call site whose job is
+  converting it into `{ relative_reduction: null, reason }` — never a
+  substituted value (e.g. `0` or `Infinity`).
+
+### `sha256` field vs the CLI's
+
+`aggregateFrugalityLedger`'s output carries `ledger.sha256 =
+sha256(JSON.stringify(ledger))` — the canonical bytes of the parsed object
+as handed to this module, not the ledger file's bytes on disk. The CLI
+publishes the on-disk digest separately as `files.ledger.sha256` (and the
+parameters file's as `files.parameters.sha256`); the two ledger digests are
+not expected to match, since a re-serialization can differ from the source
+file in key order and whitespace.
+
 ## Running a Step 0 check
 
 ```sh
