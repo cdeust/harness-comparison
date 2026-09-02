@@ -14,7 +14,7 @@ place pending a later dedup pass (it was under active use at copy time).
 2. Rebuild Harness A's Graphify artifact for every corpus repository. Record
    the build as A-side ingestion cost. Where a per-harness precompute-receipt
    runner exists (Claude's `claude-harness/run-precompute.mjs`), drive the
-   rebuild through it so the receipt — raw CPU seconds, max RSS, and its two
+   rebuild through it so the receipt — raw CPU seconds, max RSS, and its three
    printed semantic caveats — becomes the recorded cost, not an unmeasured
    wall-clock note.
 3. Run B ingestion cells first, then A ingestion cells, one cell at a time.
