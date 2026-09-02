@@ -1,8 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-import { validateResultEnvelope } from "./result-envelope.mjs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { readResultEnvelope, validateResultEnvelope } from "./result-envelope.mjs";
 
 const fixturePath = resolve(import.meta.dirname, "fixtures/result-envelope.claude-2.1.258.json");
 const fixture = JSON.parse(readFileSync(fixturePath, "utf8"));
@@ -69,4 +70,50 @@ test("extra unknown top-level field is still valid", () => {
   extended.some_future_field_not_yet_documented = { anything: true };
   const { valid, errors } = validateResultEnvelope(extended);
   assert.equal(valid, true, errors.join("; "));
+});
+
+test("is_error: true is invalid and names is_error", () => {
+  const errored = structuredClone(fixture);
+  errored.is_error = true;
+  const { valid, errors } = validateResultEnvelope(errored);
+  assert.equal(valid, false);
+  assert.ok(errors.some((error) => error.startsWith("is_error:")), errors.join("; "));
+});
+
+const scratch = mkdtempSync(join(tmpdir(), "result-envelope-test-"));
+
+test("readResultEnvelope returns the parsed fixture", () => {
+  assert.deepEqual(readResultEnvelope(fixturePath), fixture);
+});
+
+test("readResultEnvelope on a missing path throws naming the path", () => {
+  const missing = join(scratch, "missing.envelope.json");
+  assert.throws(
+    () => readResultEnvelope(missing),
+    (error) => error.message.startsWith(`unreadable result envelope at ${missing}:`)
+  );
+});
+
+test("readResultEnvelope on an empty file throws unreadable with the path", () => {
+  const empty = join(scratch, "empty.envelope.json");
+  writeFileSync(empty, "");
+  assert.throws(
+    () => readResultEnvelope(empty),
+    (error) => error.message.startsWith(`unreadable result envelope at ${empty}:`)
+  );
+});
+
+test("readResultEnvelope on a parsable but invalid envelope joins every error", () => {
+  const invalid = join(scratch, "invalid.envelope.json");
+  const broken = structuredClone(fixture);
+  broken.is_error = true;
+  broken.modelUsage = {};
+  writeFileSync(invalid, JSON.stringify(broken));
+  assert.throws(
+    () => readResultEnvelope(invalid),
+    (error) =>
+      error.message.startsWith(`invalid result envelope at ${invalid}:`) &&
+      error.message.includes("is_error:") &&
+      error.message.includes("modelUsage:")
+  );
 });

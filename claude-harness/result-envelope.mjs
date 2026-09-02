@@ -78,7 +78,15 @@ export function validateResultEnvelope(value) {
   // subtypes on other branches, so only non-empty string is pinned here)
   if (!isNonEmptyString(value.subtype)) errors.push("subtype: must be a non-empty string");
   // source: https://code.claude.com/docs/en/agent-sdk/typescript (SDKResultMessage: "is_error: boolean")
-  if (typeof value.is_error !== "boolean") errors.push("is_error: must be a boolean");
+  if (typeof value.is_error !== "boolean") {
+    errors.push("is_error: must be a boolean");
+  } else if (value.is_error === true) {
+    // source: measured 2026-09-02, claude 2.1.258 under an unauthenticated isolated
+    // home: is_error:true came with terminal_reason "api_error", total_cost_usd 0 and
+    // an empty modelUsage — an errored result is not a measured cell, so the ledger
+    // must refuse it even when the cost fields happen to be populated.
+    errors.push("is_error: must be false (an errored result is not an accepted cell)");
+  }
   // source: https://code.claude.com/docs/en/agent-sdk/typescript (SDKResultMessage: "session_id: string")
   if (!isNonEmptyString(value.session_id)) errors.push("session_id: must be a non-empty string");
   // source: https://code.claude.com/docs/en/agent-sdk/typescript (SDKResultMessage: "num_turns: number");
@@ -104,7 +112,12 @@ export function validateResultEnvelope(value) {
 // captured envelope file, parses it, and throws with every validation error
 // joined into one message when it is invalid.
 export function readResultEnvelope(path) {
-  const parsed = JSON.parse(readFileSync(path, "utf8"));
+  let parsed;
+  try {
+    parsed = JSON.parse(readFileSync(path, "utf8"));
+  } catch (error) {
+    throw new Error(`unreadable result envelope at ${path}: ${error.message}`);
+  }
   const { valid, errors } = validateResultEnvelope(parsed);
   if (!valid) throw new Error(`invalid result envelope at ${path}: ${errors.join("; ")}`);
   return parsed;

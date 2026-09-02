@@ -78,6 +78,13 @@ for (const required of [
 ]) {
   assert.match(probesRunner, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `run-probes-sequential.mjs lost required primitive: ${required}`);
 }
+
+// The envelope validator must keep refusing an errored result and must name
+// the file when it cannot even be read: both were review findings on PR #10.
+const envelopeValidator = readFileSync(resolve(root, "result-envelope.mjs"), "utf8");
+for (const required of ["is_error === true", "unreadable result envelope at"]) {
+  assert.match(envelopeValidator, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `result-envelope.mjs lost required gate: ${required}`);
+}
 // Isolation stays run-isolated.mjs's job — the orchestrator must never point
 // a session at a config root itself.
 assert.doesNotMatch(probesRunner, /CLAUDE_CONFIG_DIR/);

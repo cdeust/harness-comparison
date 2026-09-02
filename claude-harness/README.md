@@ -142,7 +142,13 @@ is the pure validator (`validateResultEnvelope`) plus the read+validate
 wrapper `readResultEnvelope`, wired into `run-probes-sequential.mjs`:
 `acceptStagedReport` requires the envelope to exist and validate before a
 cell can be accepted, and the partial-prior-artifacts refusal treats a
-report present without its envelope as partial. `claude-harness/fixtures/`
+report present without its envelope as partial. The validator pins the field
+shapes and additionally refuses `is_error: true`: an errored result (measured
+2026-09-02 as `terminal_reason: "api_error"` with an empty `modelUsage` under an
+isolated home that was never logged in) is never a measured cell, even when a
+report landed on disk. That measurement also fixes an operator precondition:
+the isolated home starts logged out, so run `CLAUDE_CONFIG_DIR=claude-harness/runtime/<a|b>/claude-home claude`
+and `/login` once per harness before any scored cell. `claude-harness/fixtures/`
 carries a byte-exact CLI 2.1.258 envelope plus its provenance (command,
 version, date, sha256) — captured under the operator's user-scope
 `~/.claude`, field-shape evidence only, not a benchmark measurement. Every

@@ -294,7 +294,15 @@ réelle ; l'agrégateur recalcule byte-exact la réduction et son intervalle
     `readResultEnvelope`), `claude-harness/result-envelope.test.mjs`,
     branchés dans `claude-harness/run-probes-sequential.mjs` (un rapport
     sans enveloppe compte comme artefact partiel, jamais comme cellule
-    terminée) et `claude-harness/validate.mjs`.
+    terminée) et `claude-harness/validate.mjs`. Revue fraîche du 2026-09-02
+    (REQUEST_CHANGES) corrigée dans la même PR : le validateur refuse
+    `is_error: true` (mesuré sur une cellule réelle B : home isolé jamais
+    connecté → `terminal_reason: "api_error"`, `modelUsage` vide),
+    `readResultEnvelope` est testé (fixture, chemin absent, fichier vide,
+    enveloppe invalide) et nomme le fichier illisible ; précondition
+    opérateur documentée dans `claude-harness/README.md` (`/login` sous
+    `CLAUDE_CONFIG_DIR=claude-harness/runtime/<a|b>/claude-home` avant
+    toute cellule scorée).
 - [ ] Définir le bras témoin « exploration fichier par fichier » : Claude
   Code sans serveur MCP mémoire, auto-memory désactivée
   (`CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`), Read/Grep/Glob autorisés, mêmes
