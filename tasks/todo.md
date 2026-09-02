@@ -174,6 +174,51 @@ source, no seal-clean forgery path found).
   `main`. Not merged; the coordinator handles CI, freeze-delta
   re-verification, and the merge decision. No scored cell was run.
 
+### HC-CORTEX-002 review (2026-09-01, first scored execution)
+
+Check named before acting: `analyze-hc-cortex-002.mjs` exit 0 on the release
+root, then `seal --status VERIFIED`, `verify-hc-cortex-002-release.mjs` and
+`validate-benchmark-release.mjs` all exit 0, plus every suite green.
+
+- [x] Execute the frozen 18-cell matrix from merged `main` (`dc53c6f`) into
+  `hc-cortex-002-release-20260901`: runner exit 0, 18/18 `passed`, 17
+  `proven`, baseline `blocked` as preregistered.
+- [x] Analyze it — **refused by the analyzer at the RED control**
+  (`RETRY_CHOREOGRAPHY_INVALID`, then `PROCESS_RECEIPT_INCOMPLETE`). Root
+  causes and fixes: runbook §9, lessons 11-12, commit `baecc89`. The first
+  tree is preserved unsealed as negative engineering evidence.
+- [x] Re-execute from the pushed fix (`baecc89`) with a fresh PostgreSQL
+  root into `hc-cortex-002-release-20260901-r2`: runner exit 0
+  (20:35:01Z–20:41:35Z), 18/18 `passed`, 17 `proven`, baseline `blocked`.
+  Its first analysis exposed a third, analyzer-only defect
+  (`PROCESS_BINDING_INVALID`: strict-equality comparison of the structured
+  PostgreSQL service binding, never reached by a fixture), fixed in
+  `3cfef16` with a fixture that now attempts a PostgreSQL cell and a
+  regression test confirmed red on the pre-fix analyzer (runbook §9.1,
+  lesson 13). The raw evidence was untouched; no third execution.
+- [x] Analyze, seal `VERIFIED`, deep-verify and generically validate the
+  second release: analysis valid (18 cells, study verdict `PASS`), seal
+  `VERIFIED` (203 artifacts), verification valid (raw-input set
+  `8e1a3579…f762`, byte-exact recomputation), generic validation valid,
+  discovery over `artifacts/` valid.
+- [x] Copy the sealed release under `artifacts/` and update the Cortex
+  dossier from `scoring/scoring.json` only.
+- [ ] Publish through a dedicated pull request (CI green, independent review,
+  merge commit so the registration stays reachable).
+- [ ] Decide `cdeust/Cortex#452` from the sealed evidence.
+
+Host conditions (recorded in the runner's per-cell host snapshots and the
+session condition log): macOS, 10 cores, 1-minute load 5.70 at launch and
+6.58 after the run, 42 GiB free before and after; a peer session ran light
+`node --test`/`npm ci` bursts during the window, never a sustained build or
+benchmark.
+
+Issue candidates (pre-existing, not worsened in kind by this delivery):
+`scripts/hc-cortex-002-analysis.test.mjs` (1624 lines) and
+`scripts/hc-cortex-002-analysis-lib.mjs` (1622 lines) exceed the 500-line
+file cap; splitting them along fixture/assertion and evidence/scoring seams
+is separate work.
+
 ## Claude-harness parity worklog review (2026-09-01)
 
 - `node --check` passed on all three scripts; `node claude-harness/validate.mjs`

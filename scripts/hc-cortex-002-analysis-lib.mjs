@@ -502,7 +502,9 @@ function validateProcess(snapshot, path, mode, cellInput, planned, bindings) {
     postgresqlService: cellInput.postgresqlService ?? null
   };
   for (const [field, expected] of Object.entries(expectedLogical)) {
-    if (logical?.[field] !== expected) failEvidence("PROCESS_BINDING_INVALID", path, `Logical process argument ${field} is not bound to the cell`);
+    if (!equalJson(logical?.[field], expected)) {
+      failEvidence("PROCESS_BINDING_INVALID", path, `Logical process argument ${field} is not bound to the cell`);
+    }
   }
   const expectedDatabase = planned.parameters.backend === "sqlite"
     ? { strategy: "release-cell-local", databaseIdentitySha256: cellInput.database?.databaseIdentitySha256 }
@@ -622,8 +624,7 @@ function validateWorkloadLedger(ledger, cellInput, planned, provenance, path) {
     }
   }
   const retries = records.filter((record) => record.event === "operation_retry");
-  const expectedRetries = planned.parameters.backend === "sqlite" && planned.parameters.concurrency >= 2 ? 1 : 0;
-  if (retries.length !== expectedRetries) failEvidence("RETRY_CHOREOGRAPHY_INVALID", path, "Fault retry count contradicts the protocol fixture");
+  validateRetryChoreography(retries, intents, path);
   const loadRecords = records.filter((record) => record.phase === "load" &&
     ["operation_intent", "operation_outcome", "operation_retry"].includes(record.event));
   const lastLoadIndex = Math.max(...loadRecords.map((record) => records.indexOf(record)));
@@ -634,6 +635,24 @@ function validateWorkloadLedger(ledger, cellInput, planned, provenance, path) {
     path, records, start, preflight, loadWindow, measurement, terminal,
     intents: intents.entries, outcomes: outcomes.entries, retries
   };
+}
+
+// Protocol retryPolicy: the harness performs no general retry; only the peer remember inside
+// the injected SQLite fault window may retry once, and every attempt stays in the ledger.
+// Whether that single retry occurred is treatment-sensitive (the shared-handle baseline never
+// observes the lock), so its count is judged by the fault_retry_choreography oracle check and
+// never by ledger validity; only the structural bound is an evidence invariant.
+function validateRetryChoreography(retries, intents, path) {
+  if (retries.length > 1) {
+    failEvidence("RETRY_CHOREOGRAPHY_INVALID", path, "Ledger records more than the single permitted peer-remember retry");
+  }
+  for (const retry of retries) {
+    const intent = intents.grouped.get(retry.operation_id)?.[0];
+    if (retry.operation !== "remember" || retry.phase !== "load" || retry.attempt !== 1 ||
+        intent?.operation !== "remember" || intent.phase !== "load") {
+      failEvidence("RETRY_CHOREOGRAPHY_INVALID", path, "Retry is not the single permitted peer remember inside the fault window");
+    }
+  }
 }
 
 function sharedIdentity(left, right) {
@@ -888,7 +907,7 @@ function recomputeOracleCheck(name, check, context) {
   }
   if (name === "fault_retry_choreography") {
     const expectedRetries = planned.parameters.backend === "sqlite" && planned.parameters.concurrency >= 2 ? 1 : 0;
-    return observed === expectedRetries && check.expected === expectedRetries;
+    return observed === workload.retries.length && observed === expectedRetries && check.expected === expectedRetries;
   }
   if (name === "marker_exactly_once_and_rejected_zero") {
     return persisted.markerValid;

@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "hc-cortex-002-postgresql-service-receipt/v1",
+  "protocolId": "2026-08-30-hc-cortex-002-v1",
+  "protocolSha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+  "serviceInstanceId": "5b76367b905f4bb0efd3d7562b0dca5fc4c1b96d5b7ef7950c3ed8d0f3405eba",
+  "startedAt": "2026-09-01T20:34:19.659Z",
+  "postgresVersion": "17.9 (Homebrew)",
+  "processId": 43070,
+  "configuration": {
+    "listenAddresses": "",
+    "unixSocketMode": "0700",
+    "socketDirectoryMode": "0700",
+    "socketDirectoryIdentitySha256": "7d2a0bd9123c54fff34456e0892950c6a17238c81e2c79089874e2b9302f7a58",
+    "socketDirectoryOwnerMatchesProcessUser": true,
+    "socketOwnerMatchesProcessUser": true,
+    "port": 5432,
+    "connectedViaUnixSocket": true,
+    "serverInetAddress": null
+  },
+  "hostAuthentication": {
+    "localRuleMethods": [
+      "trust"
+    ],
+    "hostRuleMethods": [
+      "reject"
+    ],
+    "parseErrorCount": 0,
+    "passwordMaterialRecorded": false
+  },
+  "cells": [
+    {
+      "cellId": "main-r1-postgresql-c1",
+      "databaseIdentitySha256": "1254d2ff48843ae5229bb38a5b8caf2c8221fc9f9600e30fd234a802cfaab8d5",
+      "createdFrom": "template0",
+      "fresh": true
+    },
+    {
+      "cellId": "main-r1-postgresql-c2",
+      "databaseIdentitySha256": "b7998497aef1f54830eaba177688bad400e135cf43812ae88fc116b134170cf2",
+      "createdFrom": "template0",
+      "fresh": true
+    },
+    {
+      "cellId": "main-r1-postgresql-c4",
+      "databaseIdentitySha256": "a532825d5e2919d108a8857a48c7b6837d0d4f92e1c5df4e387712ccb70ab37e",
+      "createdFrom": "template0",
+      "fresh": true
+    },
+    {
+      "cellId": "main-r1-postgresql-c5",
+      "databaseIdentitySha256": "a244318150706e139b5b05f5675cbd6fce8c71c2096d7b9abad8e3ed6cbfea0c",
+      "createdFrom": "template0",
+      "fresh": true
+    },
+    {
+      "cellId": "main-r2-postgresql-c1",
+      "databaseIdentitySha256": "7316155a5c0c1245ccaee87b791422eaec11db35533ce78a5fc71ae1d4c949f2",
+      "createdFrom": "template0",
+      "fresh": true
+    },
+    {
+      "cellId": "main-r2-postgresql-c2",
+      "databaseIdentitySha256": "dff5c3b3cc63ad330d8871f22469933e7c737e14cc20ead1742fcd11b45c02b9",
+      "createdFrom": "template0",
+      "fresh": true
+    },
+    {
+      "cellId": "main-r2-postgresql-c4",
+      "databaseIdentitySha256": "8b47912968461a6f31a070d62cd6bd086508a2d90f376d93e8e4685161748543",
+      "createdFrom": "template0",
+      "fresh": true
+    },
+    {
+      "cellId": "main-r2-postgresql-c5",
+      "databaseIdentitySha256": "5471faf30bf6119ffbd8cf101a5ec7101968ba2654dc675605fbf0f0a9d72b25",
+      "createdFrom": "template0",
+      "fresh": true
+    }
+  ]
+}

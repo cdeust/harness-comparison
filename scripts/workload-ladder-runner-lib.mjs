@@ -1004,7 +1004,11 @@ async function captureProcess(runtime, arguments_, paths, environment, cancellat
   const after = environmentBracket(paths.root);
   const closeEvent = events.at(-1);
   const closeAfterStdio = closeEvent?.event === "close" && stdoutEnded && stderrEnded;
-  const status = signal || cancellation.signal ? "indeterminate" : spawnError || code !== 0 ? "failed" : "complete";
+  // The receipt status describes the process lifecycle only: a child that spawned, drained
+  // both streams and exited by itself is "complete" whatever its exit code, because the exit
+  // code is contract-bearing per mode (an oracle exits 1 to report a blocked verdict, see
+  // adapters/hc-cortex-002/README.md) and is interpreted by processOutcome, not here.
+  const status = signal || cancellation.signal ? "indeterminate" : spawnError ? "failed" : "complete";
   return {
     pid: child?.pid ?? null,
     status,

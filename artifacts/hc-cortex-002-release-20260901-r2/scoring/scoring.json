@@ -1,0 +1,318 @@
+{
+  "schemaVersion": "hc-cortex-002-scoring/v1",
+  "generatedAt": "2026-09-01T20:48:26.016Z",
+  "protocolId": "2026-08-30-hc-cortex-002-v1",
+  "aggregatePolicy": "No maturity score or performance winner is computed for this issue-specific experiment.",
+  "causalContrast": {
+    "label": "PASS",
+    "baseline": {
+      "id": "regression-baseline-sqlite-c2",
+      "state": "RED",
+      "failedChecks": [
+        "fault_retry_choreography",
+        "fault_rollback_state",
+        "fts_count",
+        "marker_exactly_once_and_rejected_zero",
+        "memory_count",
+        "post_load_health_is_read_only",
+        "vector_count"
+      ]
+    },
+    "candidate": {
+      "id": "regression-candidate-sqlite-c2",
+      "state": "GREEN",
+      "failedChecks": []
+    },
+    "exactChange": "blocked (RED) -> proven (GREEN)"
+  },
+  "candidateConformance": {
+    "label": "PASS",
+    "requiredCells": 17,
+    "conformantCells": 17,
+    "nonconformantCellIds": []
+  },
+  "studyVerdict": {
+    "label": "PASS",
+    "reasons": [
+      "The causal control and every candidate cell match the preregistered exact verdicts."
+    ]
+  },
+  "descriptiveSaturation": [
+    {
+      "backend": "sqlite",
+      "status": "OBSERVED",
+      "onsetConcurrency": 5,
+      "comparisons": [
+        {
+          "previousConcurrency": 1,
+          "concurrency": 2,
+          "repetitions": [
+            {
+              "repetition": 1,
+              "throughputNonIncrease": false,
+              "queueP95Increase": false,
+              "maxQueueDepthIncrease": false
+            },
+            {
+              "repetition": 2,
+              "throughputNonIncrease": false,
+              "queueP95Increase": false,
+              "maxQueueDepthIncrease": false
+            }
+          ],
+          "satisfies": false
+        },
+        {
+          "previousConcurrency": 2,
+          "concurrency": 4,
+          "repetitions": [
+            {
+              "repetition": 1,
+              "throughputNonIncrease": false,
+              "queueP95Increase": false,
+              "maxQueueDepthIncrease": false
+            },
+            {
+              "repetition": 2,
+              "throughputNonIncrease": false,
+              "queueP95Increase": true,
+              "maxQueueDepthIncrease": false
+            }
+          ],
+          "satisfies": false
+        },
+        {
+          "previousConcurrency": 4,
+          "concurrency": 5,
+          "repetitions": [
+            {
+              "repetition": 1,
+              "throughputNonIncrease": true,
+              "queueP95Increase": true,
+              "maxQueueDepthIncrease": true
+            },
+            {
+              "repetition": 2,
+              "throughputNonIncrease": true,
+              "queueP95Increase": true,
+              "maxQueueDepthIncrease": true
+            }
+          ],
+          "satisfies": true
+        }
+      ],
+      "missing": []
+    },
+    {
+      "backend": "postgresql",
+      "status": "NOT_OBSERVED",
+      "onsetConcurrency": null,
+      "comparisons": [
+        {
+          "previousConcurrency": 1,
+          "concurrency": 2,
+          "repetitions": [
+            {
+              "repetition": 1,
+              "throughputNonIncrease": false,
+              "queueP95Increase": true,
+              "maxQueueDepthIncrease": false
+            },
+            {
+              "repetition": 2,
+              "throughputNonIncrease": false,
+              "queueP95Increase": false,
+              "maxQueueDepthIncrease": false
+            }
+          ],
+          "satisfies": false
+        },
+        {
+          "previousConcurrency": 2,
+          "concurrency": 4,
+          "repetitions": [
+            {
+              "repetition": 1,
+              "throughputNonIncrease": false,
+              "queueP95Increase": false,
+              "maxQueueDepthIncrease": false
+            },
+            {
+              "repetition": 2,
+              "throughputNonIncrease": false,
+              "queueP95Increase": false,
+              "maxQueueDepthIncrease": false
+            }
+          ],
+          "satisfies": false
+        },
+        {
+          "previousConcurrency": 4,
+          "concurrency": 5,
+          "repetitions": [
+            {
+              "repetition": 1,
+              "throughputNonIncrease": false,
+              "queueP95Increase": true,
+              "maxQueueDepthIncrease": true
+            },
+            {
+              "repetition": 2,
+              "throughputNonIncrease": true,
+              "queueP95Increase": true,
+              "maxQueueDepthIncrease": true
+            }
+          ],
+          "satisfies": false
+        }
+      ],
+      "missing": []
+    }
+  ],
+  "cells": [
+    {
+      "id": "regression-baseline-sqlite-c2",
+      "correctnessLabel": "FAIL",
+      "expectedVerdict": "blocked",
+      "observedVerdict": "blocked",
+      "expectationMatch": true,
+      "evidenceComplete": true
+    },
+    {
+      "id": "regression-candidate-sqlite-c2",
+      "correctnessLabel": "PASS",
+      "expectedVerdict": "proven",
+      "observedVerdict": "proven",
+      "expectationMatch": true,
+      "evidenceComplete": true
+    },
+    {
+      "id": "main-r1-sqlite-c1",
+      "correctnessLabel": "PASS",
+      "expectedVerdict": "proven",
+      "observedVerdict": "proven",
+      "expectationMatch": true,
+      "evidenceComplete": true
+    },
+    {
+      "id": "main-r1-sqlite-c2",
+      "correctnessLabel": "PASS",
+      "expectedVerdict": "proven",
+      "observedVerdict": "proven",
+      "expectationMatch": true,
+      "evidenceComplete": true
+    },
+    {
+      "id": "main-r1-sqlite-c4",
+      "correctnessLabel": "PASS",
+      "expectedVerdict": "proven",
+      "observedVerdict": "proven",
+      "expectationMatch": true,
+      "evidenceComplete": true
+    },
+    {
+      "id": "main-r1-sqlite-c5",
+      "correctnessLabel": "PASS",
+      "expectedVerdict": "proven",
+      "observedVerdict": "proven",
+      "expectationMatch": true,
+      "evidenceComplete": true
+    },
+    {
+      "id": "main-r1-postgresql-c1",
+      "correctnessLabel": "PASS",
+      "expectedVerdict": "proven",
+      "observedVerdict": "proven",
+      "expectationMatch": true,
+      "evidenceComplete": true
+    },
+    {
+      "id": "main-r1-postgresql-c2",
+      "correctnessLabel": "PASS",
+      "expectedVerdict": "proven",
+      "observedVerdict": "proven",
+      "expectationMatch": true,
+      "evidenceComplete": true
+    },
+    {
+      "id": "main-r1-postgresql-c4",
+      "correctnessLabel": "PASS",
+      "expectedVerdict": "proven",
+      "observedVerdict": "proven",
+      "expectationMatch": true,
+      "evidenceComplete": true
+    },
+    {
+      "id": "main-r1-postgresql-c5",
+      "correctnessLabel": "PASS",
+      "expectedVerdict": "proven",
+      "observedVerdict": "proven",
+      "expectationMatch": true,
+      "evidenceComplete": true
+    },
+    {
+      "id": "main-r2-postgresql-c1",
+      "correctnessLabel": "PASS",
+      "expectedVerdict": "proven",
+      "observedVerdict": "proven",
+      "expectationMatch": true,
+      "evidenceComplete": true
+    },
+    {
+      "id": "main-r2-postgresql-c2",
+      "correctnessLabel": "PASS",
+      "expectedVerdict": "proven",
+      "observedVerdict": "proven",
+      "expectationMatch": true,
+      "evidenceComplete": true
+    },
+    {
+      "id": "main-r2-postgresql-c4",
+      "correctnessLabel": "PASS",
+      "expectedVerdict": "proven",
+      "observedVerdict": "proven",
+      "expectationMatch": true,
+      "evidenceComplete": true
+    },
+    {
+      "id": "main-r2-postgresql-c5",
+      "correctnessLabel": "PASS",
+      "expectedVerdict": "proven",
+      "observedVerdict": "proven",
+      "expectationMatch": true,
+      "evidenceComplete": true
+    },
+    {
+      "id": "main-r2-sqlite-c1",
+      "correctnessLabel": "PASS",
+      "expectedVerdict": "proven",
+      "observedVerdict": "proven",
+      "expectationMatch": true,
+      "evidenceComplete": true
+    },
+    {
+      "id": "main-r2-sqlite-c2",
+      "correctnessLabel": "PASS",
+      "expectedVerdict": "proven",
+      "observedVerdict": "proven",
+      "expectationMatch": true,
+      "evidenceComplete": true
+    },
+    {
+      "id": "main-r2-sqlite-c4",
+      "correctnessLabel": "PASS",
+      "expectedVerdict": "proven",
+      "observedVerdict": "proven",
+      "expectationMatch": true,
+      "evidenceComplete": true
+    },
+    {
+      "id": "main-r2-sqlite-c5",
+      "correctnessLabel": "PASS",
+      "expectedVerdict": "proven",
+      "observedVerdict": "proven",
+      "expectationMatch": true,
+      "evidenceComplete": true
+    }
+  ]
+}

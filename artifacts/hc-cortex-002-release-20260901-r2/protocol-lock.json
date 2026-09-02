@@ -1,0 +1,266 @@
+{
+  "schemaVersion": "workload-protocol-lock/v1",
+  "runAttemptId": "768ee081-6eef-4d1e-a4ba-6fa34f53e73c",
+  "createdAt": "2026-09-01T20:35:05.731Z",
+  "protocolId": "2026-08-30-hc-cortex-002-v1",
+  "protocolSha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+  "protocolBytes": 43310,
+  "copiedProtocolPath": "protocol.json",
+  "registration": {
+    "repository": "https://github.com/cdeust/harness-comparison.git",
+    "revision": "baecc89fea4062e99cba01b53a7a1797361ebeac",
+    "path": "protocols/2026-08-30-hc-cortex-002-v1.json"
+  },
+  "runnerInputs": {
+    "sha256": "496345f3bd146a1cfde8fcc127c33c38abe770e11557436312a8188a2901acdb",
+    "files": [
+      {
+        "path": "schemas/benchmark-protocol-v1.schema.json",
+        "gitBlob": "7549c79807c9479ef9feaadf0070c05a8cc359ef",
+        "sha256": "f3cfa3aafc4c177d0d4893689179f7e15b31da7d1ba7544cda23a6f72ab6d427",
+        "bytes": 13017
+      },
+      {
+        "path": "schemas/execution-manifest-v1.schema.json",
+        "gitBlob": "1a7c79560dc9a56574bf0d08ce4ff5f1e44863bc",
+        "sha256": "505ceada523cfe13952136e8beb83569d7a5e5c897e38a4bb66a41db555a9c7b",
+        "bytes": 11149
+      },
+      {
+        "path": "scripts/analyze-hc-cortex-002.mjs",
+        "gitBlob": "8658c0fff6d5c5eee5264196df2ed6392ea27caf",
+        "sha256": "e106cb217009e324d9ed98e8bfcd967cefbdce75d2649413f834d86ccbe7368f",
+        "bytes": 1411
+      },
+      {
+        "path": "scripts/benchmark-release-lib.mjs",
+        "gitBlob": "2abcff06597512e3bb25a959425daabca834a415",
+        "sha256": "faf83163c151f31eecf77e7a99b05ecda7ae2657e21533a0445bd0d765b1b45f",
+        "bytes": 74083
+      },
+      {
+        "path": "scripts/hc-cortex-002-analysis-lib.mjs",
+        "gitBlob": "8b955dba1f2723010371fe8a6e607107a83ad9dd",
+        "sha256": "369a2fb8437f8c74d3a1391a74b8c9dde49bbc9c8ea7412c477fa6326a8a5041",
+        "bytes": 87703
+      },
+      {
+        "path": "scripts/hc-cortex-002-evidence-lib.mjs",
+        "gitBlob": "39bb62c16e7b7a0bdd6bb52288def6d340d2bb83",
+        "sha256": "0adf2d0327b9436ca064dce4ee340e288d23f7f340fd2eaca8e056f8da33adc8",
+        "bytes": 19068
+      },
+      {
+        "path": "scripts/hc-cortex-002-postgresql-lib.mjs",
+        "gitBlob": "10bcb5b89b1cc84406ffb7825f297f52a0b8e971",
+        "sha256": "cf6efe0dd8d9c657bf78248ad43afd833ed68bba3f8818fbfc6b44605f7a0bf2",
+        "bytes": 33057
+      },
+      {
+        "path": "scripts/hc-cortex-002-seal-lib.mjs",
+        "gitBlob": "157b43aa6c54b96db0839ac9cd2e44ea163f2162",
+        "sha256": "1197382a1eee24b55f2ebb8f2473cae01cec35d7afa0d89108608f701d3ce088",
+        "bytes": 13437
+      },
+      {
+        "path": "scripts/provision-hc-cortex-002-postgresql.mjs",
+        "gitBlob": "a80e6a0be00d56bb28b56f74dc717f92f5caca4a",
+        "sha256": "f6502fc970f84022c1d41542a3f8f693c3c79753c7eab0d38653279e1520fca3",
+        "bytes": 2120
+      },
+      {
+        "path": "scripts/run-workload-ladder.mjs",
+        "gitBlob": "2b7a4c102da0ca795737b468581ebcf003739e40",
+        "sha256": "3ecb1f1e712d041fe6f8f451d89d8612a9f85d607934978affc63667279ff372",
+        "bytes": 3471
+      },
+      {
+        "path": "scripts/seal-hc-cortex-002.mjs",
+        "gitBlob": "e39adcb2529461ccb1492871475603279fb4932b",
+        "sha256": "626ceb9ce28081301bdee47b1ddff60eff3b7577ccd1ab4032759bebeb59377c",
+        "bytes": 1765
+      },
+      {
+        "path": "scripts/validate-benchmark-release.mjs",
+        "gitBlob": "978da5838c8768beaf471d561b668c624e166d12",
+        "sha256": "e8749b46c070742581d8eb1023f388bc01a9edcc367a4509e2b81c2fbf8a4e46",
+        "bytes": 5651
+      },
+      {
+        "path": "scripts/verify-hc-cortex-002-release-lib.mjs",
+        "gitBlob": "50354f4cf9280340962820fc6539f400c6a10087",
+        "sha256": "812e8f89a5047fe3c591600bdba02c4cec721b7468b92f174c82f31a08ff0350",
+        "bytes": 2186
+      },
+      {
+        "path": "scripts/verify-hc-cortex-002-release.mjs",
+        "gitBlob": "07d11df4086ffffe1e90c52e3bbc520f4d9fcf05",
+        "sha256": "be4601eba83e1dc80d6cc42030a1c12b6b637055e470678a7968ebbf768117a3",
+        "bytes": 1145
+      },
+      {
+        "path": "scripts/workload-ladder-runner-lib.mjs",
+        "gitBlob": "b1e381deae6be227021f8453ad7fe0f4a298d5ed",
+        "sha256": "93aaa2f5400fb2a60b7f87e64dec55ae2cb44891b594fce0d3225ea07092239c",
+        "bytes": 75896
+      }
+    ]
+  },
+  "postgresqlServiceReceipt": {
+    "path": "postgresql-service-receipt.json",
+    "sha256": "40d578f09e893d1d46bb1b30b58c1fb85054d816a84d108368dacfb340b23f18",
+    "bytes": 2672,
+    "schemaVersion": "hc-cortex-002-postgresql-service-receipt/v1",
+    "serviceInstanceId": "5b76367b905f4bb0efd3d7562b0dca5fc4c1b96d5b7ef7950c3ed8d0f3405eba"
+  },
+  "adapters": [
+    {
+      "id": "hc-cortex-002-adapter",
+      "path": "adapters/hc-cortex-002/adapter.py",
+      "sha256": "a9dff7eb178f10272c5a622b6cb2bf0f437aa8fc56dd11706ad24c75a8cad4b4",
+      "interface": "hc-cortex-002/v1",
+      "runtimeId": "python-3.12",
+      "treeSha256": "40942215c833b8b47e9256edebc90b7f970fecc5c051bcafcebe32b6bcfbea0b",
+      "treeFiles": [
+        {
+          "path": "adapters/hc-cortex-002/README.md",
+          "gitBlob": "a56a23478cbccb6df864bed8036df858c2c33624",
+          "sha256": "ff2e332a29b9dfeb4d56a4d75e9a2cb6ddc43413aa11a3ddca62cdb7b1b84fb7",
+          "bytes": 12123
+        },
+        {
+          "path": "adapters/hc-cortex-002/adapter.py",
+          "gitBlob": "f8b3f6bdd0057ca35df9d847f4823bd22d289f3f",
+          "sha256": "a9dff7eb178f10272c5a622b6cb2bf0f437aa8fc56dd11706ad24c75a8cad4b4",
+          "bytes": 7006
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/__init__.py",
+          "gitBlob": "725624a2e62d528f8f31950304d2ebb75139ab4b",
+          "sha256": "32043d9182d1bcd9d6838ee75670665992585527fc47f65ff7ae44fcd8b3f66c",
+          "bytes": 108
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/admission_observer.py",
+          "gitBlob": "1a8737b059d8ba0b55edb082c975b8a0e607b808",
+          "sha256": "b2831dc5dd7c2092e45cb6152b7301240ae43cdbf5a86d86fcad765c6f07fc17",
+          "bytes": 3230
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/backend.py",
+          "gitBlob": "cfd0e7298468a7460ed61d6d9cb8c04f6d53e4f5",
+          "sha256": "b09514604253e8516343f5250e7347811395ff0352ef67e7905ae8caf9eb02dd",
+          "bytes": 8206
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/backend_health.py",
+          "gitBlob": "0352a33d1f96b1572e9dd6d7cc40bc1e2da7e58c",
+          "sha256": "83658a52f57ec175bbaba5b1fb1bfc2cf2860d662c57857402f6d78bbe29c153",
+          "bytes": 3034
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/execution.py",
+          "gitBlob": "3c94f780ec9ee4b0073b5473cc93792f8280055f",
+          "sha256": "84d91b8cb7db19e47cc9971d7f332be6abc38c19166da369019b39906bd7960a",
+          "bytes": 6184
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/fault.py",
+          "gitBlob": "4822ef68e50f9703591858e284578a7f3cb67817",
+          "sha256": "c3f25e98b9f5a9c8c9955bcb084a332a1a639ac9a8aeed181d72b39e0caa75d4",
+          "bytes": 6313
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/journal.py",
+          "gitBlob": "c62205a456e5e1106a3e8bd594eca119d4b35f9b",
+          "sha256": "769994f0bc977c2f83307f4cc07826bfc63c8b8c4b1b2cb76f6f40473973a75d",
+          "bytes": 6476
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/metrics.py",
+          "gitBlob": "5a093e2d61792f0c2e6770cf8fa77c408b5be1a7",
+          "sha256": "b3e496c349e549319118290fb86ff475337e69537f6be9f4ce3db97e744661ec",
+          "bytes": 8376
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/oracle.py",
+          "gitBlob": "4cb91e17d1027405d8416c15123f1d7ddd9b9e43",
+          "sha256": "a07c1b32efd67fca2d7df0c6cf3d7bc5e3fe2347d3bdff4050d741a65e6be743",
+          "bytes": 4993
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/oracle_check_support.py",
+          "gitBlob": "908302d841c8ce91b8974d128de170dd63c78cb2",
+          "sha256": "18a9069cae1321c090d47307be17e83ee7c4e483f1912fc6964d5c1845ef56f1",
+          "bytes": 6369
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/oracle_checks.py",
+          "gitBlob": "425b0af4cd2a1d28e6744d8e41178a9e5c5c2ffe",
+          "sha256": "f4bf7208e9915f6ea4e574b2026cc9befa880fe5bf35e0264643e546ec9cd806",
+          "bytes": 15543
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/oracle_snapshot.py",
+          "gitBlob": "64fc8473a3ac17cad0e5487a0be5b3ea0c96c9e9",
+          "sha256": "25b402000c5045a6950ee4160b31779feb9de8a7271cfefc406adf919f1dfc0d",
+          "bytes": 8861
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/provenance.py",
+          "gitBlob": "39748003d84e8af0c075d56c8925bf0324b94d0d",
+          "sha256": "ca87f04a7069101c2be4eac80ecb307784c9215d087a1b353702f5a147aec48c",
+          "bytes": 10782
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/workload.py",
+          "gitBlob": "4cd3ccbe6f1cda0b76ab0a2ddb53e87fe9d4b762",
+          "sha256": "67383b8c7b447f1546e76cae8229a54f10f6a903695dcbed96bb889a634a916c",
+          "bytes": 11127
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/workload_schedule.py",
+          "gitBlob": "9da15ea1908a2499ad5a348d8e7e52303bd8b73a",
+          "sha256": "126bb850f0480bfd059247bada0e90161c9cd223c3aee1cd158693991b8cacb7",
+          "bytes": 5213
+        },
+        {
+          "path": "adapters/hc-cortex-002/tests/conftest.py",
+          "gitBlob": "1d777deb0abe8e0ca7c2134d79c186894ef984e0",
+          "sha256": "ce036e94313e91643c0e29cd1c3d19c529ba12ea60a53ef1cf5acf174f651906",
+          "bytes": 204
+        },
+        {
+          "path": "adapters/hc-cortex-002/tests/test_backend_compat.py",
+          "gitBlob": "b95b7a0ec2d1cdc9dab9e6910b331f867ff555e0",
+          "sha256": "19c4cc819c6cd88ddad9f233ffd84912d2a045586e77cf869b31c7dee4459c82",
+          "bytes": 7865
+        },
+        {
+          "path": "adapters/hc-cortex-002/tests/test_journal.py",
+          "gitBlob": "721678b382455a93d85a395ad0cead700777cf12",
+          "sha256": "6fe9031dac159ef73c10020eb56852ec4b0964e2d740b395a38fe965828a6ab3",
+          "bytes": 2021
+        },
+        {
+          "path": "adapters/hc-cortex-002/tests/test_metrics.py",
+          "gitBlob": "4e04f8e298802213ac02f578a9be51345a76c79c",
+          "sha256": "745f382450112dc9dae10a8b25818d6aba0792ada20855846bf4630fef583e5f",
+          "bytes": 2712
+        },
+        {
+          "path": "adapters/hc-cortex-002/tests/test_postgresql_oracle_contract.py",
+          "gitBlob": "c93b09ab6d782c1d96a6d1ccf010755742e86811",
+          "sha256": "4255d9d003ba41d9efa88e3454d249a8ffb45db61dc3f60b75a039d6223cac37",
+          "bytes": 4731
+        },
+        {
+          "path": "adapters/hc-cortex-002/tests/test_sqlite_end_to_end.py",
+          "gitBlob": "8cc23b38742dba6924fd39ce466d160818b9ce96",
+          "sha256": "3bd1c7236347edb51553ebb6a54f0ec61b41af76aebf0d686065b51e2a2657f3",
+          "bytes": 12750
+        }
+      ]
+    }
+  ]
+}

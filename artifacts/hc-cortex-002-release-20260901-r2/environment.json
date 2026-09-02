@@ -1,0 +1,747 @@
+{
+  "schemaVersion": "workload-environment/v1",
+  "capturedAt": "2026-09-01T20:35:05.736Z",
+  "sources": [
+    {
+      "id": "cortex-baseline",
+      "revision": "8f5ae3b87b6969f3abcb3736859febfdab69304a",
+      "checkoutIdentitySha256": "46936db2b52ab041540980a4ced42fce46092777e25c61292f3776233a6b3721",
+      "locks": [
+        {
+          "path": "pyproject.toml",
+          "sha256": "515fb94cba11eda35d39cb764917c887047595cd1dbbffd1d0e1c9e04a588d41",
+          "bytes": 41906
+        },
+        {
+          "path": "uv.lock",
+          "sha256": "5b75e3f6915e4890ffd1eb555d8f76570a51f1aace6f916770bab13cc0f97c49",
+          "bytes": 1029173
+        }
+      ],
+      "sourceFiles": [
+        {
+          "path": "mcp_server/__init__.py",
+          "sha256": "ef500c6111a1708e7c706397b40a6ce2c5daeb7a5fb75686775829b1f86322c7",
+          "bytes": 79
+        }
+      ]
+    },
+    {
+      "id": "cortex-candidate",
+      "revision": "9faa80d3f36b1c7fd05edb4aca8202448a79fb27",
+      "checkoutIdentitySha256": "0b3e0b106448a52061e5579cca9860a62292e6d021e0b51905eda483fa2cab61",
+      "locks": [
+        {
+          "path": "pyproject.toml",
+          "sha256": "515fb94cba11eda35d39cb764917c887047595cd1dbbffd1d0e1c9e04a588d41",
+          "bytes": 41906
+        },
+        {
+          "path": "uv.lock",
+          "sha256": "5b75e3f6915e4890ffd1eb555d8f76570a51f1aace6f916770bab13cc0f97c49",
+          "bytes": 1029173
+        }
+      ],
+      "sourceFiles": [
+        {
+          "path": "mcp_server/__init__.py",
+          "sha256": "ef500c6111a1708e7c706397b40a6ce2c5daeb7a5fb75686775829b1f86322c7",
+          "bytes": 79
+        }
+      ]
+    }
+  ],
+  "runtimes": [
+    {
+      "id": "python-3.12",
+      "sha256": "d049fa6d31f8075e3fcb76517ddaaa666fc2344768d6e7698d3263f79b49db8f",
+      "version": "Python 3.12.11",
+      "environmentIdentity": {
+        "schemaVersion": "python-runtime-environment/v1",
+        "sha256": "ff94a838c241a3d49f0d95db17be66c65c5a943bf585fdc274dd7c5103e12e6c",
+        "distributions": [
+          {
+            "name": "annotated-doc",
+            "version": "0.0.5"
+          },
+          {
+            "name": "annotated-types",
+            "version": "0.8.0"
+          },
+          {
+            "name": "anyio",
+            "version": "4.14.2"
+          },
+          {
+            "name": "attrs",
+            "version": "26.1.0"
+          },
+          {
+            "name": "certifi",
+            "version": "2026.7.22"
+          },
+          {
+            "name": "cffi",
+            "version": "2.1.0"
+          },
+          {
+            "name": "charset-normalizer",
+            "version": "3.4.9"
+          },
+          {
+            "name": "click",
+            "version": "8.4.2"
+          },
+          {
+            "name": "coverage",
+            "version": "7.15.2"
+          },
+          {
+            "name": "cryptography",
+            "version": "50.0.0"
+          },
+          {
+            "name": "exceptiongroup",
+            "version": "1.3.1"
+          },
+          {
+            "name": "filelock",
+            "version": "3.32.0"
+          },
+          {
+            "name": "flashrank",
+            "version": "0.2.10"
+          },
+          {
+            "name": "flatbuffers",
+            "version": "25.12.19"
+          },
+          {
+            "name": "fsspec",
+            "version": "2026.6.0"
+          },
+          {
+            "name": "googleapis-common-protos",
+            "version": "1.75.0"
+          },
+          {
+            "name": "h11",
+            "version": "0.16.0"
+          },
+          {
+            "name": "hf-xet",
+            "version": "1.5.2"
+          },
+          {
+            "name": "httpcore",
+            "version": "1.0.9"
+          },
+          {
+            "name": "httpcore2",
+            "version": "2.10.0"
+          },
+          {
+            "name": "httpx",
+            "version": "0.28.1"
+          },
+          {
+            "name": "httpx2",
+            "version": "2.10.0"
+          },
+          {
+            "name": "huggingface-hub",
+            "version": "1.25.1"
+          },
+          {
+            "name": "hypermnesia-mcp",
+            "version": "4.18.0"
+          },
+          {
+            "name": "idna",
+            "version": "3.18"
+          },
+          {
+            "name": "igraph",
+            "version": "1.0.0"
+          },
+          {
+            "name": "iniconfig",
+            "version": "2.3.0"
+          },
+          {
+            "name": "jinja2",
+            "version": "3.1.6"
+          },
+          {
+            "name": "joblib",
+            "version": "1.5.3"
+          },
+          {
+            "name": "jsonschema",
+            "version": "4.26.0"
+          },
+          {
+            "name": "jsonschema-specifications",
+            "version": "2025.9.1"
+          },
+          {
+            "name": "leidenalg",
+            "version": "0.12.0"
+          },
+          {
+            "name": "markdown-it-py",
+            "version": "4.2.0"
+          },
+          {
+            "name": "markupsafe",
+            "version": "3.0.3"
+          },
+          {
+            "name": "mcp",
+            "version": "2.0.0"
+          },
+          {
+            "name": "mcp-types",
+            "version": "2.0.0"
+          },
+          {
+            "name": "mdurl",
+            "version": "0.1.2"
+          },
+          {
+            "name": "mpmath",
+            "version": "1.4.1"
+          },
+          {
+            "name": "narwhals",
+            "version": "2.24.0"
+          },
+          {
+            "name": "networkx",
+            "version": "3.6.1"
+          },
+          {
+            "name": "nodeenv",
+            "version": "1.10.0"
+          },
+          {
+            "name": "numpy",
+            "version": "2.5.1"
+          },
+          {
+            "name": "onnxruntime",
+            "version": "1.28.0"
+          },
+          {
+            "name": "opentelemetry-api",
+            "version": "1.44.0"
+          },
+          {
+            "name": "opentelemetry-exporter-otlp-proto-common",
+            "version": "1.44.0"
+          },
+          {
+            "name": "opentelemetry-exporter-otlp-proto-http",
+            "version": "1.44.0"
+          },
+          {
+            "name": "opentelemetry-proto",
+            "version": "1.44.0"
+          },
+          {
+            "name": "opentelemetry-sdk",
+            "version": "1.44.0"
+          },
+          {
+            "name": "opentelemetry-semantic-conventions",
+            "version": "0.65b0"
+          },
+          {
+            "name": "packaging",
+            "version": "26.2"
+          },
+          {
+            "name": "pgvector",
+            "version": "0.5.0"
+          },
+          {
+            "name": "pluggy",
+            "version": "1.6.0"
+          },
+          {
+            "name": "protobuf",
+            "version": "7.35.1"
+          },
+          {
+            "name": "psycopg",
+            "version": "3.3.4"
+          },
+          {
+            "name": "psycopg-binary",
+            "version": "3.3.4"
+          },
+          {
+            "name": "psycopg-pool",
+            "version": "3.3.1"
+          },
+          {
+            "name": "pycparser",
+            "version": "3.0"
+          },
+          {
+            "name": "pydantic",
+            "version": "2.13.4"
+          },
+          {
+            "name": "pydantic-core",
+            "version": "2.46.4"
+          },
+          {
+            "name": "pydantic-settings",
+            "version": "2.14.2"
+          },
+          {
+            "name": "pygments",
+            "version": "2.20.0"
+          },
+          {
+            "name": "pyjwt",
+            "version": "2.13.0"
+          },
+          {
+            "name": "pyright",
+            "version": "1.1.411"
+          },
+          {
+            "name": "pytest",
+            "version": "9.1.1"
+          },
+          {
+            "name": "pytest-asyncio",
+            "version": "1.4.0"
+          },
+          {
+            "name": "pytest-cov",
+            "version": "7.1.0"
+          },
+          {
+            "name": "pytest-timeout",
+            "version": "2.4.0"
+          },
+          {
+            "name": "python-dateutil",
+            "version": "2.9.0.post0"
+          },
+          {
+            "name": "python-dotenv",
+            "version": "1.2.2"
+          },
+          {
+            "name": "python-multipart",
+            "version": "0.0.32"
+          },
+          {
+            "name": "pyyaml",
+            "version": "6.0.3"
+          },
+          {
+            "name": "referencing",
+            "version": "0.37.0"
+          },
+          {
+            "name": "regex",
+            "version": "2026.7.19"
+          },
+          {
+            "name": "requests",
+            "version": "2.34.2"
+          },
+          {
+            "name": "rich",
+            "version": "15.0.0"
+          },
+          {
+            "name": "rpds-py",
+            "version": "2026.6.3"
+          },
+          {
+            "name": "safetensors",
+            "version": "0.8.0"
+          },
+          {
+            "name": "scikit-learn",
+            "version": "1.9.0"
+          },
+          {
+            "name": "scipy",
+            "version": "1.18.0"
+          },
+          {
+            "name": "sentence-transformers",
+            "version": "5.6.1"
+          },
+          {
+            "name": "setuptools",
+            "version": "83.0.0"
+          },
+          {
+            "name": "shellingham",
+            "version": "1.5.4"
+          },
+          {
+            "name": "six",
+            "version": "1.17.0"
+          },
+          {
+            "name": "sqlite-vec",
+            "version": "0.1.9"
+          },
+          {
+            "name": "sse-starlette",
+            "version": "3.4.6"
+          },
+          {
+            "name": "starlette",
+            "version": "1.3.1"
+          },
+          {
+            "name": "sympy",
+            "version": "1.14.0"
+          },
+          {
+            "name": "texttable",
+            "version": "1.7.0"
+          },
+          {
+            "name": "threadpoolctl",
+            "version": "3.6.0"
+          },
+          {
+            "name": "tokenizers",
+            "version": "0.22.2"
+          },
+          {
+            "name": "torch",
+            "version": "2.13.0"
+          },
+          {
+            "name": "tqdm",
+            "version": "4.70.0"
+          },
+          {
+            "name": "transformers",
+            "version": "5.14.1"
+          },
+          {
+            "name": "tree-sitter",
+            "version": "0.26.0"
+          },
+          {
+            "name": "tree-sitter-language-pack",
+            "version": "1.14.3"
+          },
+          {
+            "name": "truststore",
+            "version": "0.10.4"
+          },
+          {
+            "name": "typer",
+            "version": "0.27.1"
+          },
+          {
+            "name": "typing-extensions",
+            "version": "4.16.0"
+          },
+          {
+            "name": "typing-inspection",
+            "version": "0.4.2"
+          },
+          {
+            "name": "urllib3",
+            "version": "2.7.0"
+          },
+          {
+            "name": "uvicorn",
+            "version": "0.52.1"
+          }
+        ],
+        "psycopg": {
+          "implementation": "binary",
+          "libpq_version": 180000,
+          "version": "3.3.4"
+        },
+        "python": {
+          "implementation": "CPython",
+          "version": "3.12.11"
+        },
+        "sqlite": {
+          "compile_options": [
+            "ATOMIC_INTRINSICS=1",
+            "COMPILER=clang-20.1.4",
+            "DEFAULT_AUTOVACUUM",
+            "DEFAULT_CACHE_SIZE=-2000",
+            "DEFAULT_FILE_FORMAT=4",
+            "DEFAULT_JOURNAL_SIZE_LIMIT=-1",
+            "DEFAULT_MMAP_SIZE=0",
+            "DEFAULT_PAGE_SIZE=4096",
+            "DEFAULT_PCACHE_INITSZ=20",
+            "DEFAULT_RECURSIVE_TRIGGERS",
+            "DEFAULT_SECTOR_SIZE=4096",
+            "DEFAULT_SYNCHRONOUS=2",
+            "DEFAULT_WAL_AUTOCHECKPOINT=1000",
+            "DEFAULT_WAL_SYNCHRONOUS=2",
+            "DEFAULT_WORKER_THREADS=0",
+            "DIRECT_OVERFLOW_READ",
+            "ENABLE_DBSTAT_VTAB",
+            "ENABLE_FTS3",
+            "ENABLE_FTS3_PARENTHESIS",
+            "ENABLE_FTS4",
+            "ENABLE_FTS5",
+            "ENABLE_GEOPOLY",
+            "ENABLE_MATH_FUNCTIONS",
+            "ENABLE_RTREE",
+            "MALLOC_SOFT_LIMIT=1024",
+            "MAX_ATTACHED=10",
+            "MAX_COLUMN=2000",
+            "MAX_COMPOUND_SELECT=500",
+            "MAX_DEFAULT_PAGE_SIZE=8192",
+            "MAX_EXPR_DEPTH=1000",
+            "MAX_FUNCTION_ARG=1000",
+            "MAX_LENGTH=1000000000",
+            "MAX_LIKE_PATTERN_LENGTH=50000",
+            "MAX_MMAP_SIZE=0x7fff0000",
+            "MAX_PAGE_COUNT=0xfffffffe",
+            "MAX_PAGE_SIZE=65536",
+            "MAX_SQL_LENGTH=1000000000",
+            "MAX_TRIGGER_DEPTH=1000",
+            "MAX_VARIABLE_NUMBER=32766",
+            "MAX_VDBE_OP=250000000",
+            "MAX_WORKER_THREADS=8",
+            "MUTEX_PTHREADS",
+            "SYSTEM_MALLOC",
+            "TEMP_STORE=1",
+            "THREADSAFE=1"
+          ],
+          "library_version": "3.50.4",
+          "module_version": "2.6.0"
+        }
+      },
+      "virtualEnvironment": {
+        "pyvenvCfgSha256": "72bf83c600394f82fd495450c86e419d714a23304fce3c9114c61ebeadb58b8f",
+        "pyvenvCfgBytes": 205,
+        "invocationIdentitySha256": "ef8fa73fafa4a9a672417af1ee65febc3cfef47da7f9221a6d76c5afbe24f936",
+        "targetSha256": "d049fa6d31f8075e3fcb76517ddaaa666fc2344768d6e7698d3263f79b49db8f"
+      }
+    }
+  ],
+  "adapters": [
+    {
+      "id": "hc-cortex-002-adapter",
+      "path": "adapters/hc-cortex-002/adapter.py",
+      "sha256": "a9dff7eb178f10272c5a622b6cb2bf0f437aa8fc56dd11706ad24c75a8cad4b4",
+      "interface": "hc-cortex-002/v1",
+      "runtimeId": "python-3.12",
+      "treeSha256": "40942215c833b8b47e9256edebc90b7f970fecc5c051bcafcebe32b6bcfbea0b",
+      "treeFiles": [
+        {
+          "path": "adapters/hc-cortex-002/README.md",
+          "gitBlob": "a56a23478cbccb6df864bed8036df858c2c33624",
+          "sha256": "ff2e332a29b9dfeb4d56a4d75e9a2cb6ddc43413aa11a3ddca62cdb7b1b84fb7",
+          "bytes": 12123
+        },
+        {
+          "path": "adapters/hc-cortex-002/adapter.py",
+          "gitBlob": "f8b3f6bdd0057ca35df9d847f4823bd22d289f3f",
+          "sha256": "a9dff7eb178f10272c5a622b6cb2bf0f437aa8fc56dd11706ad24c75a8cad4b4",
+          "bytes": 7006
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/__init__.py",
+          "gitBlob": "725624a2e62d528f8f31950304d2ebb75139ab4b",
+          "sha256": "32043d9182d1bcd9d6838ee75670665992585527fc47f65ff7ae44fcd8b3f66c",
+          "bytes": 108
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/admission_observer.py",
+          "gitBlob": "1a8737b059d8ba0b55edb082c975b8a0e607b808",
+          "sha256": "b2831dc5dd7c2092e45cb6152b7301240ae43cdbf5a86d86fcad765c6f07fc17",
+          "bytes": 3230
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/backend.py",
+          "gitBlob": "cfd0e7298468a7460ed61d6d9cb8c04f6d53e4f5",
+          "sha256": "b09514604253e8516343f5250e7347811395ff0352ef67e7905ae8caf9eb02dd",
+          "bytes": 8206
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/backend_health.py",
+          "gitBlob": "0352a33d1f96b1572e9dd6d7cc40bc1e2da7e58c",
+          "sha256": "83658a52f57ec175bbaba5b1fb1bfc2cf2860d662c57857402f6d78bbe29c153",
+          "bytes": 3034
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/execution.py",
+          "gitBlob": "3c94f780ec9ee4b0073b5473cc93792f8280055f",
+          "sha256": "84d91b8cb7db19e47cc9971d7f332be6abc38c19166da369019b39906bd7960a",
+          "bytes": 6184
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/fault.py",
+          "gitBlob": "4822ef68e50f9703591858e284578a7f3cb67817",
+          "sha256": "c3f25e98b9f5a9c8c9955bcb084a332a1a639ac9a8aeed181d72b39e0caa75d4",
+          "bytes": 6313
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/journal.py",
+          "gitBlob": "c62205a456e5e1106a3e8bd594eca119d4b35f9b",
+          "sha256": "769994f0bc977c2f83307f4cc07826bfc63c8b8c4b1b2cb76f6f40473973a75d",
+          "bytes": 6476
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/metrics.py",
+          "gitBlob": "5a093e2d61792f0c2e6770cf8fa77c408b5be1a7",
+          "sha256": "b3e496c349e549319118290fb86ff475337e69537f6be9f4ce3db97e744661ec",
+          "bytes": 8376
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/oracle.py",
+          "gitBlob": "4cb91e17d1027405d8416c15123f1d7ddd9b9e43",
+          "sha256": "a07c1b32efd67fca2d7df0c6cf3d7bc5e3fe2347d3bdff4050d741a65e6be743",
+          "bytes": 4993
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/oracle_check_support.py",
+          "gitBlob": "908302d841c8ce91b8974d128de170dd63c78cb2",
+          "sha256": "18a9069cae1321c090d47307be17e83ee7c4e483f1912fc6964d5c1845ef56f1",
+          "bytes": 6369
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/oracle_checks.py",
+          "gitBlob": "425b0af4cd2a1d28e6744d8e41178a9e5c5c2ffe",
+          "sha256": "f4bf7208e9915f6ea4e574b2026cc9befa880fe5bf35e0264643e546ec9cd806",
+          "bytes": 15543
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/oracle_snapshot.py",
+          "gitBlob": "64fc8473a3ac17cad0e5487a0be5b3ea0c96c9e9",
+          "sha256": "25b402000c5045a6950ee4160b31779feb9de8a7271cfefc406adf919f1dfc0d",
+          "bytes": 8861
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/provenance.py",
+          "gitBlob": "39748003d84e8af0c075d56c8925bf0324b94d0d",
+          "sha256": "ca87f04a7069101c2be4eac80ecb307784c9215d087a1b353702f5a147aec48c",
+          "bytes": 10782
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/workload.py",
+          "gitBlob": "4cd3ccbe6f1cda0b76ab0a2ddb53e87fe9d4b762",
+          "sha256": "67383b8c7b447f1546e76cae8229a54f10f6a903695dcbed96bb889a634a916c",
+          "bytes": 11127
+        },
+        {
+          "path": "adapters/hc-cortex-002/hc_cortex_002/workload_schedule.py",
+          "gitBlob": "9da15ea1908a2499ad5a348d8e7e52303bd8b73a",
+          "sha256": "126bb850f0480bfd059247bada0e90161c9cd223c3aee1cd158693991b8cacb7",
+          "bytes": 5213
+        },
+        {
+          "path": "adapters/hc-cortex-002/tests/conftest.py",
+          "gitBlob": "1d777deb0abe8e0ca7c2134d79c186894ef984e0",
+          "sha256": "ce036e94313e91643c0e29cd1c3d19c529ba12ea60a53ef1cf5acf174f651906",
+          "bytes": 204
+        },
+        {
+          "path": "adapters/hc-cortex-002/tests/test_backend_compat.py",
+          "gitBlob": "b95b7a0ec2d1cdc9dab9e6910b331f867ff555e0",
+          "sha256": "19c4cc819c6cd88ddad9f233ffd84912d2a045586e77cf869b31c7dee4459c82",
+          "bytes": 7865
+        },
+        {
+          "path": "adapters/hc-cortex-002/tests/test_journal.py",
+          "gitBlob": "721678b382455a93d85a395ad0cead700777cf12",
+          "sha256": "6fe9031dac159ef73c10020eb56852ec4b0964e2d740b395a38fe965828a6ab3",
+          "bytes": 2021
+        },
+        {
+          "path": "adapters/hc-cortex-002/tests/test_metrics.py",
+          "gitBlob": "4e04f8e298802213ac02f578a9be51345a76c79c",
+          "sha256": "745f382450112dc9dae10a8b25818d6aba0792ada20855846bf4630fef583e5f",
+          "bytes": 2712
+        },
+        {
+          "path": "adapters/hc-cortex-002/tests/test_postgresql_oracle_contract.py",
+          "gitBlob": "c93b09ab6d782c1d96a6d1ccf010755742e86811",
+          "sha256": "4255d9d003ba41d9efa88e3454d249a8ffb45db61dc3f60b75a039d6223cac37",
+          "bytes": 4731
+        },
+        {
+          "path": "adapters/hc-cortex-002/tests/test_sqlite_end_to_end.py",
+          "gitBlob": "8cc23b38742dba6924fd39ce466d160818b9ce96",
+          "sha256": "3bd1c7236347edb51553ebb6a54f0ec61b41af76aebf0d686065b51e2a2657f3",
+          "bytes": 12750
+        }
+      ]
+    }
+  ],
+  "host": {
+    "platform": "darwin",
+    "release": "25.6.0",
+    "architecture": "arm64",
+    "node": "v24.7.0",
+    "cpus": [
+      {
+        "model": "Apple M4",
+        "speedMHz": 2400
+      },
+      {
+        "model": "Apple M4",
+        "speedMHz": 2400
+      },
+      {
+        "model": "Apple M4",
+        "speedMHz": 2400
+      },
+      {
+        "model": "Apple M4",
+        "speedMHz": 2400
+      },
+      {
+        "model": "Apple M4",
+        "speedMHz": 2400
+      },
+      {
+        "model": "Apple M4",
+        "speedMHz": 2400
+      },
+      {
+        "model": "Apple M4",
+        "speedMHz": 2400
+      },
+      {
+        "model": "Apple M4",
+        "speedMHz": 2400
+      },
+      {
+        "model": "Apple M4",
+        "speedMHz": 2400
+      },
+      {
+        "model": "Apple M4",
+        "speedMHz": 2400
+      }
+    ]
+  },
+  "memory": {
+    "freeBytes": 703741952,
+    "totalBytes": 25769803776,
+    "runner": {
+      "rss": 64045056,
+      "heapTotal": 11632640,
+      "heapUsed": 7826128,
+      "external": 2630907,
+      "arrayBuffers": 518987
+    }
+  },
+  "childEnvironmentPolicy": "minimal locale/PATH/SSL allow-list; cell-private HOME, TMP and XDG roots; exact pinned-source PYTHONPATH"
+}

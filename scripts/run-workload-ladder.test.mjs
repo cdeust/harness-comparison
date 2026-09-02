@@ -680,6 +680,14 @@ test("expected RED control continues, while main failures stop only their backen
       ["main-r1-higher", "not-run", null],
       ["main-r2-independent", "passed", "proven"]
     ]);
+    // A blocked oracle exits 1 by contract; its receipt still describes a complete lifecycle.
+    for (const ordinal of ["0001", "0003"]) {
+      const oracleProcess = readJson(join(fixture.release, "cells", ordinal, "oracle", "process.json"));
+      assert.equal(oracleProcess.status, "complete");
+      assert.deepEqual(oracleProcess.exit, { code: 1, signal: null });
+      assert.equal(oracleProcess.adapterEnvelope.verdict, "blocked");
+      assert.equal(readJson(join(fixture.release, "cells", ordinal, "workload", "process.json")).status, "complete");
+    }
   } finally {
     remove(fixture);
   }

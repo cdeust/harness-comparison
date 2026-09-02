@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "hc-cortex-002-negative-evidence/v1",
+  "declaredDeviations": [
+    {
+      "id": "deterministic-direct-adapter",
+      "description": "The dossier's provisional command used Codex run-isolated. This protocol instead invokes the same safe_handler/store boundary directly from a deterministic adapter.",
+      "rationale": "The LLM and host scheduler are outside the transaction-isolation question and would add an uncontrolled source of operation ordering, retries and missing ledger events. Host integration remains an explicit non-claim."
+    },
+    {
+      "id": "full-postgresql-reference-ladders",
+      "description": "The dossier names a matched PostgreSQL reference cell; this protocol runs the complete four-level PostgreSQL ladder in both repetitions.",
+      "rationale": "Using the same operation counts, concurrency levels and reversed repetition order avoids selecting one favorable PostgreSQL level after observing SQLite."
+    },
+    {
+      "id": "pre-freeze-c1-c2-tooling-pilots",
+      "description": "Temporary C1/C2 experiments run during runner/adapter development are development pilots only. They used a write recovery probe, an eager task backlog, the wrong queue boundary and no peak-connection observation; they are excluded from the release matrix and did not select any registered parameter.",
+      "rationale": "Documented here, at freeze, so the pre-freeze tooling history is traceable without being mistaken for scored evidence; RESEARCH-PROCESS.md requires pilot observations that inform the final protocol to be written before any scored cell."
+    },
+    {
+      "id": "pre-freeze-corrected-c2-w1-and-c5-w100-smokes",
+      "description": "After the C1/C2 pilots above were corrected, two development smokes ran unscored outside any sealed release: the pinned baseline at concurrency 2, operations-per-type 1, produced the expected blocked oracle; the pinned candidate at concurrency 5, operations-per-type 100, produced a proven oracle with 3W+1 = 301 measured terminal operations, five dispatcher requests in flight and one request observed at the source admission queue.",
+      "rationale": "These smokes validated the corrected runner/oracle machinery before registering the exact ladder levels and repetitions below; their temporary trees are excluded from publication and neither result selects a registered parameter after the fact."
+    },
+    {
+      "id": "pre-freeze-postgresql-c1-w1-producer-oracle-smoke",
+      "description": "A real PostgreSQL 17.9 producer-to-oracle smoke at concurrency 1, operations-per-type 1 ran during tooling development against the pinned candidate and returned a proven oracle verdict.",
+      "rationale": "Established that the workload/oracle chain reconciles against a live PostgreSQL 17 service before registering the PostgreSQL provisioner and the full ladder; it is unscored and excluded from the release matrix, and did not select any registered PostgreSQL parameter."
+    }
+  ],
+  "nonClaims": [
+    "The study does not establish a safe production concurrency above five requests or generalize throughput beyond this synthetic mutation fixture.",
+    "The study does not claim that cancelling an asyncio waiter cancels its native worker, and it never relabels a cancelled or transport-lost operation as rejected.",
+    "The study does not prove handler-wide atomicity after a store method has already committed; a larger unit-of-work contract is separate work.",
+    "The study does not measure embedding, predictive gating, wiki synchronization, MCP serialization, LLM quality, Claude/Codex host parity or complete-stack maturity.",
+    "The PostgreSQL reference uses an owner-private, credential-free local Unix-socket service. It does not evaluate authentication, TLS or networked PostgreSQL security, and databases are logically dedicated rather than isolated from other code running as the same operating-system user.",
+    "The scored full matrix is POSIX-only on the registered Linux or macOS host and its results are host-specific. Cross-platform validator conformance does not establish Windows workload support.",
+    "No external network access is required or intentionally performed, but external egress is neither blocked by an operating-system sandbox nor measured. The pinned source, adapter and runtime execute as trusted code under the same operating-system identity; this study is not a hostile-code isolation or data-loss-prevention evaluation.",
+    "The release binds the source locks, interpreter bytes, Python version, package/version inventory and reported native-library versions. It does not claim a byte-identical container, complete software bill of materials, or content hash for every installed package file.",
+    "Performance and saturation observations are descriptive; they are not correctness thresholds or winner scores."
+  ],
+  "entries": [
+    {
+      "cellId": "regression-baseline-sqlite-c2",
+      "status": "passed",
+      "verdict": "blocked",
+      "reason": "expected-negative-control",
+      "failedChecks": [
+        "fault_retry_choreography",
+        "fault_rollback_state",
+        "fts_count",
+        "marker_exactly_once_and_rejected_zero",
+        "memory_count",
+        "post_load_health_is_read_only",
+        "vector_count"
+      ],
+      "expectedNegativeControl": true
+    }
+  ]
+}

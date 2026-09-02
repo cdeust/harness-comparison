@@ -29,3 +29,28 @@ These rules capture corrections that must remain true in later capstone cycles.
     recovery probe or telemetry boundary differs from the preregistered
     contract. Preserve it as engineering feedback, correct the adapter, and
     rerun from a fresh unscored attempt.
+11. A treatment-sensitive predicate is never an evidence-validity gate. The
+    first scored HC-CORTEX-002 run (2026-09-01) was unanalyzable because the
+    analyzer rejected the RED control's ledger for recording zero fault
+    retries — the very behaviour the control exists to exhibit. Keep the
+    structural bound (protocol `retryPolicy`) in ledger validation and leave
+    the count to the oracle check; and make every synthetic fixture mirror the
+    real negative control, otherwise a green suite proves nothing about RED.
+12. A receipt's lifecycle status must not encode an exit-code judgement. The
+    oracle exits 1 by contract to report `blocked`; the runner marked that
+    receipt `failed` while classifying the cell as observed, and the analyzer
+    refused it. Interpret exit codes per mode where the contract lives, and
+    exercise every contractual non-zero exit in the runner suite on the
+    receipt itself, not only on the summary. Because the runner binds HEAD to
+    the registration (clean, pushed), a runner fix can never repair an
+    existing release: commit, push, re-provision, re-execute into a fresh root
+    and preserve the invalidated tree as negative evidence.
+13. A strict-equality loop over receipt fields silently rejects every
+    structured field. The HC-CORTEX-002 analyzer compared `postgresqlService`
+    (an object) with `!==`, so no correctly bound PostgreSQL receipt could ever
+    pass; SQLite cells passed only because both sides were `null`. Compare
+    structured evidence canonically, and never trust a suite whose fixture
+    cannot reach a backend: the fixture never attempted a PostgreSQL cell, so
+    the first time that path ran was on the scored re-execution. Every backend
+    the protocol preregisters must be attempted by fixture evidence before a
+    scored run.

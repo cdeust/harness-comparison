@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "workload-cell-input/v1",
+  "protocolId": "2026-08-30-hc-cortex-002-v1",
+  "protocolSha256": "4173b962962fc0b726ad4d0d9b5e3ade6918cdce1c00051ab939ac75693d6143",
+  "runAttemptId": "768ee081-6eef-4d1e-a4ba-6fa34f53e73c",
+  "attemptId": "d314b618-0b8b-4630-88b5-dbf93d8a4da7",
+  "runId": "run-0013-d9c59744-0391-4470-8e53-f81ac71db728",
+  "ordinal": 13,
+  "id": "main-r2-postgresql-c4",
+  "expectedVerdict": "proven",
+  "parameters": {
+    "sourceId": "cortex-candidate",
+    "backend": "postgresql",
+    "concurrency": 4,
+    "operationsPerType": 100,
+    "repetition": 2,
+    "phase": "main",
+    "callRate": "closed-loop",
+    "callCount": 100,
+    "duration": null,
+    "warmCold": "cold",
+    "faultIds": [
+      "fault-after-cas"
+    ]
+  },
+  "source": {
+    "id": "cortex-candidate",
+    "revision": "9faa80d3f36b1c7fd05edb4aca8202448a79fb27"
+  },
+  "database": {
+    "strategy": "caller-supplied-per-cell",
+    "databaseIdentitySha256": "8b47912968461a6f31a070d62cd6bd086508a2d90f376d93e8e4685161748543",
+    "redacted": true
+  },
+  "postgresqlService": {
+    "serviceInstanceId": "5b76367b905f4bb0efd3d7562b0dca5fc4c1b96d5b7ef7950c3ed8d0f3405eba",
+    "startedAt": "2026-09-01T20:34:19.659Z",
+    "processId": 43070
+  }
+}
