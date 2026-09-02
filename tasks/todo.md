@@ -238,3 +238,140 @@ is separate work.
   of a dated hardcoded result root.
 - No benchmark cell was executed — runners are operator-launched only, after
   the environment gate, per BENCHMARK-PROCESS.md.
+
+## Trois chantiers 2026-09-02 — plan soumis à l'owner (aucune implémentation)
+
+Directive owner du 2026-09-02 (mémoire Cortex 4355799) : (A) ledger de
+frugalité mesurée, (B) protocole v2 auto-memory vs Cortex à 10^2..10^5 items
+avec axe fraîcheur, (C) bras Zikkaron. Sources vérifiées : mémoires 4355837
+(Zikkaron, auto-memory) et le rapport frugalité du même jour ; inventaire
+du dépôt (agent Explore, 19:38Z). Ordre proposé : A avant B, C comme bras
+de B. Le ledger est l'instrument que les deux autres chantiers lisent.
+
+### Constats qui bornent les trois chantiers
+
+- Aucune télémétrie de tokens n'existe dans le dépôt : le coût est un
+  placeholder déclaré à zéro (`adapters/hc-cortex-002/hc_cortex_002/provenance.py:19-24`,
+  `scripts/hc-cortex-002-analysis-lib.mjs:966`). Pourtant
+  `claude-harness/run-isolated.mjs:76-85` lance déjà `claude -p
+  --output-format json` mais avec `stdio: "inherit"` : l'enveloppe JSON
+  (usage et coût) est affichée puis perdue. Le ledger commence par capturer
+  ce flux, pas par inventer un compteur.
+- Aucun bras témoin sans mémoire : `cortex-baseline` est une révision
+  antérieure de Cortex, pas une exploration fichier par fichier.
+- Aucun générateur de corpus : le seul axe de taille est
+  `operationsPerType ∈ {1,100}` (`protocols/2026-08-30-hc-cortex-002-v1.json:376-381`).
+- Énergie et CO2e : zéro occurrence dans le dépôt.
+- La preuve de fraîcheur (Cortex servant des README vieux de 2 à 4 mois)
+  vit dans `results/COMPARISON-rev2.md` au commit `da491bf`, absent de
+  `main` actuel ; le protocole v2 la cite par objet git, pas par chemin.
+- Deux chiffres de la directive ne survivent pas aux sources : le plafond
+  « ~200 fichiers » attribué à Karpathy n'est pas dans son gist (il parle
+  de « ~100 sources, ~hundreds of pages ») ; aucun chiffre « 4 000 tokens »
+  de CLAUDE.md n'existe dans la documentation Anthropic. Ni l'un ni
+  l'autre n'entre dans une préinscription.
+
+### Chantier A — ledger de frugalité mesurée
+
+Vérification nommée avant d'agir : un validateur de schéma du ledger
+(`node --test`) rouge sur une entrée sans `usage`, vert sur une cellule
+réelle ; l'agrégateur recalcule byte-exact la réduction et son intervalle
+à partir des JSON bruts.
+
+- [ ] Capturer l'enveloppe `claude -p --output-format json` dans un fichier
+  par cellule (`usage.input_tokens`, `output_tokens`,
+  `cache_creation_input_tokens`, `cache_read_input_tokens`,
+  `total_cost_usd`, `num_turns`, `duration_ms`) ; vérifier les noms de
+  champs contre la documentation du CLI et la version installée avant
+  d'écrire le schéma.
+- [ ] Définir le bras témoin « exploration fichier par fichier » : Claude
+  Code sans serveur MCP mémoire, auto-memory désactivée
+  (`CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`), Read/Grep/Glob autorisés, mêmes
+  prompts que les bras A et B ; le préinscrire comme troisième
+  `experimentalUnit`.
+- [ ] Ligne de précalcul dans le ledger : coût d'ingestion et d'indexation
+  (secondes CPU, RSS max, tokens si un LLM intervient) publié brut et
+  par tâche avec le `n` d'amortissement affiché, jamais dilué en silence.
+- [ ] Schéma `frugality-ledger-v1.schema.json` + agrégateur indépendant :
+  réduction relative vs témoin avec intervalle de confiance bootstrap
+  percentile, `n` publié par cellule, aucune valeur seuil inventée
+  (leçon 5).
+- [ ] Conversion énergie/CO2e via EcoLogits 0.11.1 (MPL-2.0) :
+  `E_request = PUE × E_server`, `E_GPU = #T_out × (α e^(βB) P_active + γ)`
+  avec α, β, γ, B cités depuis la page méthodologie ; facteurs d'émission
+  Our World in Data ; part incorporée BoaviztAPI (p5.48xlarge, 3 ans).
+  Chaque constante porte `// source:`.
+- [ ] Réserves d'honnêteté imprimées dans toute publication : effet rebond
+  (Luccioni-Strubell-Crawford 2025, Sorrell 2009, Coroamă-Mattern 2019) ;
+  énergie dominée par l'infrastructure fournisseur (nous agissons sur le
+  numérateur par tâche) ; EcoLogits ne modélise pas les tokens d'entrée et
+  donne des plages min/max pour les modèles fermés ; jamais « green »,
+  toujours « frugalité mesurée ».
+- [ ] Déclaration AFNOR SPEC 2314 : unité fonctionnelle (une tâche de
+  benchmark menée au rubric), frontières (tokens d'inférence + précalcul
+  local), méthode d'allocation (par requête) ; indicateurs RGESN 1.5
+  couverts ou déclarés absents (eau, ressources abiotiques : absents).
+- [ ] Une note de benchmark publiée depuis le ledger scellé uniquement.
+
+### Chantier B — protocole v2 : auto-memory vs Cortex, échelle et fraîcheur
+
+Vérification nommée : la fixture du générateur produit des corpus
+déterministes (graine publiée) dont le hash est stable entre deux
+exécutions ; chaque backend préinscrit passe une cellule fixture avant
+toute cellule notée (leçon 13).
+
+- [ ] Préinscription `protocols/2026-09-xx-hc-memory-scale-v2.json` copiée
+  sur la forme v1 (mêmes 23 clés, `registeredAt` gelé après revue).
+- [ ] Générateur de corpus 10^2, 10^3, 10^4, 10^5 items : faits synthétiques
+  avec paires question/réponse de vérité terrain ; écrit l'arbre markdown
+  auto-memory (index `MEMORY.md` ≤ 200 lignes / 25 Ko, fichiers de sujet
+  lus à la demande) et alimente Cortex par `remember` ; un item = une
+  unité définie une fois pour les deux bras (décision owner ci-dessous).
+- [ ] Deux courbes par taille : rappel (taux de réponse correcte aux
+  sondes) et tokens par tâche (ledger A). Le point de croisement est le
+  produit ; les courbes perdantes se publient.
+- [ ] Axe fraîcheur : versions périmées puis fraîches d'un même document ;
+  mesurer si le contenu servi correspond à la version courante (défaut
+  rev.2, `da491bf:results/COMPARISON-rev2.md`).
+- [ ] Mesure headless vérifiée : `claude -p` charge l'auto-memory sauf
+  `--bare` ; les écritures se mesurent par diff du répertoire mémoire.
+- [ ] Non-revendications préinscrites : la consolidation « auto-dream »
+  n'est pas documentée (preuve : prompt extrait ccVersion 2.1.235 et
+  commentaire anthropics/claude-code#39135) ; son déclenchement, son état
+  par défaut et son comportement sous `-p` ne sont pas vérifiés. Le
+  protocole mesure l'arbre tel qu'écrit et, si une consolidation est
+  observable, la déclare en déviation.
+
+### Chantier C — bras Zikkaron
+
+Vérification nommée : cellule fixture Zikkaron verte sous le contrat
+adaptateur existant (`README.md:42-56`, schémas
+`benchmark-protocol-v1` et `execution-manifest-v1`) avant toute cellule
+notée.
+
+- [ ] Faisabilité confirmée par les sources : `pip install zikkaron==1.6.0`
+  (MIT, Python ≥ 3.11), serveur MCP stdio, une base SQLite par cellule via
+  `ZIKKARON_DB_PATH`, embeddings `all-MiniLM-L6-v2` à pré-télécharger et
+  hacher ; dernier commit 2026-04-01.
+- [ ] Adapter `adapters/zikkaron/` : bras dans le protocole v2, mêmes
+  tâches, même corpus, même ledger.
+- [ ] Déclarer sans conclure : 21 des 24 noms d'outils coïncident avec
+  Cortex ; les benchmarks publiés sont auto-déclarés sans intervalle ni
+  graine ; aucun argument tiré des étoiles ou des téléchargements.
+
+### Décisions qui reviennent à l'owner avant implémentation
+
+1. `n` par cellule et méthode d'intervalle : pilote pour estimer la
+   variance, puis `n` dérivé d'une demi-largeur cible déclarée, ou `n`
+   fixe préinscrit.
+2. Énergie pour les modèles sans entrée EcoLogits (Fable 5, Opus 5) :
+   publier « aucun chiffre traçable », ou une plage sous hypothèse
+   déclarée `model-arch-not-released` avec l'entrée Opus 4.x en proxy.
+3. Facteur d'émission : mix mondial Our World in Data ou région déclarée.
+4. Définition de l'item et origine du corpus : synthétique déterministe
+   (proposé) ou dérivé de dépôts réels.
+5. Zikkaron : troisième bras du v2 (proposé, un seul corpus) ou protocole
+   séparé.
+6. Candidats issue déjà signalés sans numéro : `scripts/hc-cortex-002-analysis-lib.mjs`
+   (1622 lignes) et `scripts/hc-cortex-002-analysis.test.mjs` (1642 lignes)
+   dépassent le plafond de 500 lignes ; seul l'owner ouvre les issues.
