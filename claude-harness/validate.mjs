@@ -12,6 +12,7 @@ const names = (manifest) => Object.keys(manifest.mcpServers).sort();
 
 const harnessA = load("harness-a.mcp.json");
 const harnessB = load("harness-b.mcp.json");
+const harnessC = load("harness-c.mcp.json");
 
 assert.deepEqual(names(harnessA), ["codebase-memory", "graphify", "mongodb", "obsidian", "opentelemetry", "serena", "supabase"]);
 // Harness B carries no file-based MCP servers at all — cortex/ai-architect
@@ -32,6 +33,18 @@ assert.deepEqual(harnessB.plugins, [
   "zetetic-team-subagents@zetetic-marketplace"
 ]);
 
+// Harness C is the memory-free control arm: no MCP server, no plugin, only
+// the single factor under test (auto-memory) turned off via env var.
+assert.deepEqual(names(harnessC), []);
+assert.deepEqual(harnessC.plugins, []);
+assert.deepEqual(harnessC.environment, { CLAUDE_CODE_DISABLE_AUTO_MEMORY: "1" });
+// Harness A and B's auto-memory state is left at the CLI default for now —
+// a confound reported to the owner, not silently fixed here. Any future
+// change to their auto-memory posture must be declared as an `environment`
+// key on their own manifest, exactly like Harness C's.
+assert.equal(harnessA.environment, undefined);
+assert.equal(harnessB.environment, undefined);
+
 // Opposite of codex-harness's own assertion: Claude's MCP schema REQUIRES
 // "type": "http" on a URL-only entry (Codex's format forbids it). Confirmed
 // against this repository's own already-proven .mcp.json before writing
@@ -48,7 +61,7 @@ const runner = readFileSync(resolve(root, "run-isolated.mjs"), "utf8");
 for (const required of [
   "CLAUDE_CONFIG_DIR", "--strict-mcp-config", "--mcp-config", "expandEnvironment",
   "prompt placeholder has no --value", "isolated Claude Code home is not provisioned",
-  "--envelope-out", "\"wx\""
+  "--envelope-out", "\"wx\"", "composeIsolatedEnvironment", "harness-environment.mjs"
 ]) {
   assert.match(runner, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 }
@@ -61,8 +74,8 @@ for (const forbidden of ["\\$HOME/\\.claude", "process\\.env\\.HOME.*\\.claude",
 // The benchmark prompt roster must be complete before any revision run: a
 // missing prompt surfaces here, not as a mid-run ENOENT after hours of cells.
 for (const prompt of [
-  "step0-a", "step0-b", "ingest-a", "ingest-b",
-  "probe-a", "probe-b", "components-a", "components-b"
+  "step0-a", "step0-b", "step0-c", "ingest-a", "ingest-b",
+  "probe-a", "probe-b", "probe-c", "components-a", "components-b", "components-c"
 ]) {
   assert.ok(existsSync(resolve(root, "prompts", `${prompt}.md`)), `prompts/${prompt}.md is missing`);
 }
@@ -74,7 +87,8 @@ const probesRunner = readFileSync(resolve(root, "run-probes-sequential.mjs"), "u
 for (const required of [
   "run-isolated.mjs", "\"wx\"", "attempt", "preserve or quarantine",
   "validateReport", "COPYFILE_EXCL", "environmentSnapshot",
-  "--envelope-out", "readResultEnvelope", ".envelope.json"
+  "--envelope-out", "readResultEnvelope", ".envelope.json",
+  "prompts/probe-c.md", "C-components"
 ]) {
   assert.match(probesRunner, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `run-probes-sequential.mjs lost required primitive: ${required}`);
 }
@@ -101,12 +115,13 @@ assert.doesNotMatch(unboundedDriver, /target\/release/);
 // that are supposed to build it — this is what actually proves Finding #1
 // from the local-rev3 diagnostic (isolation enforced by prose only, never by
 // configuration) cannot recur here.
-for (const harness of ["a", "b"]) {
+const harnessManifestByRuntimeKey = { a: harnessA, b: harnessB, c: harnessC };
+for (const harness of ["a", "b", "c"]) {
   const installedPluginsPath = resolve(root, "runtime", harness, "claude-home", "installed_plugins.json");
   assert.ok(existsSync(installedPluginsPath), `runtime/${harness}/claude-home/installed_plugins.json is not provisioned yet`);
   const installed = load(`runtime/${harness}/claude-home/installed_plugins.json`);
   const installedNames = Object.keys(installed.plugins ?? {}).sort();
-  const expectedPlugins = (harness === "a" ? harnessA.plugins : harnessB.plugins).slice().sort();
+  const expectedPlugins = harnessManifestByRuntimeKey[harness].plugins.slice().sort();
   assert.deepEqual(installedNames, expectedPlugins, `runtime/${harness}/claude-home/installed_plugins.json must carry exactly this harness's plugin roster, nothing from the other side`);
 
   if (harness === "b") {
@@ -140,5 +155,32 @@ for (const harness of ["a", "b"]) {
     }
   }
 }
+
+// Validate harness-c.experimental-unit.json against the schema's own
+// properties.experimentalUnits.items — key list and value shapes are read
+// from the schema file, never hard-coded here, so this gate cannot silently
+// drift from schemas/benchmark-protocol-v1.schema.json.
+function validateExperimentalUnitFragment(fragment, itemSchema) {
+  assert.equal(itemSchema.additionalProperties, false, "schema no longer forbids additional properties on an experimentalUnit — update this gate");
+  for (const key of itemSchema.required) {
+    assert.ok(Object.prototype.hasOwnProperty.call(fragment, key), `experimental-unit fragment is missing required key: ${key}`);
+  }
+  for (const key of Object.keys(fragment)) {
+    assert.ok(itemSchema.required.includes(key), `experimental-unit fragment carries an undeclared key: ${key}`);
+  }
+  for (const key of ["id", "description"]) {
+    assert.equal(typeof fragment[key], "string", `${key} must be a string`);
+    assert.notEqual(fragment[key].trim(), "", `${key} must be non-empty`);
+  }
+  assert.ok(Array.isArray(fragment.components) && fragment.components.length > 0, "components must be a non-empty array");
+  for (const component of fragment.components) {
+    assert.equal(typeof component, "string", "every components entry must be a string");
+    assert.notEqual(component.trim(), "", "every components entry must be non-empty");
+  }
+}
+
+const experimentalUnitSchema = JSON.parse(readFileSync(resolve(root, "../schemas/benchmark-protocol-v1.schema.json"), "utf8"));
+const experimentalUnitFragment = load("harness-c.experimental-unit.json");
+validateExperimentalUnitFragment(experimentalUnitFragment, experimentalUnitSchema.properties.experimentalUnits.items);
 
 console.log("claude harness isolation: valid");

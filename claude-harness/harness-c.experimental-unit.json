@@ -1,0 +1,12 @@
+{
+  "id": "claude-code-file-exploration-control",
+  "description": "Claude Code 2.1.258 headless (`claude -p --output-format json`), no MCP server, no plugin, auto-memory disabled via CLAUDE_CODE_DISABLE_AUTO_MEMORY=1 set by claude-harness/harness-c.mcp.json, answers every probe by reading the repository file by file with the built-in Read/Grep/Glob tools, same prompts and same permission mode as the other arms, no ingestion/precompute step by construction.",
+  "components": [
+    "read-tool",
+    "grep-tool",
+    "glob-tool",
+    "env:CLAUDE_CODE_DISABLE_AUTO_MEMORY=1",
+    "empty-mcp-manifest",
+    "claude-harness/runtime/c/claude-home"
+  ]
+}
