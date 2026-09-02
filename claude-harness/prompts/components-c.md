@@ -2,10 +2,9 @@ You are executing the C1–C5 component probes for Harness C under Claude Code.
 
 This session's `CLAUDE_CONFIG_DIR` is provisioned with no MCP server and no
 plugin, and auto-memory is disabled by `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`.
-Answer by exploring the target repository file by file with the built-in
-Read, Grep and Glob tools; cite the exact file paths (and line ranges) that
-ground each answer. Do not modify the target repository, do not start
-background services, do not modify configuration, do not score your answers.
+Answer every probe from this session's own tool roster alone. Do not inspect
+any corpus repository with Read/Grep/Bash, do not start background services,
+do not modify configuration, and do not score the results.
 
 C1 session memory: state that no memory tool and no auto-memory is available
 to this session, and list the exact tool roster names visible to this

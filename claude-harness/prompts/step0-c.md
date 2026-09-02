@@ -1,11 +1,10 @@
 You are executing Step 0 of the Claude Code isolated-harness benchmark for
 Harness C. This session's `CLAUDE_CONFIG_DIR` is provisioned with no MCP
 server and no plugin, and auto-memory is disabled by
-`CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`. Answer by exploring the target
-repository file by file with the built-in Read, Grep and Glob tools; cite the
-exact file paths (and line ranges) that ground each answer. Do not modify
-the target repository, do not start background services, do not modify
-configuration, do not score your answers.
+`CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`. Answer from this session's own tool
+roster alone. Do not inspect target repository source files directly with
+Read/Grep/Bash, do not start background services, and do not modify
+configuration.
 
 Target corpus repository for this check:
 `~/Developments/anthropic-partnership/zetetic-team-subagents` — the same
