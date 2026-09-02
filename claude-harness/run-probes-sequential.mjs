@@ -152,6 +152,22 @@ function processSnapshot() {
   return { processes };
 }
 
+// The result envelope carries no CLI version field of its own (checked
+// against claude-harness/fixtures/result-envelope.claude-2.1.258.json — the
+// SDKResultMessage shape has no such field either); a shared frugality
+// ledger needs host identity per cell to distinguish measurements taken
+// under different CLI builds (Cortex memory 4356573). Measured on the same
+// PATH run-isolated.mjs resolves "claude" from — never fabricated: a failed
+// version probe records the error, not a guessed version string.
+function hostToolSnapshot() {
+  try {
+    const version = execFileSync("claude", ["--version"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+    return { name: "claude", version };
+  } catch (error) {
+    return { name: "claude", version: null, error: error.message };
+  }
+}
+
 function environmentSnapshot(cell) {
   const disk = statfsSync(workspace);
   return {
@@ -163,6 +179,7 @@ function environmentSnapshot(cell) {
     disk_bytes: { available: disk.bavail * disk.bsize, total: disk.blocks * disk.bsize },
     git: gitSnapshot(cell.repo),
     qualified_artifact: cell.artifact ? { path: cell.artifact, sha256: fileSha256(cell.artifact) } : null,
+    host_tool: hostToolSnapshot(),
     peers: processSnapshot()
   };
 }

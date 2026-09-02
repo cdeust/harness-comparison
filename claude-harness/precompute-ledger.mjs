@@ -135,7 +135,10 @@ export function validatePrecomputeReceipt(receipt) {
 // per-request tokens; cache_creation_input_tokens and cache_read_input_tokens
 // are the prompt-caching write/read counts. All four are real token volume
 // moved through the API, so all four belong in one amortized total.
-function sumUsageTokens(usage) {
+// Exported (chantier A, etape 4) so claude-harness/frugality-ledger.mjs and
+// the etape-4 bootstrap aggregator reuse this one summation rather than
+// duplicating it.
+export function sumUsageTokens(usage) {
   return usage.input_tokens + usage.output_tokens + usage.cache_creation_input_tokens + usage.cache_read_input_tokens;
 }
 

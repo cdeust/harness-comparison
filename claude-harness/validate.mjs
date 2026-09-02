@@ -213,4 +213,39 @@ const timeReportProvenance = load("fixtures/time-report.darwin-26.6.2.provenance
 const timeReportSha256 = createHash("sha256").update(readFileSync(timeReportFixturePath)).digest("hex");
 assert.equal(timeReportSha256, timeReportProvenance.sha256, "fixtures/time-report.darwin-26.6.2.txt no longer matches its provenance sha256");
 
+// The frugality ledger (chantier A, etape 4) must keep reusing the pure
+// modules it depends on rather than duplicating their pinned rules —
+// json-schema-subset-lib.mjs for the JSON-Schema-subset validator,
+// result-envelope.mjs's validateUsage, and precompute-ledger.mjs's
+// precomputeLedgerLine.
+const frugalityLedger = readFileSync(resolve(root, "frugality-ledger.mjs"), "utf8");
+for (const required of [
+  "../scripts/json-schema-subset-lib.mjs", "./result-envelope.mjs",
+  "validateUsage", "./precompute-ledger.mjs", "precomputeLedgerLine"
+]) {
+  assert.match(frugalityLedger, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `frugality-ledger.mjs lost required primitive: ${required}`);
+}
+
+// sumUsageTokens must stay exported from precompute-ledger.mjs (currently
+// module-private otherwise) so the etape-4 bootstrap aggregator
+// (claude-harness/frugality-aggregate.mjs, built in parallel) reuses this
+// summation rather than duplicating it. frugality-ledger.mjs itself has no
+// use for it: it never re-derives precomputeLedgerLine's already-computed
+// amortized token sum, so it is not imported here (coding-standards.md §9:
+// no dead imports).
+const precomputeLedgerSource = readFileSync(resolve(root, "precompute-ledger.mjs"), "utf8");
+assert.match(precomputeLedgerSource, /export function sumUsageTokens/, "precompute-ledger.mjs must keep exporting sumUsageTokens for the etape-4 aggregator");
+
+// The ledger schema itself must exist and pin the exact schema version
+// string every ledger document declares.
+const frugalityLedgerSchema = load("../schemas/frugality-ledger-v1.schema.json");
+assert.equal(
+  frugalityLedgerSchema.properties?.schemaVersion?.const,
+  "frugality-ledger/v1",
+  "schemas/frugality-ledger-v1.schema.json must pin schemaVersion.const to \"frugality-ledger/v1\""
+);
+
+// D5: host identity must be captured per cell, never fabricated on failure.
+assert.match(probesRunner, /host_tool/, "run-probes-sequential.mjs lost required primitive: host_tool");
+
 console.log("claude harness isolation: valid");

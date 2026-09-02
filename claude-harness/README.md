@@ -319,6 +319,72 @@ node claude-harness/precompute-line.mjs \
 directly on this machine — field-shape and unit evidence only, not a
 benchmark measurement.
 
+## Frugality ledger (chantier A, etape 4)
+
+`claude-harness/frugality-ledger.mjs` (pure) assembles and validates one
+`frugality-ledger-v1` document (`schemas/frugality-ledger-v1.schema.json`)
+from already-read cell evidence: `ledgerEntryFromCell` turns one accepted
+probe cell's bracket + validated result envelope + evidence hashes into an
+`entries[]` row, `precomputeLedgerEntry` wraps `precomputeLedgerLine`
+(etape 3) into a `precompute[]` row, and `validateFrugalityLedger` checks
+both the JSON Schema and the semantic pins the schema cannot express
+(declared replicates, `(cell_id, replicate)` uniqueness, `amortization.n`
+matching the accepted-entries count, no precompute row on the control
+harness, `cell_id` matching `${harness}-${task}`). The schema validation
+itself runs through `scripts/json-schema-subset-lib.mjs` — the same JSON
+Schema subset validator `scripts/benchmark-release-lib.mjs` already used,
+extracted into its own pure module once a third real consumer (this ledger)
+needed it (coding-standards.md §3.3: three concrete uses).
+
+`claude-harness/build-frugality-ledger.mjs` is the only I/O: it reads every
+accepted cell (`probes/run-summary.json` status `ok` or `existing`) under
+one or more replicate result roots, hashes `manifest/probe-brackets/<cell>.json`,
+`probes/<cell>.envelope.json`, and `probes/<cell>.json`, and reads every
+`precompute/<harness>-<task>.receipt.json` present (optional directory).
+
+```sh
+node claude-harness/build-frugality-ledger.mjs \
+  --result-root <result-root-1> [--result-root <result-root-2> ...] \
+  --out <path-to-ledger.json>
+```
+
+**What is in the ledger:**
+- Raw usage per cell (`usage.input_tokens`, `output_tokens`,
+  `cache_creation_input_tokens`, `cache_read_input_tokens`,
+  `total_cost_usd`, `num_turns`, `duration_ms`, `duration_api_ms`), each row
+  hash-bound to its source envelope, bracket, and report — a report or
+  envelope tampered with after the cell finished produces a hash mismatch
+  and the whole ledger build refuses.
+- Precompute lines (etape 3) unchanged from `precomputeLedgerLine`'s own
+  output: raw figures next to per-task amortized figures, `n` always shown.
+- `host.tool` / `host.version` per cell, from the probe bracket's
+  `before.host_tool` (`run-probes-sequential.mjs`'s `hostToolSnapshot`,
+  measured via `claude --version` on the same PATH the cell itself resolved
+  `claude` from — Cortex memory 4356573: the result envelope carries no CLI
+  version field of its own). `version` is `null`, never fabricated, on a
+  bracket that predates this capture or when the version probe itself
+  failed at cell time.
+
+**What is deliberately absent:**
+- No derived fields (e.g. no `tokens_total`): the independent aggregator
+  (`claude-harness/frugality-aggregate.mjs`) recomputes every reduction and
+  its bootstrap-percentile confidence interval byte-exact from these raw
+  fields, never from a value this ledger already summed.
+- No absolute filesystem paths: every `evidence.*.path` is relative to its
+  own replicate's result root (`tasks/lessons.md`, lesson 7 — private paths
+  stay out of public artifacts).
+- `usage.provider` is an enum with the single admitted value `"anthropic"`.
+  Codex's usage semantics (whether `cached_input_tokens` is already folded
+  into `input_tokens`) have not been verified against a source, so a Codex
+  cell is not admitted by this ledger version yet (coding-standards.md §8:
+  no source, no implementation).
+
+Run the ledger's own tests with:
+
+```sh
+node --test claude-harness/frugality-ledger.test.mjs claude-harness/build-frugality-ledger.test.mjs
+```
+
 ## Running a Step 0 check
 
 ```sh
