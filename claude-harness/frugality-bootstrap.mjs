@@ -124,14 +124,18 @@ function isEffectivelyInteger(x) {
 //       k = (replicates + 1) * alpha / 2 (1-indexed into the ascending-
 //       sorted bootstrap replicates), lowerRank = k, upperRank = R+1-k.
 //       Throws naming both when k is not an integer >= 1 — no interpolation
-//       rule is chosen here (source: Davison, A.C. & Hinkley, D.V. 1997,
-//       "Bootstrap Methods and their Application", Cambridge University
-//       Press, ch. 5 — bibliographic record verified via Crossref DOI
-//       10.1017/cbo9780511802843 2026-09-03; the exact page/section for
-//       "choose R so the percentile ranks are integers" could not be
-//       independently read from a primary excerpt in this session, so only
-//       the chapter is cited, per tasks/lessons.md lesson 5's
-//       preregistration discipline).
+//       rule is chosen here. source: Davison, A.C., "Bootstrap Methods and
+//       their Application", short-course handout (February 2021), slide 45
+//       "Other confidence intervals", https://statistique.cuso.ch/fileadmin/
+//       statistique/user_upload/BootShortHandout.pdf (read 2026-09-03):
+//       percentile interval = (theta*_((R+1)a), theta*_((R+1)(1-a))) on the
+//       ordered replicates, a being one tail's probability — hence
+//       k = (R+1)(1-c)/2 for a two-sided level c; the handout's own examples
+//       use R = 999. Refusing a non-integer rank is this module's consequence
+//       of that formula (no interpolation rule is chosen), not a rule quoted
+//       from Davison & Hinkley 1997 (Cambridge University Press, DOI
+//       10.1017/cbo9780511802843), whose text was not read in-session
+//       (tasks/lessons.md lesson 5: never invent what a source did not say).
 export function percentileRanks({ replicates, confidenceLevel }) {
   if (!Number.isInteger(replicates) || replicates < 1) {
     throw new Error(`percentileRanks: replicates must be an integer >= 1, got ${JSON.stringify(replicates)}`);

@@ -10,20 +10,13 @@
 // (coding-standards.md §4.1) and keeps "how do you resample" separate from
 // "how do you read this ledger" (Move 5 / coding-standards.md §1.1).
 import { createHash } from "node:crypto";
+import { sumUsageTokens } from "./precompute-ledger.mjs";
 import { createSeededGenerator, bootstrapPercentileInterval, finalizeBootstrapInterval, relativeReduction, mean, resampleWithReplacement } from "./frugality-bootstrap.mjs";
 
 export { createSeededGenerator, percentileRanks, bootstrapPercentileInterval, relativeReduction } from "./frugality-bootstrap.mjs";
 
 const ALLOWED_METRICS = ["tokens_inference", "tokens_total", "total_cost_usd", "duration_ms", "num_turns"];
 const AGGREGATION_PARAMETERS_SCHEMA = "frugality-aggregation-parameters/v1";
-
-// Sums all four token classes the Anthropic Messages API reports usage for.
-// TODO(integration): replace by the export from ./precompute-ledger.mjs once
-// feat/frugality-ledger-schema merges (same signature, same four-field sum —
-// see that module's own sumUsageTokens for the field-by-field rationale).
-function sumUsageTokens(usage) {
-  return usage.input_tokens + usage.output_tokens + usage.cache_creation_input_tokens + usage.cache_read_input_tokens;
-}
 
 function pushMissing(errors, condition, message) {
   if (!condition) errors.push(message);
@@ -329,7 +322,7 @@ function ledgerSha256(ledger) {
   // Canonical bytes as handed to this module (JSON.stringify of the parsed
   // object), NOT the file's raw bytes on disk — a re-serialization can
   // differ from the source file (key order, whitespace). Documented per D1:
-  // the CLI (written by the orchestrator at integration) hashes the file
+  // the CLI (aggregate-frugality-ledger.mjs) hashes the file
   // bytes directly instead; the two digests are not expected to match.
   return createHash("sha256").update(JSON.stringify(ledger)).digest("hex");
 }
@@ -356,13 +349,15 @@ export function aggregateFrugalityLedger(ledger, parameters) {
     method: {
       resampling: "two-sample nonparametric bootstrap, each sample resampled independently with replacement (Efron & Tibshirani 1993 ch. 8; pooled comparisons stratify by task, Davison & Hinkley 1997 §3.2)",
       interval: "percentile",
-      rank_rule: "k = (replicates + 1) * alpha / 2, refused when not an integer >= 1 (Davison & Hinkley 1997 ch. 5)",
+      rank_rule: "k = (replicates + 1) * alpha / 2 on the ascending-sorted replicates, i.e. the percentile interval (theta*_((R+1)a), theta*_((R+1)(1-a))) of Davison 2021 short-course handout slide 45; refused when k is not an integer >= 1 — a consequence of that formula (no interpolation rule is chosen), not a quoted rule",
       prng: "xoshiro128**",
       seed_derivation: "sha256(seed string) read as four big-endian uint32 initial state words; per-comparison seed = `${parameters.seed} ${task} ${treatment} ${metric}`; pooled seed = `${parameters.seed} pooled ${treatment} ${metric}`",
       sources: [
         "Blackman, D. & Vigna, S. 2021, ACM TOMS 47(4) art. 36 (xoshiro128**)",
         "Lemire, D. 2019, ACM TOMACS 29(1) art. 3, Algorithm 3 (unbiased bounded integers)",
-        "Davison, A.C. & Hinkley, D.V. 1997, Bootstrap Methods and their Application, Cambridge University Press",
+        "Davison, A.C. 2021, Bootstrap Methods and their Application, short-course handout (February 2021), slide 45 \"Other confidence intervals\", https://statistique.cuso.ch/fileadmin/statistique/user_upload/BootShortHandout.pdf",
+        "Davison, A.C. & Hinkley, D.V. 1997, Bootstrap Methods and their Application, Cambridge University Press, DOI 10.1017/cbo9780511802843 (stratified resampling, §3.2)",
+        "Rousselet, G.A., Pernet, C.R. & Wilcox, R.R. 2021, AMPPS 4(1), DOI 10.1177/2515245920911881 (two independent groups resampled independently; percentile bounds at alpha/2 and 1 - alpha/2)",
         "Efron, B. & Tibshirani, R.J. 1993, An Introduction to the Bootstrap, Chapman & Hall/CRC",
         "Efron, B. 1979, Ann. Statist. 7(1):1-26, DOI 10.1214/aos/1176344552"
       ]

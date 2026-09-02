@@ -346,10 +346,44 @@ réelle ; l'agrégateur recalcule byte-exact la réduction et son intervalle
     etape 3) », y compris `cpu_seconds` = borne inférieure et
     `max_rss_bytes` = pic du plus gros processus, jamais amorti) ;
     `BENCHMARK-PROCESS.md` (étapes 2–3 citent le runner).
-- [ ] Schéma `frugality-ledger-v1.schema.json` + agrégateur indépendant :
+- [x] Schéma `frugality-ledger-v1.schema.json` + agrégateur indépendant :
   réduction relative vs témoin avec intervalle de confiance bootstrap
   percentile, `n` publié par cellule, aucune valeur seuil inventée
   (leçon 5).
+  - Livrés (2026-09-03, PR `feat/frugality-ledger-aggregator`, fusion de
+    `feat/frugality-ledger-schema` et `feat/frugality-aggregate`) :
+    `schemas/frugality-ledger-v1.schema.json` (draft 2020-12, sous-ensemble
+    du validateur maison extrait verbatim dans
+    `scripts/json-schema-subset-lib.mjs` — troisième usage réel) ;
+    `claude-harness/frugality-ledger.mjs` (pur : `ledgerEntryFromCell`,
+    `precomputeLedgerEntry`, `validateFrugalityLedger` = schéma + pins
+    sémantiques) et `build-frugality-ledger.mjs` (CLI, un `--result-root`
+    par réplicat, chaque ligne liée par sha256 à son enveloppe / bracket /
+    rapport / reçu, chemins relatifs seulement) ;
+    `claude-harness/frugality-bootstrap.mjs` (xoshiro128\*\* seedé
+    sha256, port vérifié octet par octet contre le C de Vigna compilé
+    localement, fixture + provenance ; rejet Lemire 2019 alg. 3 ; rangs
+    percentile (R+1)α d'après le handout Davison 2021 slide 45, rang non
+    entier REFUSÉ — aucune interpolation choisie) et
+    `frugality-aggregate.mjs` (pur : paramètres tous requis, aucun défaut ;
+    réduction θ = 1 − mean_X/mean_C par tâche × bras, IC percentile
+    two-sample, `n` par bras, `degenerate` à n < 2, `tokens_total` = tokens
+    d'inférence + `llm_tokens` amorti du précalcul, CPU/RSS publiés à
+    part ; pooled stratifié par tâche ; `sumUsageTokens` réutilisé depuis
+    `precompute-ledger.mjs`) ; `aggregate-frugality-ledger.mjs` (CLI
+    `--ledger --parameters --out`, valide le ledger d'abord, sha256 des
+    octets des deux fichiers d'entrée, `wx`, exit 64) ;
+    `run-probes-sequential.mjs` capture `before.host_tool`
+    (`claude --version`, `null` en cas d'échec, jamais fabriqué) ;
+    `validate.mjs` pins (réutilisation `sumUsageTokens` / `validateUsage` /
+    `json-schema-subset-lib`, refus des paramètres, règle du rang, PRNG
+    nommé, fixture PRNG vs provenance) ; README sections « Frugality
+    ledger » et « Frugality aggregator » ; `BENCHMARK-PROCESS.md` étape 7.
+    Hors périmètre, candidats issue : `schemaValidate` (77 l., déplacé
+    verbatim) ; les trois manifestes de fichiers copiés
+    (`workload-ladder-runner-lib.mjs`, `run-workload-ladder.test.mjs`,
+    `hc-cortex-002-real-adapter-e2e.test.mjs`) devraient dériver d'une
+    seule liste.
 - [ ] Conversion énergie/CO2e via EcoLogits 0.11.1 (MPL-2.0) :
   `E_request = PUE × E_server`, `E_GPU = #T_out × (α e^(βB) P_active + γ)`
   avec α, β, γ, B cités depuis la page méthodologie ; facteurs d'émission

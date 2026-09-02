@@ -390,9 +390,29 @@ node --test claude-harness/frugality-ledger.test.mjs claude-harness/build-frugal
 `frugality-bootstrap.mjs` (PRNG + resampling primitives, ledger-agnostic) and
 `frugality-aggregate.mjs` (ledger-specific cell/comparison/pooled logic) are
 the independent aggregator of the measured-frugality ledger. Both are pure —
-no I/O, no clock. The CLI that reads a ledger file, hashes its bytes, and
-writes a summary file is written by the orchestrator at integration
-(`aggregate-frugality-ledger.mjs`, not part of this delivery).
+no I/O, no clock. `aggregate-frugality-ledger.mjs` is the only I/O: it reads the ledger file
+and the parameters file, validates the ledger first
+(`validateFrugalityLedger`), hashes both files' exact bytes on disk, runs
+`aggregateFrugalityLedger`, and writes one `frugality-summary/v1` document
+create-exclusively (`wx`). Usage errors exit 64 (`sysexits(3)`); any refusal
+exits 1 with the reason on stderr and no output file.
+
+```sh
+node claude-harness/aggregate-frugality-ledger.mjs \
+  --ledger <path-to-ledger.json> \
+  --parameters <path-to-parameters.json> \
+  --out <path-to-summary.json>
+```
+
+The written summary is the pure module's output plus one `files` block
+(`files.ledger.{path,sha256}`, `files.parameters.{path,sha256}` — basenames
+only, sha256 of the bytes read). End to end, one replicate campaign is:
+
+```sh
+node claude-harness/build-frugality-ledger.mjs --result-root <r1> --result-root <r2> --out ledger.json
+node claude-harness/aggregate-frugality-ledger.mjs --ledger ledger.json --parameters parameters.json --out summary.json
+node --test claude-harness/aggregate-frugality-ledger.test.mjs   # the CLI's own tests
+```
 
 ### Parameter file — every field required, no defaults
 
@@ -415,11 +435,16 @@ invent thresholds or weights):
 ### The integer-rank rule
 
 The percentile interval's ranks are `k = (replicates + 1) * alpha / 2` and
-its mirror `replicates + 1 - k` (Davison & Hinkley 1997, *Bootstrap Methods
-and their Application*, ch. 5 — verified bibliographically via Crossref DOI
-`10.1017/cbo9780511802843`; the exact page for "choose `R` so the ranks are
-integers" could not be read from a primary excerpt in this session, so only
-the chapter is cited). `percentileRanks` **refuses** any `(replicates,
+its mirror `replicates + 1 - k`: the percentile interval
+(θ̂\*<sub>((R+1)α)</sub>, θ̂\*<sub>((R+1)(1−α))</sub>) on the ordered
+replicates, α being one tail's probability — Davison, *Bootstrap Methods and
+their Application*, short-course handout (February 2021), slide 45 "Other
+confidence intervals",
+<https://statistique.cuso.ch/fileadmin/statistique/user_upload/BootShortHandout.pdf>
+(read 2026-09-03; its own examples use R = 999). The book (Davison & Hinkley
+1997, Cambridge University Press, DOI `10.1017/cbo9780511802843`) was only
+verified bibliographically, so the refusal below is stated as a consequence
+of the handout's formula, not as a rule quoted from the book. `percentileRanks` **refuses** any `(replicates,
 confidence_level)` pair whose `k` is not an integer ≥ 1 — no interpolation
 rule is chosen by this code. Compatible pairs used by this module's tests:
 `replicates: 999` or `1999` at `confidence_level: 0.95` (`k = 25` / `50`),
@@ -479,9 +504,11 @@ module's own test asserts against.
 
 `aggregateFrugalityLedger`'s output carries `ledger.sha256 =
 sha256(JSON.stringify(ledger))` — the canonical bytes of the parsed object
-as handed to this module, not the ledger file's bytes on disk (which the CLI
-hashes directly instead; the two digests are not expected to match a
-re-serialized object).
+as handed to this module, not the ledger file's bytes on disk. The CLI
+publishes the on-disk digest separately as `files.ledger.sha256` (and the
+parameters file's as `files.parameters.sha256`); the two ledger digests are
+not expected to match, since a re-serialization can differ from the source
+file in key order and whitespace.
 
 ## Running a Step 0 check
 

@@ -30,7 +30,21 @@ place pending a later dedup pass (it was under active use at copy time).
    itself. Preserve every failure in a negative-result log.
 6. Run the contamination sweep over B content probes before publishing their
    scores. Persistent-store evidence about previous benchmark runs is excluded.
+7. Once every replicate root is complete, build the measured-frugality ledger
+   from the accepted cells only (`claude-harness/build-frugality-ledger.mjs`,
+   one `--result-root` per replicate; every row hash-bound to its envelope,
+   bracket, report and precompute receipt) and aggregate it with the
+   parameters file the protocol declares
+   (`claude-harness/aggregate-frugality-ledger.mjs --ledger --parameters
+   --out`). The parameters file carries every statistical choice — control
+   harness, confidence level, bootstrap replicates, seed, stage, declared `n`
+   per cell, metrics; the aggregator refuses a missing field and a
+   `(replicates, confidence level)` pair whose percentile rank is not an
+   integer, and publishes `n` per cell, marking an interval degenerate at
+   `n < 2` rather than hiding it. Both outputs are create-exclusive; the
+   summary records the sha256 of the ledger and parameters files it read.
 
 The reports must preserve raw tool responses, environment verification, timing
-brackets, pre-registered rubric, independent scores, and negative results.
+brackets, pre-registered rubric, independent scores, negative results, and —
+for a frugality claim — the ledger, the parameters file and the summary.
 No aggregate winner is claimed from the four-repository corpus.

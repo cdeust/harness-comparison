@@ -248,4 +248,33 @@ assert.equal(
 // D5: host identity must be captured per cell, never fabricated on failure.
 assert.match(probesRunner, /host_tool/, "run-probes-sequential.mjs lost required primitive: host_tool");
 
+// The etape-4 bootstrap aggregator must reuse precompute-ledger.mjs's
+// exported sumUsageTokens (never a local copy), refuse a parameters file
+// instead of defaulting any field, keep its PRNG named, and keep refusing a
+// non-integer percentile rank with the handout that sources the rank
+// formula; its CLI must validate the ledger before aggregating, hash the
+// input files' bytes, exit 64 on usage, and write create-exclusively.
+const frugalityAggregate = readFileSync(resolve(root, "frugality-aggregate.mjs"), "utf8");
+for (const required of [
+  "import { sumUsageTokens } from \"./precompute-ledger.mjs\"", "./frugality-bootstrap.mjs",
+  "validateAggregationParameters", "xoshiro128**", "frugality-summary/v1"
+]) {
+  assert.match(frugalityAggregate, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `frugality-aggregate.mjs lost required primitive: ${required}`);
+}
+assert.doesNotMatch(frugalityAggregate, /^function sumUsageTokens/m, "frugality-aggregate.mjs must not carry its own sumUsageTokens copy");
+const frugalityBootstrap = readFileSync(resolve(root, "frugality-bootstrap.mjs"), "utf8");
+for (const required of ["is not an integer >= 1", "BootShortHandout.pdf", "xoshiro128", "Lemire"]) {
+  assert.match(frugalityBootstrap, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `frugality-bootstrap.mjs lost required primitive: ${required}`);
+}
+const aggregateCli = readFileSync(resolve(root, "aggregate-frugality-ledger.mjs"), "utf8");
+for (const required of ["validateFrugalityLedger", "aggregateFrugalityLedger", "\"wx\"", "EX_USAGE = 64", "createHash(\"sha256\")"]) {
+  assert.match(aggregateCli, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `aggregate-frugality-ledger.mjs lost required primitive: ${required}`);
+}
+// The PRNG reference vector must still be the one its provenance describes.
+const prngReference = load("fixtures/xoshiro128starstar.reference.json");
+const prngProvenance = load("fixtures/xoshiro128starstar.reference.provenance.json");
+assert.ok(Array.isArray(prngReference.outputs) && prngReference.outputs.length === 16, "fixtures/xoshiro128starstar.reference.json must carry exactly 16 reference outputs");
+assert.match(prngProvenance.referenceSourceSha256 ?? "", /^[0-9a-f]{64}$/, "fixtures/xoshiro128starstar.reference.provenance.json must record the reference C source sha256");
+assert.equal(prngProvenance.seedString, "harness-comparison frugality reference vector", "xoshiro128** provenance lost its seed string");
+
 console.log("claude harness isolation: valid");
