@@ -61,10 +61,20 @@ const repoCells = [
     artifact: resolve(corpusRoot, name, "graphify-out/graph.json"),
     expectedIds: ["P1", "P2", "P3"],
     resultKey: "probes"
+  })),
+  ...repoNames.map((name) => ({
+    id: `C-${name}`,
+    harness: "C",
+    repo: resolve(corpusRoot, name),
+    prompt: resolve(import.meta.dirname, "prompts/probe-c.md"),
+    values: { REPO: resolve(corpusRoot, name) },
+    expectedIds: ["P1", "P2", "P3"],
+    resultKey: "probes"
   }))
 ];
 
-const componentCells = ["B", "A"].map((harness) => ({
+// Generated ids: B-components, A-components, C-components.
+const componentCells = ["B", "A", "C"].map((harness) => ({
   id: `${harness}-components`,
   harness,
   repo: workspace,
@@ -251,7 +261,12 @@ async function spawnHarnessChild(cell, paths, staging) {
   return exit;
 }
 
-function writeBracket(cell, { paths, staging, before, after, exit }) {
+// cellRun bundles the per-cell execution context (paths, staging, before/
+// after environment snapshots, exit status) behind one parameter — kept as
+// a single object rather than a wide destructured signature (coding-standards
+// §4.4: max 4 parameters).
+function writeBracket(cell, cellRun) {
+  const { paths, staging, before, after, exit } = cellRun;
   // The measured-frugality ledger's primary artifact: null when the child
   // never produced one (e.g. it crashed before writing), never fabricated.
   const envelope = existsSync(paths.envelope) ? { path: paths.envelope, sha256: fileSha256(paths.envelope) } : null;
@@ -282,7 +297,8 @@ function repoChangedDuringCell(before, after) {
   return Boolean(sourceChanged || artifactChanged);
 }
 
-function acceptStagedReport(cell, { paths, staging, before, after, exit, bracket }) {
+function acceptStagedReport(cell, cellRun) {
+  const { paths, staging, before, after, exit, bracket } = cellRun;
   if (exit.code !== 0 || exit.signal !== null || exit.error !== null) {
     console.log(`FAIL ${cell.id}: child did not exit cleanly: ${JSON.stringify(exit)}`);
     return { id: cell.id, status: "failed", exit, error: "child did not exit cleanly" };

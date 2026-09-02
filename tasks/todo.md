@@ -303,11 +303,25 @@ réelle ; l'agrégateur recalcule byte-exact la réduction et son intervalle
     opérateur documentée dans `claude-harness/README.md` (`/login` sous
     `CLAUDE_CONFIG_DIR=claude-harness/runtime/<a|b>/claude-home` avant
     toute cellule scorée).
-- [ ] Définir le bras témoin « exploration fichier par fichier » : Claude
+- [x] Définir le bras témoin « exploration fichier par fichier » : Claude
   Code sans serveur MCP mémoire, auto-memory désactivée
   (`CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`), Read/Grep/Glob autorisés, mêmes
-  prompts que les bras A et B ; le préinscrire comme troisième
-  `experimentalUnit`.
+  prompts que les bras A et B ; le préinscrire comme quatrième (après
+  auto-memory, Cortex, Zikkaron) `experimentalUnit`.
+  - Livrés : `claude-harness/harness-c.mcp.json` (manifeste vide, clé
+    `environment` nouvelle au niveau harness),
+    `claude-harness/runtime/c/claude-home/{settings.json,installed_plugins.json}`,
+    `claude-harness/harness-environment.mjs` (`composeIsolatedEnvironment`,
+    module pur extrait de `run-isolated.mjs`) +
+    `claude-harness/harness-environment.test.mjs`, `run-isolated.mjs` (accepte
+    `--harness A|B|C`), `run-probes-sequential.mjs` (cellules `C-<repo>` ×5 +
+    `C-components`, aucune cellule d'ingestion — exploration fichier par
+    fichier par construction), les prompts `prompts/{step0-c,probe-c,
+    components-c}.md` (miroir de la structure A/B), `validate.mjs` (roster
+    vide de C, `environment` de C vs absence sur A/B, boucle runtime
+    `["a","b","c"]`, validation du fragment `harness-c.experimental-unit.json`
+    contre le schéma), `harness-c.experimental-unit.json`, et
+    `claude-harness/README.md` (section « Control arm (Harness C) »).
 - [ ] Ligne de précalcul dans le ledger : coût d'ingestion et d'indexation
   (secondes CPU, RSS max, tokens si un LLM intervient) publié brut et
   par tâche avec le `n` d'amortissement affiché, jamais dilué en silence.

@@ -3,9 +3,10 @@ import { existsSync, readFileSync, writeFileSync, mkdtempSync } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
 import { resolve, join } from "node:path";
 import { tmpdir } from "node:os";
+import { composeIsolatedEnvironment } from "./harness-environment.mjs";
 
 function usage() {
-  console.error("usage: run-isolated.mjs --harness A|B --cwd <repo> --prompt-file <file> [--value KEY=VALUE ...] [--envelope-out <path>]");
+  console.error("usage: run-isolated.mjs --harness A|B|C --cwd <repo> --prompt-file <file> [--value KEY=VALUE ...] [--envelope-out <path>]");
   process.exit(64);
 }
 
@@ -32,7 +33,7 @@ const harness = option("--harness");
 const cwd = option("--cwd");
 const promptFile = option("--prompt-file");
 const envelopeOut = option("--envelope-out");
-if (!new Set(["A", "B"]).has(harness) || !cwd || !promptFile) usage();
+if (!new Set(["A", "B", "C"]).has(harness) || !cwd || !promptFile) usage();
 // Create-exclusive discipline, same as the rest of this harness: refuse
 // before spawning rather than silently overwriting a prior cell's envelope.
 if (envelopeOut && existsSync(envelopeOut)) {
@@ -73,10 +74,17 @@ const tempDir = mkdtempSync(join(tmpdir(), "claude-harness-mcp-"));
 const resolvedConfigPath = join(tempDir, `harness-${harness.toLowerCase()}.resolved.mcp.json`);
 writeFileSync(resolvedConfigPath, JSON.stringify({ mcpServers }, null, 2));
 
-const isolatedEnv = {
-  ...process.env,
-  CLAUDE_CONFIG_DIR: claudeHome
-};
+// environment is a harness-level manifest key (harness-c.mcp.json), like
+// plugins never meant for --mcp-config: variables the runner injects into
+// the child process, overriding the operator's shell (e.g.
+// CLAUDE_CODE_DISABLE_AUTO_MEMORY=1 for Harness C's memory-free control arm).
+// composeIsolatedEnvironment also sets CLAUDE_CONFIG_DIR to claudeHome last,
+// so no manifest or shell variable can override the isolated config root.
+const isolatedEnv = composeIsolatedEnvironment({
+  shellEnvironment: process.env,
+  manifestEnvironment: manifest.environment,
+  claudeHome
+});
 
 const args = [
   "-p", prompt,

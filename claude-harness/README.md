@@ -24,6 +24,65 @@ isolation checks.
   Claude-specific difference from `codex-harness/harness-b.mcp.json` (which
   models the same two servers as plain commands) — Claude has a first-class
   plugin/MCP distinction that Codex's manifest format does not.
+- **Harness C**: the memory-free control arm — no MCP server, no plugin, and
+  auto-memory disabled by `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`. See "Control
+  arm (Harness C)" below.
+
+## Control arm (Harness C)
+
+Harness C exists to answer a single question: how much of Harness A's and
+Harness B's advantage over plain file exploration is attributable to the
+memory tooling itself, holding every other factor fixed? The single-factor
+rule (Move 7 / owner's plan, `tasks/todo.md:306-310`) requires that Harness C
+differ from A and B in exactly one dimension — memory tooling — and nothing
+else: same probe prompts (P1–P3, C1–C5), same `--permission-mode
+bypassPermissions`, same `--strict-mcp-config`, same runner flow, same
+Claude Code CLI version.
+
+**Why the env var, not `--bare`.** Claude Code's CLI (2.1.258, binary at
+`/Users/cdeust/.local/share/claude/versions/2.1.258`) gates auto-memory on
+`process.env.CLAUDE_CODE_DISABLE_AUTO_MEMORY` — a "1"-like value disables it,
+a "0"-like value forces it on, otherwise the `autoMemoryEnabled` setting
+applies (default on; confirmed by `grep -a` against the installed binary).
+Per the docs (https://code.claude.com/docs/en/memory), auto-memory is on by
+default and `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1` disables it; `claude -p`
+loads the same context as an interactive session unless `--bare` is passed
+(https://code.claude.com/docs/en/headless). `--bare` was rejected because it
+also drops CLAUDE.md, hooks, and plugins the same way arms A and B load them
+— it would vary more than the one factor under test. The env var isolates
+exactly the auto-memory factor and nothing else.
+
+**The `environment` manifest key.** `harness-c.mcp.json` carries a new,
+harness-level `environment` object: variables the runner injects into the
+child process, overriding the operator's shell (`{"environment":
+{"CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"}}`). Composition is
+`claude-harness/harness-environment.mjs`'s pure `composeIsolatedEnvironment`
+— shell, then manifest, then `CLAUDE_CONFIG_DIR` pinned last so no manifest
+or shell value can override the isolated config root. Like `plugins`, the
+`environment` key never reaches `--mcp-config`. Harness A and B's own
+manifests carry no `environment` key: their auto-memory state is left at the
+CLI default for now — a confound reported to the owner rather than silently
+fixed here.
+
+**No ingestion cells.** Harness C answers every probe by reading the target
+repository file by file with the built-in Read, Grep, and Glob tools; there
+is no precompute/indexing step by construction, so `run-probes-sequential.mjs`
+defines no `C-` ingestion cells — only the same repository probe cells
+(`C-<repo>`) and one components cell (`C-components`) that A and B already
+have.
+
+**Operator precondition.** Same as A and B: the isolated home starts logged
+out. Run `CLAUDE_CONFIG_DIR=claude-harness/runtime/c/claude-home claude` and
+`/login` once before any scored Harness C cell (see "Result-envelope
+capture" below for what an unauthenticated cell looks like — zero cost,
+`is_error: true`, `terminal_reason: "api_error"`).
+
+Preregistration fragment: `claude-harness/harness-c.experimental-unit.json`
+(validated by `validate.mjs` against
+`schemas/benchmark-protocol-v1.schema.json`'s
+`properties.experimentalUnits.items`) is the exact object protocol v2 will
+embed as its fourth `experimentalUnit`, after auto-memory, Cortex, and
+Zikkaron.
 
 ## Isolation mechanism
 
