@@ -3,6 +3,7 @@
 // behavior), never a wall-clock verdict.
 import test from "node:test";
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -86,6 +87,30 @@ test("a bad --envelope path fails before the measured command is spawned", darwi
     "--", ...allocatingCommand()
   ]);
   assert.notEqual(result.status, 0);
+  assert.equal(existsSync(receiptOut), false);
+});
+
+test("--artifact present after a zero exit embeds path + sha256 consistent with the file", darwinOnly, () => {
+  const stage = mkdtempSync(join(tmpdir(), "run-precompute-test-"));
+  const receiptOut = resolve(stage, "receipt.json");
+  const artifactPath = resolve(stage, "graph.json");
+  const producingCommand = [process.execPath, "-e", `require("node:fs").writeFileSync(${JSON.stringify(artifactPath)}, "{}\\n")`];
+  const result = runCli(["--harness", "A", "--repo", stage, "--receipt-out", receiptOut, "--artifact", artifactPath, "--", ...producingCommand]);
+  assert.equal(result.status, 0, result.stderr);
+  const receipt = JSON.parse(readFileSync(receiptOut, "utf8"));
+  assert.equal(receipt.artifact.path, artifactPath);
+  const expectedSha256 = createHash("sha256").update(readFileSync(artifactPath)).digest("hex");
+  assert.equal(receipt.artifact.sha256, expectedSha256);
+  assert.deepEqual(validatePrecomputeReceipt(receipt), receipt);
+});
+
+test("--artifact declared but absent after a zero exit is refused, no receipt written (review finding I1)", darwinOnly, () => {
+  const stage = mkdtempSync(join(tmpdir(), "run-precompute-test-"));
+  const receiptOut = resolve(stage, "receipt.json");
+  const artifactPath = resolve(stage, "never-written.json");
+  const result = runCli(["--harness", "A", "--repo", stage, "--receipt-out", receiptOut, "--artifact", artifactPath, "--", ...allocatingCommand()]);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /--artifact .*never-written\.json.* was declared but the command exited 0 without producing it/);
   assert.equal(existsSync(receiptOut), false);
 });
 

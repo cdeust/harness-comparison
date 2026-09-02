@@ -65,6 +65,27 @@ function pushResourceErrors(receipt, errors) {
   }
 }
 
+const SHA256_HEX = /^[0-9a-f]{64}$/;
+
+// Pins artifact's semantics, not only its shape (PR #10 lesson): null means
+// no --artifact was declared or the command failed; an object always means
+// run-precompute.mjs hashed a file that existed after a zero exit — never a
+// "maybe present, check truthiness" value the consumer has to guess at.
+function pushArtifactErrors(receipt, errors) {
+  const artifact = receipt.artifact;
+  if (artifact === null || artifact === undefined) return;
+  if (typeof artifact !== "object") {
+    errors.push("artifact: must be null or { path: string, sha256: <64 hex chars> }");
+    return;
+  }
+  if (typeof artifact.path !== "string" || artifact.path.trim() === "") {
+    errors.push("artifact.path: must be a non-empty string");
+  }
+  if (typeof artifact.sha256 !== "string" || !SHA256_HEX.test(artifact.sha256)) {
+    errors.push("artifact.sha256: must be a 64-character lowercase hex sha256 digest");
+  }
+}
+
 function pushTimeReportErrors(receipt, errors) {
   if (typeof receipt.time_report?.raw !== "string") {
     errors.push("time_report.raw: must be a string");
@@ -102,11 +123,18 @@ export function validatePrecomputeReceipt(receipt) {
   pushExitError(receipt, errors);
   pushResourceErrors(receipt, errors);
   pushTimeReportErrors(receipt, errors);
+  pushArtifactErrors(receipt, errors);
   if (receipt.llm_usage !== null) validateUsage(receipt.llm_usage, errors, "llm_usage");
   if (errors.length > 0) throw new Error(`invalid precompute receipt: ${errors.join("; ")}`);
   return receipt;
 }
 
+// Sums all four token classes the Anthropic Messages API reports usage for
+// (source: result-envelope.mjs#validateUsage, which pins exactly these four
+// fields as the usage schema): input_tokens and output_tokens are billed
+// per-request tokens; cache_creation_input_tokens and cache_read_input_tokens
+// are the prompt-caching write/read counts. All four are real token volume
+// moved through the API, so all four belong in one amortized total.
 function sumUsageTokens(usage) {
   return usage.input_tokens + usage.output_tokens + usage.cache_creation_input_tokens + usage.cache_read_input_tokens;
 }
@@ -117,9 +145,12 @@ function sumUsageTokens(usage) {
 // post: returns { harness, repo, raw, amortization: { n, per_task },
 //       semantics }. raw always carries the unamortized figures next to
 //       per_task — tasks/todo.md:331-334's "never silently diluted" rule.
-//       per_task is exact division (no rounding) and never carries
-//       max_rss_bytes: a peak cannot be amortized across tasks. Throws when
-//       amortizationTaskCount is not an integer >= 1.
+//       raw carries both wall_ms (the runner's wrapper-inclusive wall clock)
+//       and real_seconds (the measured command's own real time from
+//       /usr/bin/time) side by side — never only the biased one (review
+//       finding I2). per_task is exact division (no rounding) and never
+//       carries max_rss_bytes: a peak cannot be amortized across tasks.
+//       Throws when amortizationTaskCount is not an integer >= 1.
 export function precomputeLedgerLine(receipt, options = {}) {
   const validated = validatePrecomputeReceipt(receipt);
   const { amortizationTaskCount } = options;
@@ -129,6 +160,7 @@ export function precomputeLedgerLine(receipt, options = {}) {
   const n = amortizationTaskCount;
   const raw = {
     wall_ms: validated.wall_ms,
+    real_seconds: validated.resources.real_seconds,
     cpu_user_seconds: validated.resources.user_seconds,
     cpu_system_seconds: validated.resources.system_seconds,
     cpu_seconds: validated.resources.user_seconds + validated.resources.system_seconds,
@@ -149,6 +181,17 @@ export function precomputeLedgerLine(receipt, options = {}) {
       }
     },
     semantics: {
+      // source: run-precompute.mjs#runMeasured — wall_ms is
+      // Date.parse(utcEnd) - Date.parse(utcStart), spanning the runner's own
+      // spawn("/usr/bin/time", ...) call, i.e. it includes the /usr/bin/time
+      // + env wrapper's own process-startup cost, not only the measured
+      // command. real_seconds (man time(1) "real" field) times the command
+      // alone. Measured 2026-09-02 on macOS 26.6.2 with `node -e
+      // "console.log(1)"` as the measured command: wall_ms=47,
+      // real_seconds=0.04 (40ms) — a 7ms / 17.5% bias from the wrapper spawn
+      // on a near-instant command (review finding I2: the review's own
+      // reproduction found +35% and +52% on other short commands).
+      wall_ms: "upper bound: includes /usr/bin/time + env wrapper process-startup overhead on top of the measured command's own real time (raw.real_seconds); use raw.real_seconds for the command's cost alone",
       // source: man time(1), man getrusage(2); measured 2026-09-02 on macOS
       // 26.6.2: a waited-on child's CPU seconds are captured by
       // /usr/bin/time -l (0.67s user, 50.9MB max RSS); a child the parent

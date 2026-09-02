@@ -108,6 +108,37 @@ test("validatePrecomputeReceipt refuses a non-object receipt", () => {
   assert.throws(() => validatePrecomputeReceipt(null), (error) => error.message.includes("is not an object"));
 });
 
+test("validatePrecomputeReceipt accepts artifact: null", () => {
+  const receipt = validReceipt({ artifact: null });
+  assert.deepEqual(validatePrecomputeReceipt(receipt), receipt);
+});
+
+test("validatePrecomputeReceipt accepts a well-formed artifact object", () => {
+  const receipt = validReceipt({ artifact: { path: "/absolute/corpus/repo/graph.json", sha256: "a".repeat(64) } });
+  assert.deepEqual(validatePrecomputeReceipt(receipt), receipt);
+});
+
+test("validatePrecomputeReceipt refuses an artifact.sha256 that is not 64 hex characters", () => {
+  assert.throws(
+    () => validatePrecomputeReceipt(validReceipt({ artifact: { path: "/x", sha256: "not-hex" } })),
+    (error) => error.message.includes("artifact.sha256: must be a 64-character lowercase hex sha256 digest")
+  );
+});
+
+test("validatePrecomputeReceipt refuses an artifact with an empty path", () => {
+  assert.throws(
+    () => validatePrecomputeReceipt(validReceipt({ artifact: { path: "", sha256: "a".repeat(64) } })),
+    (error) => error.message.includes("artifact.path: must be a non-empty string")
+  );
+});
+
+test("validatePrecomputeReceipt refuses a non-object, non-null artifact", () => {
+  assert.throws(
+    () => validatePrecomputeReceipt(validReceipt({ artifact: "graph.json" })),
+    (error) => error.message.includes("artifact: must be null or { path: string, sha256: <64 hex chars> }")
+  );
+});
+
 for (const badN of [0, -1, 1.5, "3"]) {
   test(`precomputeLedgerLine refuses amortizationTaskCount = ${JSON.stringify(badN)}`, () => {
     assert.throws(
@@ -121,6 +152,7 @@ test("precomputeLedgerLine keeps raw present next to per_task, never diluted sil
   const line = precomputeLedgerLine(validReceipt(), { amortizationTaskCount: 4 });
   assert.deepEqual(line.raw, {
     wall_ms: 1000,
+    real_seconds: 0.20,
     cpu_user_seconds: 0.15,
     cpu_system_seconds: 0.01,
     cpu_seconds: 0.16,
@@ -128,6 +160,18 @@ test("precomputeLedgerLine keeps raw present next to per_task, never diluted sil
     llm_usage: null
   });
   assert.equal(line.amortization.n, 4);
+});
+
+test("precomputeLedgerLine publishes real_seconds next to the wrapper-inclusive wall_ms (review finding I2)", () => {
+  const line = precomputeLedgerLine(validReceipt({ wall_ms: 1000, resources: { real_seconds: 0.68, user_seconds: 0.15, system_seconds: 0.01, max_rss_bytes: 70746112 } }), { amortizationTaskCount: 1 });
+  assert.equal(line.raw.wall_ms, 1000);
+  assert.equal(line.raw.real_seconds, 0.68);
+});
+
+test("precomputeLedgerLine states the wall_ms semantics as an upper bound over raw.real_seconds", () => {
+  const line = precomputeLedgerLine(validReceipt(), { amortizationTaskCount: 1 });
+  assert.match(line.semantics.wall_ms, /upper bound/);
+  assert.match(line.semantics.wall_ms, /real_seconds/);
 });
 
 test("precomputeLedgerLine divides exactly, no rounding", () => {

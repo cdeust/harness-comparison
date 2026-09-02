@@ -236,7 +236,17 @@ on a mixed-OS run. `run-precompute.mjs` and
 `precompute-ledger.mjs#validatePrecomputeReceipt` both refuse any
 `platform !== "darwin"` receipt.
 
-**Two known semantic gaps, printed on every line (never silent):**
+**Three known semantic gaps, printed on every line (never silent):**
+- `wall_ms` is an **upper bound**: it spans `Date.parse(utcEnd) -
+  Date.parse(utcStart)` around the runner's own `spawn("/usr/bin/time", ...)`
+  call, so it includes the `/usr/bin/time` + `env` wrapper's own
+  process-startup cost, not only the measured command. Use `raw.real_seconds`
+  (the `/usr/bin/time -l` "real" field, timing the command alone) for the
+  command's cost without wrapper bias. Measured 2026-09-02 on macOS 26.6.2
+  with `node -e "console.log(1)"` as the measured command: `wall_ms=47`,
+  `real_seconds=0.04` (40ms) — a 7ms / 17.5% bias on a near-instant command
+  (the review that found this reproduced +35% and +52% biases on other short
+  commands).
 - `cpu_seconds` is a **lower bound**: this harness has no
   `getrusage(RUSAGE_CHILDREN)` collector (Node exposes none — only
   `RUSAGE_SELF`, confirmed against `scripts/workload-ladder-runner-lib.mjs:873`
@@ -258,8 +268,18 @@ node claude-harness/run-precompute.mjs --harness A \
   --repo /absolute/corpus/repo \
   --receipt-out <result-root>/precompute/A-repo.receipt.json \
   --artifact /absolute/corpus/repo/graphify-out/graph.json \
-  -- npx -y @dreamtree-org/graphify /absolute/corpus/repo
+  -- npx -y @dreamtree-org/graphify --no-install --no-hooks --no-viz /absolute/corpus/repo
 ```
+
+`--no-install`, `--no-hooks`, and `--no-viz` are mandatory here: without them
+a plain build installs the Graphify agent skill and registers Claude Code
+hooks inside the measured **corpus repo** (`--no-install` "skip
+auto-installing the agent skill + MCP config after the build", `--no-hooks`
+"skip registering the Claude Code hooks in `.claude/settings.json`" — both
+confirmed against the installed package's own `npx -y @dreamtree-org/graphify
+--help`), and renders `graph.html` (`--no-viz` "skip graph.html") that this
+precompute step never reads. None of that belongs in a corpus this harness
+does not own.
 
 Usage — Harness B (the existing unbounded ingestion driver):
 

@@ -103,10 +103,27 @@ function readTimeReportRaw(timeReportPath) {
   }
 }
 
+// Contract:
+// pre: artifactPath is the operator-supplied --artifact value (or undefined
+//      when the flag was not passed); exitCode is the measured command's exit
+//      code.
+// post: returns null when --artifact was not passed, or when the command
+//       exited non-zero (a failed precompute's missing artifact is expected,
+//       and the receipt is refused by validatePrecomputeReceipt regardless).
+//       Returns { path, sha256 } when --artifact was passed and the file
+//       exists after a zero exit. Throws, naming artifactPath, when
+//       --artifact was declared and the command exited 0 but the file is
+//       absent — a silent `artifact: null` in that case would hide a
+//       precompute that claimed success without producing its declared
+//       output (review finding I1, reproduced on d9c3bd0).
 function readArtifact(artifactPath, exitCode) {
   if (!artifactPath || exitCode !== 0) return null;
   const resolved = resolve(artifactPath);
-  if (!existsSync(resolved)) return null;
+  if (!existsSync(resolved)) {
+    throw new Error(
+      `run-precompute.mjs: --artifact ${resolved} was declared but the command exited 0 without producing it`
+    );
+  }
   return { path: resolved, sha256: createHash("sha256").update(readFileSync(resolved)).digest("hex") };
 }
 
