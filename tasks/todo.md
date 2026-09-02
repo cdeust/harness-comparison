@@ -260,7 +260,7 @@ de B. Le ledger est l'instrument que les deux autres chantiers lisent.
 - Aucun bras témoin sans mémoire : `cortex-baseline` est une révision
   antérieure de Cortex, pas une exploration fichier par fichier.
 - Aucun générateur de corpus : le seul axe de taille est
-  `operationsPerType ∈ {1,100}` (`protocols/2026-08-30-hc-cortex-002-v1.json:333-337`).
+  `operationsPerType ∈ {1,100}` (`protocols/2026-08-30-hc-cortex-002-v1.json:376-381`).
 - Énergie et CO2e : zéro occurrence dans le dépôt.
 - La preuve de fraîcheur (Cortex servant des README vieux de 2 à 4 mois)
   vit dans `results/COMPARISON-rev2.md` au commit `da491bf`, absent de
@@ -345,7 +345,7 @@ toute cellule notée (leçon 13).
 ### Chantier C — bras Zikkaron
 
 Vérification nommée : cellule fixture Zikkaron verte sous le contrat
-adaptateur existant (`README.md:94-139`, schémas
+adaptateur existant (`README.md:42-56`, schémas
 `benchmark-protocol-v1` et `execution-manifest-v1`) avant toute cellule
 notée.
 
@@ -373,5 +373,5 @@ notée.
 5. Zikkaron : troisième bras du v2 (proposé, un seul corpus) ou protocole
    séparé.
 6. Candidats issue déjà signalés sans numéro : `scripts/hc-cortex-002-analysis-lib.mjs`
-   (1622 lignes) et `scripts/hc-cortex-002-analysis.test.mjs` (1624 lignes)
+   (1622 lignes) et `scripts/hc-cortex-002-analysis.test.mjs` (1642 lignes)
    dépassent le plafond de 500 lignes ; seul l'owner ouvre les issues.
