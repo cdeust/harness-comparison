@@ -218,6 +218,107 @@ reference docs or the measured fixture). Run the validator's own tests with:
 node --test claude-harness/*.test.mjs
 ```
 
+## Precompute line (chantier A, etape 3)
+
+`run-precompute.mjs` measures a precompute step's own resource cost —
+Harness A's per-repo Graphify rebuild (`BENCHMARK-PROCESS.md` step 2) or
+Harness B's `run-b-ingestion-unbounded.mjs` — and writes a
+`precompute-receipt-v1` JSON. `precompute-ledger.mjs`'s
+`precomputeLedgerLine` turns a validated receipt into a ledger row: raw
+figures always published next to the per-task amortized figures, `n` (the
+accepted probe cell count for that harness×repo) always shown beside them —
+`tasks/todo.md:331-334`'s "never diluted in silence" rule.
+
+**Darwin only.** `ru_maxrss` from `getrusage(2)` is documented in **bytes**
+on macOS and in **kilobytes** on Linux (`man getrusage`); mixing the two into
+one ledger column without converting would silently corrupt every RSS figure
+on a mixed-OS run. `run-precompute.mjs` and
+`precompute-ledger.mjs#validatePrecomputeReceipt` both refuse any
+`platform !== "darwin"` receipt.
+
+**Three known semantic gaps, printed on every line (never silent):**
+- `wall_ms` is an **upper bound**: it spans `Date.parse(utcEnd) -
+  Date.parse(utcStart)` around the runner's own `spawn("/usr/bin/time", ...)`
+  call, so it includes the `/usr/bin/time` + `env` wrapper's own
+  process-startup cost, not only the measured command. Use `raw.real_seconds`
+  (the `/usr/bin/time -l` "real" field, timing the command alone) for the
+  command's cost without wrapper bias. Measured 2026-09-02 on macOS 26.6.2
+  with `node -e "console.log(1)"` as the measured command: `wall_ms=47`,
+  `real_seconds=0.04` (40ms) — a 7ms / 17.5% bias on a near-instant command
+  (the review that found this reproduced +35% and +52% biases on other short
+  commands).
+- `cpu_seconds` is a **lower bound**: this harness has no
+  `getrusage(RUSAGE_CHILDREN)` collector (Node exposes none — only
+  `RUSAGE_SELF`, confirmed against `scripts/workload-ladder-runner-lib.mjs:873`
+  and `adapters/hc-cortex-002/hc_cortex_002/metrics.py:53`, neither of which
+  measures a child tree either). Measured 2026-09-02 on macOS 26.6.2: a
+  **waited-on** child's CPU seconds are captured correctly by
+  `/usr/bin/time -l` (0.67s user, 50.9MB max RSS); a child the parent does
+  not wait for (`cmd & disown`) reports 0.00s user. Any grandchild that
+  detaches from the measured command's own process tree is invisible here.
+- `max_rss_bytes` is the **largest single process** in the tree, never a sum
+  across it (`man getrusage`: `ru_maxrss` is per-process) — a peak, not a
+  flow, and `precomputeLedgerLine` never amortizes it into `per_task`.
+
+Usage — Harness A (the per-repo Graphify rebuild verified against the
+installed package's own `--help`, never invented flags):
+
+```sh
+node claude-harness/run-precompute.mjs --harness A \
+  --repo /absolute/corpus/repo \
+  --receipt-out <result-root>/precompute/A-repo.receipt.json \
+  --artifact /absolute/corpus/repo/graphify-out/graph.json \
+  -- npx -y @dreamtree-org/graphify --no-install --no-hooks --no-viz /absolute/corpus/repo
+```
+
+`--no-install`, `--no-hooks`, and `--no-viz` are mandatory here: without them
+a plain build installs the Graphify agent skill and registers Claude Code
+hooks inside the measured **corpus repo** (`--no-install` "skip
+auto-installing the agent skill + MCP config after the build", `--no-hooks`
+"skip registering the Claude Code hooks in `.claude/settings.json`" — both
+confirmed against the installed package's own `npx -y @dreamtree-org/graphify
+--help`), and renders `graph.html` (`--no-viz` "skip graph.html") that this
+precompute step never reads. None of that belongs in a corpus this harness
+does not own.
+
+Usage — Harness B (the existing unbounded ingestion driver):
+
+```sh
+node claude-harness/run-precompute.mjs --harness B \
+  --repo /absolute/corpus/repo \
+  --receipt-out <result-root>/precompute/B-repo.receipt.json \
+  --artifact <result-root>/harness-b-unbounded/graphs/repo/graph.json \
+  -- node claude-harness/run-b-ingestion-unbounded.mjs \
+       --repo /absolute/corpus/repo \
+       --output-dir <result-root>/harness-b-unbounded/graphs/repo \
+       --report <result-root>/harness-b-unbounded/repo.json
+```
+
+Both invocations refuse before spawning if `--receipt-out` (or its derived
+`.time.txt`/`.log` siblings) already exists — same create-exclusive
+discipline as the rest of this harness — and still write the receipt on a
+non-zero child exit, so a failed precompute is preserved as evidence rather
+than lost. Pass `--envelope <path>` when the precompute step is itself
+LLM-driven (`prompts/ingest-{a,b}.md` through `run-isolated.mjs
+--envelope-out`) to embed the already-captured, already-validated
+`usage.*` block as the receipt's `llm_usage`.
+
+Publish a line:
+
+```sh
+node claude-harness/precompute-line.mjs \
+  --receipt <result-root>/precompute/B-repo.receipt.json --tasks 3
+```
+
+`--tasks` is `n`: the count of accepted probe cells for that harness×repo
+(e.g. the number of `B-<repo>` probe cells that reached `status: "ok"` in
+`run-summary.json`) — never an invented amortization base.
+
+`claude-harness/fixtures/time-report.darwin-26.6.2.txt` (+
+`.provenance.json`) is a byte-exact `/usr/bin/time -l -o` report captured
+directly on this machine — field-shape and unit evidence only, not a
+benchmark measurement.
+
 ## Running a Step 0 check
 
 ```sh

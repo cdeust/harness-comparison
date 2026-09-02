@@ -322,9 +322,30 @@ réelle ; l'agrégateur recalcule byte-exact la réduction et son intervalle
     `["a","b","c"]`, validation du fragment `harness-c.experimental-unit.json`
     contre le schéma), `harness-c.experimental-unit.json`, et
     `claude-harness/README.md` (section « Control arm (Harness C) »).
-- [ ] Ligne de précalcul dans le ledger : coût d'ingestion et d'indexation
+- [x] Ligne de précalcul dans le ledger : coût d'ingestion et d'indexation
   (secondes CPU, RSS max, tokens si un LLM intervient) publié brut et
   par tâche avec le `n` d'amortissement affiché, jamais dilué en silence.
+  - Livrés : `claude-harness/precompute-ledger.mjs` (module pur —
+    `parseTimeReport`, `validatePrecomputeReceipt`, `precomputeLedgerLine` ;
+    réutilise `result-envelope.mjs`'s `validateUsage` pour `llm_usage`,
+    jamais dupliqué), `claude-harness/run-precompute.mjs` (CLI fine :
+    `/usr/bin/time -l -o` sous `LC_ALL=C`, commande mesurée sous la locale
+    d'origine de l'opérateur via `env`, garde `darwin` uniquement — l'unité
+    de `ru_maxrss` diffère sur Linux —, écritures `"wx"` create-exclusive,
+    enveloppe LLM optionnelle via `readResultEnvelope`), et
+    `claude-harness/precompute-line.mjs` (CLI minimale publiant une ligne).
+    Champs vérifiés contre `man time(1)` et `man getrusage(2)` sur cette
+    machine (macOS 26.6.2) ; fixture réelle capturée
+    `claude-harness/fixtures/time-report.darwin-26.6.2.txt` +
+    `.provenance.json`. `claude-harness/precompute-ledger.test.mjs` et
+    `claude-harness/run-precompute.test.mjs` (spawn réel du runner autour de
+    `node -e`, sans verdict d'horloge murale) ; `validate.mjs` étendu (pins
+    `-l`/`-o`, `LC_ALL`, garde darwin, `"wx"`, réutilisation de
+    `result-envelope.mjs`, sha256 de la fixture vs sa provenance) ;
+    `claude-harness/README.md` (section « Precompute line (chantier A,
+    etape 3) », y compris `cpu_seconds` = borne inférieure et
+    `max_rss_bytes` = pic du plus gros processus, jamais amorti) ;
+    `BENCHMARK-PROCESS.md` (étapes 2–3 citent le runner).
 - [ ] Schéma `frugality-ledger-v1.schema.json` + agrégateur indépendant :
   réduction relative vs témoin avec intervalle de confiance bootstrap
   percentile, `n` publié par cellule, aucune valeur seuil inventée
