@@ -19,13 +19,18 @@ function isFiniteNumberAtLeast(value, min) {
 // source: https://code.claude.com/docs/en/agent-sdk/typescript (NonNullableUsage:
 // "{ input_tokens: number; output_tokens: number; cache_creation_input_tokens:
 // number; cache_read_input_tokens: number; }")
-function validateUsage(usage, errors) {
+//
+// fieldPrefix is exposed (default "usage") so a caller validating a usage-
+// shaped block under a different field name — e.g. precompute-ledger.mjs's
+// `llm_usage` — reuses this single pinned rule set instead of duplicating it
+// (claude-harness/precompute-ledger.mjs's validatePrecomputeReceipt).
+export function validateUsage(usage, errors, fieldPrefix = "usage") {
   if (usage === null || typeof usage !== "object") {
-    errors.push("usage: is not an object");
+    errors.push(`${fieldPrefix}: is not an object`);
     return;
   }
   for (const field of ["input_tokens", "output_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"]) {
-    if (!isIntegerAtLeast(usage[field], 0)) errors.push(`usage.${field}: must be an integer >= 0`);
+    if (!isIntegerAtLeast(usage[field], 0)) errors.push(`${fieldPrefix}.${field}: must be an integer >= 0`);
   }
 }
 

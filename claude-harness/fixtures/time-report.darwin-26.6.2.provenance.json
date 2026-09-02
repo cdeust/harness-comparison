@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-09-02T19:46:31Z",
+  "product_name": "macOS",
+  "product_version": "26.6.2",
+  "build_version": "25G83",
+  "sw_vers_command": "sw_vers",
+  "command": "LC_ALL=C /usr/bin/time -l -o time-report.darwin-26.6.2.txt node fixture-alloc.js",
+  "command_script": "const a = Buffer.alloc(20 * 1024 * 1024, 1); let s = 0; for (let i = 0; i < 200000000; i += 1) { s += i; } if (a.length < 0 || s < 0) console.log(\"x\");",
+  "node_version": "v24.7.0",
+  "fixture_file": "time-report.darwin-26.6.2.txt",
+  "sha256": "43873e2781fad1f8bdeab7587b6e6fc7172ce6257f9c8a62523ecff39af38357",
+  "byte_length": 777,
+  "note": "captured directly via /usr/bin/time -l -o under LC_ALL=C on this machine; field-shape and unit evidence only (ru_maxrss reported in bytes on darwin per getrusage(2)), not a benchmark measurement. See man time(1) and man getrusage(2) for field provenance."
+}

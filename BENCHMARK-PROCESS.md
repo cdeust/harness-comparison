@@ -12,10 +12,16 @@ place pending a later dedup pass (it was under active use at copy time).
 1. Run Step 0 in a fresh process for each harness. A failed or stale component
    is an environment fault, not benchmark data.
 2. Rebuild Harness A's Graphify artifact for every corpus repository. Record
-   the build as A-side ingestion cost.
+   the build as A-side ingestion cost. Where a per-harness precompute-receipt
+   runner exists (Claude's `claude-harness/run-precompute.mjs`), drive the
+   rebuild through it so the receipt — raw CPU seconds, max RSS, and its two
+   printed semantic caveats — becomes the recorded cost, not an unmeasured
+   wall-clock note.
 3. Run B ingestion cells first, then A ingestion cells, one cell at a time.
    Capture UTC start/end timestamps, `uptime`, free disk, and any peer process
-   that overlaps a cell. A contaminated timing is marked `re-qualify`.
+   that overlaps a cell. A contaminated timing is marked `re-qualify`. Where
+   the precompute-receipt runner is available, capture each ingestion cell's
+   receipt the same way as step 2's rebuild.
 4. Start separate fresh processes for the P1 entry-point, P2 fan-in, P3
    documentation, and C1–C5 component probes. Probe answers may use only their
    selected harness stores; they must cite the grounding artifact.

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFileSync, existsSync, lstatSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -182,5 +183,34 @@ function validateExperimentalUnitFragment(fragment, itemSchema) {
 const experimentalUnitSchema = JSON.parse(readFileSync(resolve(root, "../schemas/benchmark-protocol-v1.schema.json"), "utf8"));
 const experimentalUnitFragment = load("harness-c.experimental-unit.json");
 validateExperimentalUnitFragment(experimentalUnitFragment, experimentalUnitSchema.properties.experimentalUnits.items);
+
+// The precompute-line runner (tasks/todo.md:331-334, chantier A, etape 3)
+// must keep its time/locale/platform/evidence discipline: /usr/bin/time -l
+// -o under a forced LC_ALL=C, a darwin-only guard, create-exclusive "wx"
+// writes, and reuse of precompute-ledger.mjs / result-envelope.mjs rather
+// than reimplementing their pinned rules.
+const precomputeRunner = readFileSync(resolve(root, "run-precompute.mjs"), "utf8");
+for (const required of [
+  "\"-l\", \"-o\"", "LC_ALL: \"C\"", "only supported on darwin", "\"wx\"",
+  "./precompute-ledger.mjs", "./result-envelope.mjs", "wrapForOriginalLocale"
+]) {
+  assert.match(precomputeRunner, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `run-precompute.mjs lost required primitive: ${required}`);
+}
+
+// The pure ledger module must reuse result-envelope.mjs's usage validator
+// rather than duplicating its pinned field list (PR #10 lesson: a validator
+// that pins shape but not semantics passes its own tests and still admits
+// the exact failure the ledger exists to exclude).
+const precomputeLedger = readFileSync(resolve(root, "precompute-ledger.mjs"), "utf8");
+for (const required of ["validateUsage", "./result-envelope.mjs", "maximum resident set size", "sha256(time_report.raw)"]) {
+  assert.match(precomputeLedger, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `precompute-ledger.mjs lost required primitive: ${required}`);
+}
+// The captured macOS time(1) fixture must match its own provenance record —
+// same discipline as the result-envelope fixture already checked implicitly
+// by result-envelope.test.mjs reading it directly.
+const timeReportFixturePath = resolve(root, "fixtures/time-report.darwin-26.6.2.txt");
+const timeReportProvenance = load("fixtures/time-report.darwin-26.6.2.provenance.json");
+const timeReportSha256 = createHash("sha256").update(readFileSync(timeReportFixturePath)).digest("hex");
+assert.equal(timeReportSha256, timeReportProvenance.sha256, "fixtures/time-report.darwin-26.6.2.txt no longer matches its provenance sha256");
 
 console.log("claude harness isolation: valid");
