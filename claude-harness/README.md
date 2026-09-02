@@ -319,6 +319,104 @@ node claude-harness/precompute-line.mjs \
 directly on this machine — field-shape and unit evidence only, not a
 benchmark measurement.
 
+## Frugality aggregator (chantier A, etape 4)
+
+`frugality-bootstrap.mjs` (PRNG + resampling primitives, ledger-agnostic) and
+`frugality-aggregate.mjs` (ledger-specific cell/comparison/pooled logic) are
+the independent aggregator of the measured-frugality ledger. Both are pure —
+no I/O, no clock. The CLI that reads a ledger file, hashes its bytes, and
+writes a summary file is written by the orchestrator at integration
+(`aggregate-frugality-ledger.mjs`, not part of this delivery).
+
+### Parameter file — every field required, no defaults
+
+`aggregateFrugalityLedger(ledger, parameters)` refuses any parameters object
+missing one of these fields, naming every violation in one thrown message
+(never silently filling in a default — `tasks/lessons.md` lesson 5: never
+invent thresholds or weights):
+
+| Field | Type | Notes |
+|---|---|---|
+| `schemaVersion` | `"frugality-aggregation-parameters/v1"` | exact match |
+| `control_harness` | non-empty string | e.g. `"C"` |
+| `confidence_level` | number in `(0, 1)` | e.g. `0.95` |
+| `bootstrap_replicates` | integer ≥ 1 | must produce an integer percentile rank — see below |
+| `seed` | non-empty string | root of every derived per-comparison seed |
+| `stage` | `"pilot"` \| `"scored"` | |
+| `declared_n_per_cell` | `null` when `stage: "pilot"`; integer ≥ 1 when `stage: "scored"` | never inferred |
+| `metrics` | non-empty subset of `["tokens_inference", "tokens_total", "total_cost_usd", "duration_ms", "num_turns"]` | declared order becomes output order |
+
+### The integer-rank rule
+
+The percentile interval's ranks are `k = (replicates + 1) * alpha / 2` and
+its mirror `replicates + 1 - k` (Davison & Hinkley 1997, *Bootstrap Methods
+and their Application*, ch. 5 — verified bibliographically via Crossref DOI
+`10.1017/cbo9780511802843`; the exact page for "choose `R` so the ranks are
+integers" could not be read from a primary excerpt in this session, so only
+the chapter is cited). `percentileRanks` **refuses** any `(replicates,
+confidence_level)` pair whose `k` is not an integer ≥ 1 — no interpolation
+rule is chosen by this code. Compatible pairs used by this module's tests:
+`replicates: 999` or `1999` at `confidence_level: 0.95` (`k = 25` / `50`),
+`replicates: 19` at `confidence_level: 0.90` (`k = 1`). The protocol file
+that drives a real run must declare a compatible pair — this module never
+picks one for you.
+
+### Seed derivation
+
+`createSeededGenerator(seedString)` derives the xoshiro128** initial state
+from `sha256(seedString)`, read as four big-endian `uint32` words. Every
+comparison and pooled result gets its own seed, so each is independently
+reproducible without replaying the whole aggregation:
+
+- per-comparison: `` `${parameters.seed} ${task} ${treatment} ${metric}` ``
+- pooled: `` `${parameters.seed} pooled ${treatment} ${metric}` ``
+
+### Reference-vector fixture
+
+`fixtures/xoshiro128starstar.reference.json` pins the first 16 outputs of
+the seed string `"harness-comparison frugality reference vector"`, produced
+by compiling the reference C implementation
+(https://prng.di.unimi.it/xoshiro128starstar.c) with a small `main()` that
+sets the four state words derived from that seed and prints `next()` 16
+times. `fixtures/xoshiro128starstar.reference.provenance.json` records the
+URL, the reference file's sha256, the compiler version, the derivation, and
+the state words — the C source and compiled binary are **not** committed;
+the provenance is enough to reproduce both the C run and the JS run this
+module's own test asserts against.
+
+### Honesty statements printed in every summary
+
+- **Degenerate intervals at n < 2.** `bootstrapPercentileInterval` sets
+  `degenerate: true` whenever either sample has fewer than 2 observations —
+  every resample is then identical to the original sample by construction.
+  This is reported, not hidden or refused.
+- **Precompute coverage.** `tokens_total` for a treatment cell (harness ≠
+  `control_harness`) is published as `null` with an explicit
+  `reason: "precompute line missing for <k> of <n> observations"` when any
+  observation in that cell has no matching precompute line — never silently
+  computed from the observations that do have one (`tasks/lessons.md` lesson
+  6: preserve negative evidence, never repair by substitution). The control
+  arm never requires a precompute line (it has none by construction).
+- **`tokens_total` vs `tokens_inference`.** `tokens_inference` is the sum of
+  the four Anthropic usage token classes for the scored cell alone.
+  `tokens_total` adds the matching precompute line's amortized
+  `llm_tokens` (0 when the precompute step is deterministic, i.e.
+  `llm_usage: null`). Precompute CPU/RSS cost is published per treatment
+  cell in a separate `precompute: { lines, cpu_seconds_per_task,
+  max_rss_bytes }` block — never folded into a token figure.
+- **Undefined ratios.** `relativeReduction` throws when `mean(control) ===
+  0`; the aggregator catches this at the one call site whose job is
+  converting it into `{ relative_reduction: null, reason }` — never a
+  substituted value (e.g. `0` or `Infinity`).
+
+### `sha256` field vs the CLI's
+
+`aggregateFrugalityLedger`'s output carries `ledger.sha256 =
+sha256(JSON.stringify(ledger))` — the canonical bytes of the parsed object
+as handed to this module, not the ledger file's bytes on disk (which the CLI
+hashes directly instead; the two digests are not expected to match a
+re-serialized object).
+
 ## Running a Step 0 check
 
 ```sh
