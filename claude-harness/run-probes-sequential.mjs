@@ -16,6 +16,7 @@ import { tmpdir } from "node:os";
 import { availableParallelism, freemem, loadavg, totalmem, uptime } from "node:os";
 import { basename, join, resolve } from "node:path";
 import { execFileSync, spawn } from "node:child_process";
+import { readResultEnvelope } from "./result-envelope.mjs";
 
 const workspace = resolve(import.meta.dirname, "..");
 const resultRoot = process.env.CLAUDE_HARNESS_RESULT_ROOT
@@ -189,6 +190,7 @@ function cellPaths(cell) {
   return {
     output: resolve(probeRoot, `${cell.id}.json`),
     log: resolve(probeRoot, `${cell.id}.run.log`),
+    envelope: resolve(probeRoot, `${cell.id}.envelope.json`),
     bracket: resolve(manifestRoot, `${cell.id}.json`),
     attempt: resolve(manifestRoot, `${cell.id}.attempt.json`)
   };
@@ -224,6 +226,7 @@ async function spawnHarnessChild(cell, paths, staging) {
     "--harness", cell.harness,
     "--cwd", staging.stage,
     "--prompt-file", staging.stagedPrompt,
+    "--envelope-out", paths.envelope,
     ...Object.entries({ ...cell.values, OUTPUT: staging.stagedReport }).flatMap(([key, value]) => ["--value", `${key}=${value}`])
   ];
   const env = {
@@ -249,6 +252,9 @@ async function spawnHarnessChild(cell, paths, staging) {
 }
 
 function writeBracket(cell, { paths, staging, before, after, exit }) {
+  // The measured-frugality ledger's primary artifact: null when the child
+  // never produced one (e.g. it crashed before writing), never fabricated.
+  const envelope = existsSync(paths.envelope) ? { path: paths.envelope, sha256: fileSha256(paths.envelope) } : null;
   const bracket = {
     cell: cell.id,
     execution_policy: "fresh staged Claude Code process; sequential; no fixed wall-clock timeout",
@@ -258,6 +264,7 @@ function writeBracket(cell, { paths, staging, before, after, exit }) {
     before,
     after,
     elapsed_ms: Date.parse(after.utc) - Date.parse(before.utc),
+    envelope,
     exit
   };
   writeFileSync(paths.bracket, `${JSON.stringify(bracket, null, 2)}\n`, { flag: "wx" });
@@ -294,6 +301,14 @@ function acceptStagedReport(cell, { paths, staging, before, after, exit, bracket
     console.log(`FAIL ${cell.id}: invalid staged report: ${error.message}`);
     return { id: cell.id, status: "failed", exit, error: error.message };
   }
+  // An unmeasured cell is not a cell in a frugality ledger: the raw result
+  // envelope is required and validated exactly like the report is.
+  try {
+    readResultEnvelope(paths.envelope);
+  } catch (error) {
+    console.log(`FAIL ${cell.id}: ${error.message}`);
+    return { id: cell.id, status: "failed", exit, error: error.message };
+  }
   copyFileSync(staging.stagedReport, paths.output, fsConstants.COPYFILE_EXCL);
   console.log(`DONE ${cell.id} ${after.utc} elapsed_ms=${bracket.elapsed_ms} exit=${JSON.stringify(exit)}`);
   return { id: cell.id, status: "ok", exit };
@@ -302,13 +317,20 @@ function acceptStagedReport(cell, { paths, staging, before, after, exit, bracket
 async function runCell(cell) {
   const paths = cellPaths(cell);
   if (existsSync(paths.output)) {
-    validateReport(paths.output, cell);
-    console.log(`SKIP ${cell.id}: existing validated report`);
-    return { id: cell.id, status: "existing" };
+    // A report without its envelope is not a completed cell in a
+    // measured-frugality ledger — fall through to the partial-artifacts
+    // refusal below rather than skipping it as done.
+    if (existsSync(paths.envelope)) {
+      validateReport(paths.output, cell);
+      readResultEnvelope(paths.envelope);
+      console.log(`SKIP ${cell.id}: existing validated report`);
+      return { id: cell.id, status: "existing" };
+    }
   }
   // An attempt receipt without a terminal bracket means a prior orchestrator
   // died mid-cell: that attempt is indeterminate evidence, never a free retry.
-  if (existsSync(paths.log) || existsSync(paths.bracket) || existsSync(paths.attempt)) {
+  // A present-but-missing envelope on any of these is the same failure mode.
+  if (existsSync(paths.output) || existsSync(paths.log) || existsSync(paths.bracket) || existsSync(paths.attempt) || existsSync(paths.envelope)) {
     throw new Error(`${cell.id}: partial prior artifacts exist; preserve or quarantine them before retrying`);
   }
   const staging = stageCell(cell);

@@ -118,6 +118,47 @@ requires. This repository never invokes these runners from another Claude
 session: execute them manually in a terminal after the environment gate is
 green.
 
+## Result-envelope capture (chantier A: measured-frugality ledger)
+
+`run-isolated.mjs` spawns `claude -p … --output-format json` with `stdio:
+"inherit"` by default, so the JSON result envelope — the only place the CLI
+reports `usage.*`, `modelUsage`, `total_cost_usd`, `num_turns`,
+`duration_ms`, `duration_api_ms` — only ever reaches the parent's stdout and
+is never stored as a per-cell artifact. Pass `--envelope-out <path>` to
+capture it:
+
+```sh
+node claude-harness/run-isolated.mjs --harness A \
+  --cwd <repo> --prompt-file <file> --envelope-out <result-root>/A-foo.envelope.json
+```
+
+With the flag: the runner refuses before spawning if `<path>` already exists
+(create-exclusive, same discipline as the rest of this harness), spawns
+`claude` with stdout piped, forwards every chunk to the orchestrator's own
+stdout unchanged, and writes the accumulated raw bytes to `<path>` with
+`"wx"` after the child closes. Without the flag, behaviour is byte-for-byte
+unchanged from before this capability existed. `claude-harness/result-envelope.mjs`
+is the pure validator (`validateResultEnvelope`) plus the read+validate
+wrapper `readResultEnvelope`, wired into `run-probes-sequential.mjs`:
+`acceptStagedReport` requires the envelope to exist and validate before a
+cell can be accepted, and the partial-prior-artifacts refusal treats a
+report present without its envelope as partial. The validator pins the field
+shapes and additionally refuses `is_error: true`: an errored result (measured
+2026-09-02 as `terminal_reason: "api_error"` with an empty `modelUsage` under an
+isolated home that was never logged in) is never a measured cell, even when a
+report landed on disk. That measurement also fixes an operator precondition:
+the isolated home starts logged out, so run `CLAUDE_CONFIG_DIR=claude-harness/runtime/<a|b>/claude-home claude`
+and `/login` once per harness before any scored cell. `claude-harness/fixtures/`
+carries a byte-exact CLI 2.1.258 envelope plus its provenance (command,
+version, date, sha256) — captured under the operator's user-scope
+`~/.claude`, field-shape evidence only, not a benchmark measurement. Every
+pinned field in the validator carries a `// source:` comment (the SDK
+reference docs or the measured fixture). Run the validator's own tests with:
+
+```sh
+node --test claude-harness/*.test.mjs
+```
+
 ## Running a Step 0 check
 
 ```sh

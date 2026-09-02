@@ -45,7 +45,11 @@ assert.equal(harnessA.mcpServers.supabase.type, "http", "Claude HTTP MCP entries
 assert.equal(harnessA.mcpServers.mongodb.args.includes("--readOnly"), false, "isolated benchmark harness must not inherit the read-only lock found in results/local-rev3/NEGATIVE-LOG.md #1");
 
 const runner = readFileSync(resolve(root, "run-isolated.mjs"), "utf8");
-for (const required of ["CLAUDE_CONFIG_DIR", "--strict-mcp-config", "--mcp-config", "expandEnvironment", "prompt placeholder has no --value", "isolated Claude Code home is not provisioned"]) {
+for (const required of [
+  "CLAUDE_CONFIG_DIR", "--strict-mcp-config", "--mcp-config", "expandEnvironment",
+  "prompt placeholder has no --value", "isolated Claude Code home is not provisioned",
+  "--envelope-out", "\"wx\""
+]) {
   assert.match(runner, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 }
 // The runner must never touch the real, shared Claude Code configuration —
@@ -69,9 +73,17 @@ for (const prompt of [
 const probesRunner = readFileSync(resolve(root, "run-probes-sequential.mjs"), "utf8");
 for (const required of [
   "run-isolated.mjs", "\"wx\"", "attempt", "preserve or quarantine",
-  "validateReport", "COPYFILE_EXCL", "environmentSnapshot"
+  "validateReport", "COPYFILE_EXCL", "environmentSnapshot",
+  "--envelope-out", "readResultEnvelope", ".envelope.json"
 ]) {
   assert.match(probesRunner, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `run-probes-sequential.mjs lost required primitive: ${required}`);
+}
+
+// The envelope validator must keep refusing an errored result and must name
+// the file when it cannot even be read: both were review findings on PR #10.
+const envelopeValidator = readFileSync(resolve(root, "result-envelope.mjs"), "utf8");
+for (const required of ["is_error === true", "unreadable result envelope at"]) {
+  assert.match(envelopeValidator, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `result-envelope.mjs lost required gate: ${required}`);
 }
 // Isolation stays run-isolated.mjs's job — the orchestrator must never point
 // a session at a config root itself.

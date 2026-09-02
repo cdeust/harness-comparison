@@ -1,0 +1,12 @@
+{
+  "captured_at": "2026-09-02",
+  "cli_version": "2.1.258 (Claude Code)",
+  "model": "claude-haiku-4-5-20251001",
+  "command": "claude -p \"Reply with exactly the single word OK and nothing else.\" --output-format json --strict-mcp-config --mcp-config empty.mcp.json --model claude-haiku-4-5-20251001",
+  "mcp_config": { "mcpServers": {} },
+  "measured_total_cost_usd": 0.163,
+  "fixture_file": "result-envelope.claude-2.1.258.json",
+  "sha256": "f56fb04df1f5e85db1a3e293a1592f1f5b93a21020f0656157aeb0ed49720e4c",
+  "byte_length": 1763,
+  "note": "captured under the operator's user-scope ~/.claude, not the isolated runtime — field-shape evidence only, not a benchmark measurement"
+}
