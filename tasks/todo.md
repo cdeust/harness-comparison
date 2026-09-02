@@ -203,9 +203,12 @@ root, then `seal --status VERIFIED`, `verify-hc-cortex-002-release.mjs` and
   discovery over `artifacts/` valid.
 - [x] Copy the sealed release under `artifacts/` and update the Cortex
   dossier from `scoring/scoring.json` only.
-- [ ] Publish through a dedicated pull request (CI green, independent review,
-  merge commit so the registration stays reachable).
-- [ ] Decide `cdeust/Cortex#452` from the sealed evidence.
+- [x] Publish through a dedicated pull request (CI green, independent review,
+  merge commit so the registration stays reachable): PR #5, review verdict
+  recorded on the PR, merged by merge commit `ad7047e` on 2026-09-02.
+- [x] Decide `cdeust/Cortex#452` from the sealed evidence: readiness decision
+  posted from `scoring/scoring.json` only, PR moved from draft to
+  ready-for-review on 2026-09-02 (merge still needs its own review there).
 
 Host conditions (recorded in the runner's per-cell host snapshots and the
 session condition log): macOS, 10 cores, 1-minute load 5.70 at launch and
