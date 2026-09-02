@@ -8,7 +8,7 @@ exact file paths (and line ranges) that ground each answer. Do not modify the
 target repository, do not start background services, do not modify
 configuration, do not score your answers.
 
-Answer these probes, citing the exact MCP result that grounds each answer:
+Answer these probes, citing the exact file path and line range that grounds each answer:
 P1: What are the main entry points of this repo and what process does each start?
 P2: Which module/file has the highest fan-in (most callers/importers), and who calls it?
 P3: What does this repo's documentation say the project is for, and what are its top-level components?
