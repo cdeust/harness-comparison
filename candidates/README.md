@@ -30,6 +30,7 @@ harness.
 |---|---|---|---|---|
 | [ECC](affaan-m-ecc.md) | portable layer; complete-harness scope to test | `d8e6a51755c6971a65eef73419076d449df0f490` | `RECONNAISSANCE` | [HC-HARNESS-012](../issues/harness-comparison/integration/ecc-inclusion-pilot.md) |
 | [DeepSeek Harness](deepseek-ai-deepseek-harness.md) | complete harness; interoperability surface to test separately | `0a53fb55bea101816fa226bb964ae2bed71c343b` | `RECONNAISSANCE` | [HC-HARNESS-013](../issues/harness-comparison/integration/deepseek-harness-inclusion-pilot.md) |
+| [JIT-Agent](bingreeky-jit.md) | complete harness (seed unit); generation surface to test separately | `ababa06c2f54d799fd9fbc356e5368f61a452260` | `RECONNAISSANCE` | [HC-HARNESS-014](../issues/harness-comparison/integration/jit-inclusion-pilot.md) |
 
 The registry intentionally omits popularity counts: they are mutable and do
 not establish validity, maturity, cross-platform behavior or sovereignty.

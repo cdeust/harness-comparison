@@ -19,6 +19,7 @@ Audited revision: `3ab7c8d17044d8b3572fca2cfa705dcae182d16b`
 | [HC-HARNESS-011](benchmark-validity/ai-architect-sovereignty-scorecard.md) | benchmark-validity | AI Architect sovereignty and maturity scorecard | pending | P1 |
 | [HC-HARNESS-012](integration/ecc-inclusion-pilot.md) | integration | ECC class and inclusion pilot | pending | P1 |
 | [HC-HARNESS-013](integration/deepseek-harness-inclusion-pilot.md) | integration | DeepSeek Harness class and inclusion pilot | pending | P1 |
+| [HC-HARNESS-014](integration/jit-inclusion-pilot.md) | integration | JIT kernel class and custom-harness inclusion pilot | pending | P1 |
 
 These are current-source infrastructure findings, not product comparison
 results. Passing the two static isolation validators is recorded separately and
