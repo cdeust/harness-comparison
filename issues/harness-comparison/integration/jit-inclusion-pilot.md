@@ -6,7 +6,7 @@
 - Population: `BENCHMARK`
 - Evidence verdict: `pending`
 - Priority: `P1`
-- Source revision: `cbb74cbf3312f934c9d9603293591401447c1cb5`
+- Source revision: `3ab7c8d17044d8b3572fca2cfa705dcae182d16b`
 - Research rule: `CAPSTONE-CHARTER.md` inclusion gate; `RESEARCH-PROCESS.md` §2 and §4; `tasks/lessons.md` rules 2, 3 and 5
 - Sovereignty dimensions: 1, 2, 3, 4, 6, 7, 9
 
